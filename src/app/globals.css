@@ -1,0 +1,169 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ═══════════════════════════════════════════════════════════════
+   VRIL LABS — Design Tokens (OLO Color System + Aurora Mesh)
+   ═══════════════════════════════════════════════════════════════ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
+  --font-display: 'Syne', 'Georgia', sans-serif;
+  --font-mono: 'Fira Code', 'Consolas', monospace;
+  --color-olo-teal: #00FFC8;
+  --color-ionic-blue: #0A84FF;
+  --color-void-indigo: #6E3DDB;
+  --color-cerulean-arc: #00B4D8;
+  --color-arctic-mist: #B8F5FF;
+  --color-deep-void: #1C1F2E;
+  --color-ghost-haze: #E8EEFF;
+  --color-copper: #b87333;
+  --color-amber: #f5a623;
+  --color-violet: #9b5eff;
+  --color-error: #ff4d6a;
+  --color-success: #4ade80;
+  --color-sidebar-ring: var(--ring);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-accent-foreground: var(--accent-foreground);
+  --color-sidebar-accent: var(--accent);
+  --color-sidebar-primary-foreground: var(--primary-foreground);
+  --color-sidebar-primary: var(--primary);
+  --color-sidebar-foreground: var(--foreground);
+  --color-sidebar: var(--card);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: #080a0e;
+  --foreground: #e8edf5;
+  --card: #0d1017;
+  --card-foreground: #e8edf5;
+  --popover: #0d1017;
+  --popover-foreground: #e8edf5;
+  --primary: #00FFC8;
+  --primary-foreground: #080a0e;
+  --secondary: #111520;
+  --secondary-foreground: #e8edf5;
+  --muted: #161b28;
+  --muted-foreground: #7a8aa8;
+  --accent: #6E3DDB;
+  --accent-foreground: #e8edf5;
+  --destructive: #ff4d6a;
+  --border: #222d40;
+  --input: #1e2535;
+  --ring: #00FFC8;
+  --chart-1: #00FFC8;
+  --chart-2: #0A84FF;
+  --chart-3: #6E3DDB;
+  --chart-4: #f5a623;
+  --chart-5: #b87333;
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  ::selection { background: #00FFC8; color: #080a0e; }
+  :focus-visible { outline: 2px solid #00FFC8; outline-offset: 3px; border-radius: 4px; }
+}
+
+/* Grid background */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px) 0 0 / 48px 48px,
+    radial-gradient(ellipse at 20% 0%, rgba(0,255,200,0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 100%, rgba(155,94,255,0.12) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, #00FFC8 0%, #0A84FF 50%, #9b5eff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Aurora shard gradient */
+.aurora-shard {
+  background: linear-gradient(90deg, #6E3DDB, #2A5FCC, #0090C8, #00C8A0, #00FFC8);
+}
+
+/* Glow effects */
+.glow-teal { box-shadow: 0 0 40px rgba(0,255,200,0.12), 0 0 80px rgba(0,255,200,0.05); }
+.glow-amber { box-shadow: 0 0 40px rgba(245,166,35,0.10); }
+.glow-violet { box-shadow: 0 0 40px rgba(155,94,255,0.12); }
+.glow-blue { box-shadow: 0 0 40px rgba(10,132,255,0.12); }
+
+/* Glass effect */
+.glass {
+  background: rgba(8,10,18,0.82);
+  backdrop-filter: blur(32px) saturate(200%) brightness(1.05);
+  -webkit-backdrop-filter: blur(32px) saturate(200%) brightness(1.05);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Pulse animation for status dots */
+@keyframes vril-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.5); }
+}
+.animate-vril-pulse { animation: vril-pulse 2s ease-in-out infinite; }
+
+/* Orbit animation */
+@keyframes orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-orbit { animation: orbit 14s linear infinite; }
+.animate-orbit-reverse { animation: orbit 18s linear reverse infinite; }
+
+/* Float animation */
+@keyframes vril-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-vril-float { animation: vril-float 4s ease-in-out infinite; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #222d40; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2a3650; }
