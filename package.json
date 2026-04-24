@@ -1,7 +1,14 @@
 {
   "name": "vril-js",
-  "version": "2.0.0",
-  "private": true,
+  "version": "2.1.0",
+  "files": [
+    "src/lib/",
+    "src/components/",
+    "src/hooks/",
+    "src/proxy.ts",
+    "vril.config.ts",
+    "vril-env.d.ts"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

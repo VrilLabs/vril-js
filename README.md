@@ -13,16 +13,16 @@
 
 ### The Security-First React Framework
 
-[![Version](https://img.shields.io/badge/version-2.1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/vrillabs/vril-js)
-[![License](https://img.shields.io/badge/license-MIT-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/vrillabs/vril-js/blob/main/LICENSE)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/vrillabs/vril-js)
+[![Version](https://img.shields.io/badge/version-2.1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
+[![License](https://img.shields.io/badge/license-VRIL_LABS_OSL_v1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js/blob/main/LICENSE)
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
 [![PQC-Ready](https://img.shields.io/badge/PQC-Ready-00d4aa?style=flat-square&labelColor=1a1a2e)](https://csrc.nist.gov/projects/post-quantum-cryptography)
 
 **Post-quantum cryptography · Zero-trust membrane · Crypto agility · ΩSignal reactivity**
 
 Vril.js is a production-grade React framework where security is the architecture, not an afterthought. Built with zero external dependencies and full NIST post-quantum cryptography support, it provides everything you need to build applications that withstand both today's threats and tomorrow's quantum adversaries.
 
-[Documentation](https://vril.li/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/vrillabs/vril-js)
+[Documentation](https://vril-js.vercel.app/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/VrilLabs/vril-js)
 
 </div>
 
@@ -764,7 +764,7 @@ We welcome contributions from the security and React communities. Here's how to 
 ## License
 
 *Copyright (c) 2026 VLABS, LLC. All rights reserved.* <br>
-*[VRIL LABS Open Source License v1.0](https://github.com/VRIL-LABS/vril-js/blob/main/LICENSE) — [vril.li/license](https://vril.li/license)*.
+*[VRIL LABS Open Source License v1.0](https://github.com/VrilLabs/vril-js/blob/main/LICENSE) — [vril.li/license](https://vril.li/license)*.
 
 ---
 
