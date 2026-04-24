@@ -66,12 +66,6 @@
       ]
     }
   ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    }
-  ],
   "regions": ["iad1"],
   "cleanUrls": true,
   "trailingSlash": false

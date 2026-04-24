@@ -1,7 +1,8 @@
 /// <reference types="next" />
 /// <reference types="next/image-types/global" />
 
-// NOTE: This file should not be edited manually.
+// NOTE: The reference directives above are managed automatically by Next.js.
+// The environment variable declarations below must be kept up-to-date manually.
 // See https://nextjs.org/docs/app/building-your-application/configuring/typescript for more information.
 
 // ─── Vril.js Environment Variables ─────────────────────────────────────────
