@@ -764,7 +764,7 @@ We welcome contributions from the security and React communities. Here's how to 
 ## License
 
 *Copyright (c) 2026 VLABS, LLC. All rights reserved.* <br>
-*[VRIL LABS Open Source License v1.0](https://github.com/VRIL-LABS/vril-zip/blob/main/LICENSE) — [vril.li/license](https://vril.li/license)*.
+*[VRIL LABS Open Source License v1.0](https://github.com/VRIL-LABS/vril-js/blob/main/LICENSE) — [vril.li/license](https://vril.li/license)*.
 
 ---
 
