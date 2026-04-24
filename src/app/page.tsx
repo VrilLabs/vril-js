@@ -447,7 +447,7 @@ function CodeShowcase() {
       {/* Output hint */}
       <div className="flex items-center gap-2 px-5 py-2.5 border-t border-white/8 bg-[#0d1017]">
         <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" />
-        <span className="font-mono text-[10px] text-white/25 tracking-wider uppercase">Live \u00B7 Zero dependencies \u00B7 Web Crypto API</span>
+        <span className="font-mono text-[10px] text-white/25 tracking-wider uppercase">Live · Zero dependencies · Web Crypto API</span>
       </div>
     </div>
   );
@@ -542,7 +542,7 @@ export default function VrilShowcase() {
             <button onClick={() => setPaletteOpen(true)} className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 bg-white/4 border border-white/10 rounded-lg text-white/40 font-mono text-xs hover:border-violet/40 hover:text-white transition-all min-w-[180px]">
               <SearchIcon className="w-3.5 h-3.5 opacity-60" />
               <span>Search...</span>
-              <kbd className="ml-auto px-1.5 py-0.5 text-[9px] bg-white/5 border border-white/10 rounded font-mono">\u2318K</kbd>
+              <kbd className="ml-auto px-1.5 py-0.5 text-[9px] bg-white/5 border border-white/10 rounded font-mono">⌘K</kbd>
             </button>
             <button onClick={() => setVaultOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/4 border border-white/10 text-white/40 hover:text-amber hover:border-amber/40 transition-all" aria-label="Open Vault">
               <LockIcon className="w-4 h-4" />
@@ -572,7 +572,7 @@ export default function VrilShowcase() {
               {/* Center symbol */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-olo-teal/20 to-violet/20 border border-olo-teal/30 flex items-center justify-center animate-vril-float">
-                  <span className="font-display font-extrabold text-3xl gradient-text">\u03A9</span>
+                  <span className="font-display font-extrabold text-3xl gradient-text">Ω</span>
                 </div>
               </div>
               {/* Orbiting dots */}
@@ -584,9 +584,9 @@ export default function VrilShowcase() {
           <div className="max-w-7xl mx-auto px-5 relative z-10">
             <div className="max-w-3xl">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-olo-teal/8 border border-olo-teal/20 rounded-full mb-8 animate-vril-pulse" style={{ animationDuration: '4s' }}>
+              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-olo-teal/8 border border-olo-teal/20 rounded-full mb-8 animate-vril-badge-pulse">
                 <span className="w-1.5 h-1.5 rounded-full bg-olo-teal" style={{ boxShadow: '0 0 8px #00FFC8' }} />
-                <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">v2.1.0 \u2014 Security-First Evolution</span>
+                <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">v2.1.0 — Security-First Evolution</span>
               </div>
 
               {/* Headline */}
@@ -599,7 +599,7 @@ export default function VrilShowcase() {
 
               {/* Subtitle */}
               <p className="text-lg md:text-xl text-white/45 leading-relaxed max-w-xl mb-8">
-                Post-quantum cryptography, zero-trust membrane, crypto agility, and breakthrough browser hardening \u2014 woven into every layer. Zero dependencies. 22 modules. 200+ exports.
+                Post-quantum cryptography, zero-trust membrane, crypto agility, and breakthrough browser hardening — woven into every layer. Zero dependencies. 22 modules. 200+ exports.
               </p>
 
               {/* CTAs */}
@@ -607,7 +607,7 @@ export default function VrilShowcase() {
                 <a href="#get-started" className="inline-flex items-center gap-2 px-6 py-3 bg-olo-teal text-[#080a0e] font-semibold rounded-lg border border-olo-teal hover:-translate-y-0.5 glow-teal transition-all no-underline">
                   <TerminalIcon className="w-4 h-4" /> Get Started
                 </a>
-                <a href="#" className="inline-flex items-center gap-2 px-6 py-3 bg-transparent text-white/60 font-semibold rounded-lg border border-white/10 hover:border-white/25 hover:text-white transition-all no-underline">
+                <a href="https://github.com/VrilLabs/vril-js" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-transparent text-white/60 font-semibold rounded-lg border border-white/10 hover:border-white/25 hover:text-white transition-all no-underline">
                   <GithubIcon className="w-4 h-4" /> View on GitHub
                 </a>
               </div>
@@ -640,7 +640,7 @@ export default function VrilShowcase() {
             <div className="text-center mb-14">
               <span className="font-mono text-xs tracking-[0.16em] uppercase text-ionic-blue">Developer Experience</span>
               <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-[-0.035em] mt-2 mb-4">Security by Default, Not by Config</h2>
-              <p className="text-white/45 text-lg max-w-2xl mx-auto">Zero-config security. Intuitive APIs. Full TypeScript. Every cryptographic operation uses the Web Crypto API \u2014 no polyfills, no dependencies.</p>
+              <p className="text-white/45 text-lg max-w-2xl mx-auto">Zero-config security. Intuitive APIs. Full TypeScript. Every cryptographic operation uses the Web Crypto API — no polyfills, no dependencies.</p>
             </div>
 
             <div className="max-w-4xl mx-auto">
@@ -655,7 +655,7 @@ export default function VrilShowcase() {
             <div className="mb-14">
               <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">Features</span>
               <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-[-0.035em] mt-2 mb-4">22 Modules. One Mission.</h2>
-              <p className="text-white/45 text-lg max-w-2xl">Security isn&apos;t a feature \u2014 it&apos;s the foundation. Every module in Vril.js is built with cryptographic integrity and zero-trust principles from the first line.</p>
+              <p className="text-white/45 text-lg max-w-2xl">Security isn&apos;t a feature — it&apos;s the foundation. Every module in Vril.js is built with cryptographic integrity and zero-trust principles from the first line.</p>
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -738,16 +738,16 @@ export default function VrilShowcase() {
                     <tr key={row.feature} className="border-b border-white/4 hover:bg-white/2 transition-colors">
                       <td className="py-3 pr-4 text-white/60 font-medium">{row.feature}</td>
                       <td className="py-3 px-3 text-center">
-                        {row.nextjs === 'yes' ? <span className="text-olo-teal">\u2713</span> : row.nextjs === 'partial' ? <span className="text-amber text-xs">\u26A0</span> : <span className="text-white/15">\u2717</span>}
+                        {row.nextjs === 'yes' ? <span className="text-olo-teal">✓</span> : row.nextjs === 'partial' ? <span className="text-amber text-xs">⚠</span> : <span className="text-white/15">✗</span>}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        {row.remix === 'yes' ? <span className="text-olo-teal">\u2713</span> : row.remix === 'partial' ? <span className="text-amber text-xs">\u26A0</span> : <span className="text-white/15">\u2717</span>}
+                        {row.remix === 'yes' ? <span className="text-olo-teal">✓</span> : row.remix === 'partial' ? <span className="text-amber text-xs">⚠</span> : <span className="text-white/15">✗</span>}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        {row.astro === 'yes' ? <span className="text-olo-teal">\u2713</span> : row.astro === 'partial' ? <span className="text-amber text-xs">\u26A0</span> : <span className="text-white/15">\u2717</span>}
+                        {row.astro === 'yes' ? <span className="text-olo-teal">✓</span> : row.astro === 'partial' ? <span className="text-amber text-xs">⚠</span> : <span className="text-white/15">✗</span>}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <span className="text-olo-teal font-bold">\u2713</span>
+                        <span className="text-olo-teal font-bold">✓</span>
                       </td>
                     </tr>
                   ))}
@@ -812,7 +812,7 @@ export default function VrilShowcase() {
               <div className="relative p-5 bg-card border border-white/6 rounded-2xl">
                 <span className="absolute -top-3 -left-2 w-7 h-7 rounded-full bg-ionic-blue text-white flex items-center justify-center font-mono text-xs font-bold">2</span>
                 <h3 className="font-display font-bold text-white mb-2 mt-1">Configure</h3>
-                <div className="font-mono text-[11px] text-white/35 leading-relaxed">Security defaults applied. PQC, CSP, HSTS, Trusted Types \u2014 all enabled.</div>
+                <div className="font-mono text-[11px] text-white/35 leading-relaxed">Security defaults applied. PQC, CSP, HSTS, Trusted Types — all enabled.</div>
               </div>
 
               {/* Step 3 */}
@@ -829,10 +829,10 @@ export default function VrilShowcase() {
                 '# Create a new Vril.js project',
                 '$ npx create-vril-app@latest my-secure-app',
                 '',
-                '\u2713 Security defaults applied',
-                '\u2713 PQC enabled (ML-KEM-768 + X25519)',
-                '\u2713 CSP Level 3 + Trusted Types',
-                '\u2713 HSTS Preload configured',
+                '✓ Security defaults applied',
+                '✓ PQC enabled (ML-KEM-768 + X25519)',
+                '✓ CSP Level 3 + Trusted Types',
+                '✓ HSTS Preload configured',
                 '',
                 '$ cd my-secure-app && vril dev',
                 '',
@@ -846,7 +846,7 @@ export default function VrilShowcase() {
               <a href="#" className="inline-flex items-center gap-2 px-6 py-3 bg-olo-teal text-[#080a0e] font-semibold rounded-lg border border-olo-teal hover:-translate-y-0.5 glow-teal transition-all no-underline">
                 <TerminalIcon className="w-4 h-4" /> Quick Start Guide
               </a>
-              <a href="#" className="inline-flex items-center gap-2 px-6 py-3 bg-transparent text-white/50 font-semibold rounded-lg border border-white/10 hover:border-violet/40 hover:text-violet transition-all no-underline">
+              <a href="https://github.com/VrilLabs/vril-js" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-transparent text-white/50 font-semibold rounded-lg border border-white/10 hover:border-violet/40 hover:text-violet transition-all no-underline">
                 <EyeIcon className="w-4 h-4" /> View on GitHub
               </a>
             </div>
@@ -860,7 +860,7 @@ export default function VrilShowcase() {
           <div className="flex flex-col md:flex-row items-start justify-between gap-8">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <DiamondIcon className="w-6 h-6 text-olo-teal" />
+                <VrilLogoIcon className="w-6 h-6 text-olo-teal" />
                 <span className="font-display font-extrabold text-white">Vril<span className="text-white/40 font-medium">.js</span></span>
               </div>
               <p className="text-white/30 text-sm max-w-xs">The security-first React framework by VRIL LABS. Post-quantum cryptography built into every layer.</p>
@@ -901,7 +901,7 @@ export default function VrilShowcase() {
             </div>
           </div>
           <div className="mt-10 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="font-mono text-[10px] text-white/20 tracking-wider">\u00A9 2025-2026 VRIL LABS \u00B7 ALL RIGHTS RESERVED \u00B7 FIPS 203/204 COMPLIANT</p>
+            <p className="font-mono text-[10px] text-white/20 tracking-wider">© 2025-2026 VRIL LABS · ALL RIGHTS RESERVED · FIPS 203/204 COMPLIANT</p>
             <div className="flex items-center gap-4">
               <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/4 border border-white/8 rounded-full font-mono text-[10px] text-white/25">
                 <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" />
@@ -961,7 +961,7 @@ export default function VrilShowcase() {
             </div>
             <div className="flex items-center justify-between px-4 py-2 border-t border-white/8 bg-[#111520]">
               <span className="font-mono text-[10px] text-white/20">{filteredCommands.length} command{filteredCommands.length !== 1 ? 's' : ''}</span>
-              <div className="flex gap-3 text-[9px] font-mono text-white/20"><span>\u2191\u2193 navigate</span><span>\u21B5 select</span><span>esc close</span></div>
+              <div className="flex gap-3 text-[9px] font-mono text-white/20"><span>↑↓ navigate</span><span>↵ select</span><span>esc close</span></div>
             </div>
           </div>
         </div>
@@ -1054,8 +1054,8 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
             <span className="font-mono text-[9px] tracking-[0.14em] uppercase px-2.5 py-0.5 rounded-full text-amber bg-amber/12 border border-amber/30 flex items-center gap-1.5 w-fit">
               <span className="w-1.5 h-1.5 rounded-full bg-current" />Vault
             </span>
-            <h3 className="font-bold text-lg text-white">\u03A9Vault Encryption</h3>
-            <p className="text-sm text-white/50">AES-256-GCM + PBKDF2-SHA-512 \u00B7 600K iterations</p>
+            <h3 className="font-bold text-lg text-white">ΩVault Encryption</h3>
+            <p className="text-sm text-white/50">AES-256-GCM + PBKDF2-SHA-512 · 600K iterations</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-white/40 bg-white/4 border border-white/8 hover:text-white hover:rotate-90 transition-all" aria-label="Close">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -1102,7 +1102,7 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
           )}
         </div>
         <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-white/8 bg-[#111520]">
-          <span className="font-mono text-[10px] text-white/20">AES-256-GCM \u00B7 PBKDF2-SHA-512 \u00B7 600K iter</span>
+          <span className="font-mono text-[10px] text-white/20">AES-256-GCM · PBKDF2-SHA-512 · 600K iter</span>
           <div className="flex gap-2">
             <button onClick={handleEncrypt} disabled={!passphrase || !plaintext || status === 'encrypting'} className="px-4 py-2 bg-amber text-[#080a0e] font-semibold text-sm rounded-lg border border-amber hover:bg-amber/80 transition-all disabled:opacity-40">Seal</button>
             <button onClick={handleDecrypt} disabled={!passphrase || !plaintext || status === 'decrypting'} className="px-4 py-2 bg-transparent text-white/70 font-semibold text-sm rounded-lg border border-white/10 hover:border-olo-teal hover:text-olo-teal transition-all disabled:opacity-40">Unseal</button>

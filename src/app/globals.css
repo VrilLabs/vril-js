@@ -147,6 +147,13 @@ body::before {
 }
 .animate-vril-pulse { animation: vril-pulse 2s ease-in-out infinite; }
 
+/* Subtle badge pulse — gentle opacity breath, no scale */
+@keyframes vril-badge-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+.animate-vril-badge-pulse { animation: vril-badge-pulse 3s ease-in-out infinite; }
+
 /* Orbit animation */
 @keyframes orbit {
   from { transform: rotate(0deg); }
