@@ -1,8 +1,4 @@
 <div align="center">
-
-# Vril.js by VRIL LABS
-**[vril.li](https://vril.li)**
-
 ```
  _    __     _ __    _     
 | |  / /____(_) /   (_)____
