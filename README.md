@@ -22,7 +22,7 @@
 
 Vril.js is a production-grade React framework where security is the architecture, not an afterthought. Built with zero external dependencies and full NIST post-quantum cryptography support, it provides everything you need to build applications that withstand both today's threats and tomorrow's quantum adversaries.
 
-[Documentation](https://vril.dev/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/vrillabs/vril-js)
+[Documentation](https://vril.li/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/vrillabs/vril-js)
 
 </div>
 
@@ -754,7 +754,7 @@ We welcome contributions from the security and React communities. Here's how to 
 
 ### Code of Conduct
 
-- Report security vulnerabilities privately to security@vrillabs.dev
+- Report security vulnerabilities privately to security@vrillabs.li
 - Do not introduce dependencies that duplicate Web Crypto API functionality
 - All cryptographic implementations must reference their NIST standard or RFC
 - Zero tolerance for timing vulnerabilities in security-critical code paths
@@ -769,6 +769,6 @@ We welcome contributions from the security and React communities. Here's how to 
 ---
 
 <div align="center">
-**26 Modules · 200+ Exports · 20,000+ Lines · 0 Dependencies · Full PQC**
-  <sub>Built by <strong>[VRIL LABS](https://vrillabs.dev)</strong> · Encrypting the future</sub>
+<strong>26 Modules · 200+ Exports · 20,000+ Lines · 0 Dependencies · Full PQC</strong><br>
+  <sub>Built by <strong>VRIL LABS</strong> · Encrypting the future</sub>
 </div>
