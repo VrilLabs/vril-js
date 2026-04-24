@@ -8,6 +8,11 @@ import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
    ═══════════════════════════════════════════════════════════════ */
 
 // ─── Vril Logo ──────────────────────────────────────────────────
+/**
+ * Renders the Vril.js brand logo as an inline SVG.
+ * Uses `currentColor` so the logo inherits the parent's text color via Tailwind.
+ * @param className - Tailwind size/color classes (default: "w-7 h-7")
+ */
 function VrilLogoIcon({ className = "w-7 h-7" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 1365 1365" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
