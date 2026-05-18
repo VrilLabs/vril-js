@@ -346,6 +346,11 @@ export function useSecureStorage<T>(
     return defaultValue;
   });
   const saltRef = useRef<Uint8Array | null>(null);
+  // Monotonically-increasing counter used to sequence async encrypted writes.
+  // Each write captures the current count before any await; if a newer write
+  // increments it first, the older write is considered superseded and must not
+  // commit its (now stale) ciphertext to localStorage.
+  const writeVersionRef = useRef(0);
 
   /** Derive an AES-GCM key from the passphrase and salt using PBKDF2 */
   const deriveKey = useCallback(async (salt: Uint8Array): Promise<CryptoKey | null> => {
@@ -414,21 +419,29 @@ export function useSecureStorage<T>(
         return next;
       }
 
-      // Encrypt and store asynchronously; React state updates synchronously
+      // Encrypt and store asynchronously; React state updates synchronously.
+      // Capture the current write version before any await so we can detect if a
+      // newer write superseded this one by the time encryption finishes.
+      const myVersion = ++writeVersionRef.current;
       (async () => {
         try {
           const salt = saltRef.current ?? crypto.getRandomValues(new Uint8Array(16));
           if (!saltRef.current) saltRef.current = salt;
           const cryptoKey = await deriveKey(salt);
-          if (!cryptoKey) return;
+          if (!cryptoKey || writeVersionRef.current !== myVersion) return;
           const iv      = crypto.getRandomValues(new Uint8Array(12));
           const encoded = new TextEncoder().encode(JSON.stringify(next));
           const ct      = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, encoded);
+          if (writeVersionRef.current !== myVersion) return;
           const blob    = new Uint8Array(16 + 12 + new Uint8Array(ct).length);
           blob.set(salt, 0);
           blob.set(iv, 16);
           blob.set(new Uint8Array(ct), 28);
-          localStorage.setItem(key, btoa(String.fromCharCode(...blob)));
+          // Build the base64 string via a loop — using spread (`...blob`) throws
+          // a RangeError for large values because every byte becomes a function arg.
+          let binary = '';
+          for (let i = 0; i < blob.length; i++) binary += String.fromCharCode(blob[i]);
+          localStorage.setItem(key, btoa(binary));
         } catch {}
       })();
 

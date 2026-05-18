@@ -95,6 +95,13 @@ const signalRegistry = new Map<string, {
   updatedAt: number;
 }>();
 
+/**
+ * Maps every signal ID to its subscriber Set so that computed signals can
+ * remove themselves from dropped dependencies during recompute, preventing
+ * stale edges that cause unnecessary invalidations and effect re-runs.
+ */
+const signalSubscribersById = new Map<string, Set<Subscriber>>();
+
 // ─── Devtools Hooks ───────────────────────────────────────────────
 
 /** Register a callback invoked when any signal is created */
@@ -226,6 +233,9 @@ export function signal<T>(initial: T): SignalReadable<T> {
   };
 
   registerSignal(id, 'signal', () => read.peek());
+  // Register the subscriber Set so computed signals can remove themselves when
+  // a dependency is no longer read after a recompute.
+  signalSubscribersById.set(id, subscribers);
   return read;
 }
 
@@ -237,7 +247,6 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
   let cachedValue: T;
   let dirty = true;
   const subscribers = new Set<Subscriber>();
-  const dependencies = new Set<string>();
   const id = `comp_${nextSignalId++}`;
 
   // The tracker is defined ONCE and reused across every recompute.
@@ -259,10 +268,21 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
 
   /** Track which signals this computed depends on */
   function recompute(): void {
-    const prevDeps = new Set(dependencies);
-    dependencies.clear();
+    const entry = signalRegistry.get(id);
+    // Snapshot the current deps BEFORE running fn() so we know what to clean up
+    const prevDeps = entry ? new Set(entry.dependencies) : new Set<string>();
 
-    // Run fn() under the stable tracker so signal reads register it
+    // Clear the registry's dep tracking for this computed so that
+    // trackDependency() calls during fn() rebuild it from scratch.
+    if (entry) {
+      for (const dep of prevDeps) {
+        const depEntry = signalRegistry.get(dep);
+        if (depEntry) depEntry.dependents.delete(id);
+      }
+      entry.dependencies.clear();
+    }
+
+    // Run fn() under the stable tracker; signal reads will re-register deps
     const prevEffect = currentEffect;
     currentEffect = tracker;
     try {
@@ -271,21 +291,19 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
       currentEffect = prevEffect;
     }
 
-    // Update dependency tracking in registry
-    const entry = signalRegistry.get(id);
-    if (entry) {
-      // Remove old deps
-      for (const dep of prevDeps) {
-        const depEntry = signalRegistry.get(dep);
-        if (depEntry) depEntry.dependents.delete(id);
-        entry.dependencies.delete(dep);
+    // After running, entry.dependencies now holds the new deps.
+    const newDeps = entry ? entry.dependencies : new Set<string>();
+
+    // Unsubscribe tracker from signal subscriber Sets that are no longer deps.
+    // This prevents stale signal→computed edges that would fire _invalidate()
+    // for unrelated signal changes, causing unnecessary effect re-runs.
+    for (const dep of prevDeps) {
+      if (!newDeps.has(dep)) {
+        signalSubscribersById.get(dep)?.delete(tracker);
       }
-      // Add new deps
-      for (const dep of dependencies) {
-        trackDependency(dep, id);
-      }
-      entry.updatedAt = Date.now();
     }
+
+    if (entry) entry.updatedAt = Date.now();
   }
 
   function self(): T {
