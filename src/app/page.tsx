@@ -498,7 +498,7 @@ function HeroGraphic() {
   ];
 
   return (
-    <div className="absolute top-1/2 right-[6%] -translate-y-1/2 hidden lg:block pointer-events-none" aria-hidden="true">
+    <div className="absolute top-1/2 right-[6%] -translate-y-1/2 hidden lg:block pointer-events-none" role="img" aria-label="Animated zero-trust security graphic with PQC, KEM, and CSP layers">
       <div className="hero-graphic relative w-[25rem] h-[25rem]">
         <div className="absolute inset-0 rounded-full bg-olo-teal/8 blur-3xl animate-vril-float" />
         <div className="absolute inset-6 rounded-full border border-white/8 hero-ring" />
@@ -1098,7 +1098,7 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
           </div>
           <div className="space-y-1.5">
             <label className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30">Input</label>
-            <textarea value={plaintext} onChange={e => { setPlaintext(e.target.value); setActiveBundle(''); }} rows={3} className="w-full px-3 py-2 bg-[#161b28] border border-white/10 rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-olo-teal transition-colors" placeholder="Enter plaintext to seal, or paste a ciphertext bundle to unseal" />
+            <textarea value={plaintext} onChange={e => { setPlaintext(e.target.value); setActiveBundle(''); }} rows={3} className="w-full px-3 py-2 bg-[#161b28] border border-white/10 rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-olo-teal transition-colors" placeholder="Enter plaintext to Seal, or paste a ciphertext bundle to Unseal" />
           </div>
           {result && (
             <div className="space-y-1.5">
