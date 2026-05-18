@@ -413,7 +413,10 @@ export class EncryptedCache {
     return this.cache.size;
   }
 
-  /** Get all non-expired keys */
+  /**
+   * Get all non-expired keys in this `EncryptedCache` instance.
+   * Entries whose TTL has elapsed are excluded and lazily removed on access.
+   */
   keys(): string[] {
     const now = Date.now();
     const result: string[] = [];

@@ -383,6 +383,9 @@ export function useSecureStorage<T>(
         // Decryption failed — key changed or data corrupt; leave defaultValue
       }
     })();
+  // Intentionally empty dep array: decryption runs once on mount to restore the
+  // persisted value. Re-decryption on key/passphrase change would require migrating
+  // the stored ciphertext — callers should unmount and remount instead.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

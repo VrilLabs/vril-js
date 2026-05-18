@@ -233,6 +233,15 @@ export class PerformanceMonitor {
 // ─── SecurityDiagnostics ──────────────────────────────────────────
 
 /**
+ * Returns true only when the browser exposes a usable Trusted Types API.
+ * A mere property presence check (`'trustedTypes' in window`) returns true
+ * for null/undefined stubs installed by partial polyfills.
+ */
+function windowHasTrustedTypes(): boolean {
+  return typeof window !== 'undefined' && !!(window as Window & { trustedTypes?: unknown }).trustedTypes;
+}
+
+/**
  * Real-time security health monitoring.
  * Checks for common security misconfigurations and vulnerabilities.
  */
@@ -327,9 +336,7 @@ export class SecurityDiagnostics {
   }
 
   private checkTrustedTypes(): void {
-    // Check the value, not just presence — property stubs that are null/undefined
-    // (e.g., from partial polyfills) should not be reported as supported.
-    const hasTT = typeof window !== 'undefined' && !!(window as Window & { trustedTypes?: unknown }).trustedTypes;
+    const hasTT = windowHasTrustedTypes();
     this.addCheck({
       check: 'Trusted Types',
       status: hasTT ? 'pass' : 'info',
@@ -821,8 +828,7 @@ export function createDiagnosticReport(): DiagnosticReport {
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
       isSecureContext: typeof window !== 'undefined' ? window.isSecureContext : false,
       hasWebCrypto: typeof globalThis.crypto !== 'undefined' && !!globalThis.crypto.subtle,
-      // Check the value, not just presence — null/undefined stubs are not usable Trusted Types
-      hasTrustedTypes: typeof window !== 'undefined' && !!(window as Window & { trustedTypes?: unknown }).trustedTypes,
+      hasTrustedTypes: windowHasTrustedTypes(),
       hasServiceWorker: typeof navigator !== 'undefined' && 'serviceWorker' in navigator,
       protocol: typeof location !== 'undefined' ? location.protocol : 'unknown',
     },
