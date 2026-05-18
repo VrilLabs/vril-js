@@ -83,8 +83,8 @@ function UsersIcon({ className = "w-5 h-5" }: { className?: string }) {
 
 // ─── Feature Data ───────────────────────────────────────────────
 const FEATURES = [
-  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'Provider-gated ML-KEM, ML-DSA, and SLH-DSA interfaces requiring admissible FIPS 203/204/205 evidence — never simulated.', accent: 'violet' as const },
-  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 classical KEM today, with ML-KEM hybrid mode enabled only when an authentic provider is registered.', accent: 'teal' as const },
+  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'Bundled native ML-KEM, ML-DSA, and SLH-DSA with admissible FIPS 203/204/205 evidence gates — never simulated.', accent: 'violet' as const },
+  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 + bundled ML-KEM hybrid KEM with SHA-256 combiner and provider override support.', accent: 'teal' as const },
   { icon: <RefreshIcon />, title: 'Crypto Agility', desc: 'NIST 2035 migration paths built in. Algorithm registry, versioning, and automated migration — zero downtime.', accent: 'blue' as const },
   { icon: <LockIcon />, title: '\u03A9Vault Encryption', desc: 'AES-256-GCM + PBKDF2-SHA-512 at 600K iterations. Zero-knowledge client-side encryption with visual KDF progress.', accent: 'amber' as const },
   { icon: <ZapIcon />, title: '\u03A9Signal Reactivity', desc: 'Fine-grained reactive primitives — signal, computed, effect, batch, untrack — with auto dependency tracking. Zero deps.', accent: 'violet' as const },
@@ -134,12 +134,10 @@ const app = createVrilApp({
     label: 'PQC Key Exchange',
     lang: 'typescript',
     code: `import { PQCHandler, HybridKEM, CryptoAgility } from 'vril';
-// Import your PQCProvider implementation with standards and certificate evidence.
-import { validatedPQCProvider } from './validated-pqc-provider';
 
-const pqc = new PQCHandler(validatedPQCProvider);
+const pqc = new PQCHandler(); // nativePQCProvider is bundled by default
 
-// Authentic ML-KEM-768 from a provider admitted by evidence and byte-size checks
+// Authentic bundled ML-KEM-768 admitted by evidence and byte-size checks
 const keyPair = await pqc.generateKeyPair('ML-KEM-768');
 const kemResult = await pqc.encapsulate(
   keyPair.publicKey,
@@ -149,8 +147,7 @@ const kemResult = await pqc.encapsulate(
 // Hybrid X25519 + ML-KEM-768
 const kem = new HybridKEM(
   'X25519MLKEM768',
-  'vril-hybrid-kem-v2',
-  validatedPQCProvider
+  'vril-hybrid-kem-v2'
 );
 const hybridKeys = await kem.generateKeyPair();
 const { sharedSecret } = await kem.encapsulate(

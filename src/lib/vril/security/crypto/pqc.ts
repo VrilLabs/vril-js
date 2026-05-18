@@ -14,6 +14,8 @@
  * Zero external dependencies — Web Crypto API and caller-supplied providers.
  */
 
+import { nativePQCProvider } from './native-pqc/provider';
+
 // ─── Types ────────────────────────────────────────────────────────────────
 
 /** PQC key pair result */
@@ -24,7 +26,7 @@ export interface PQCKeyPair {
   privateKey: Uint8Array;
   /** Algorithm identifier */
   algorithm: string;
-  /** Whether key generation used native browser crypto */
+  /** Whether key generation used a built-in/native implementation */
   native: boolean;
   /** Timestamp of generation */
   createdAt: number;
@@ -38,7 +40,7 @@ export interface KEMResult {
   sharedSecret: Uint8Array;
   /** Algorithm used */
   algorithm: string;
-  /** Whether operation used native browser crypto */
+  /** Whether operation used a built-in/native implementation */
   native: boolean;
 }
 
@@ -48,7 +50,7 @@ export interface SignatureResult {
   signature: Uint8Array;
   /** Algorithm used */
   algorithm: string;
-  /** Whether operation used native browser crypto */
+  /** Whether operation used a built-in/native implementation */
   native: boolean;
   /** Timestamp of signing */
   signedAt: number;
@@ -70,6 +72,8 @@ export interface AlgorithmInfo {
   privateKeySize: number;
   /** Ciphertext/signature size in bytes */
   ciphertextSize: number;
+  /** Signature size in bytes, for signature algorithms */
+  signatureSize?: number;
   /** Algorithm type */
   type: 'kem' | 'signature';
   /** Whether natively supported in browsers */
@@ -175,7 +179,8 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 3,
     publicKeySize: 1952,
     privateKeySize: 4032,
-    ciphertextSize: 3293,
+    ciphertextSize: 3309,
+    signatureSize: 3309,
     type: 'signature',
     nativeSupport: false,
     quantumResistant: true,
@@ -188,6 +193,7 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     publicKeySize: 2592,
     privateKeySize: 4896,
     ciphertextSize: 4627,
+    signatureSize: 4627,
     type: 'signature',
     nativeSupport: false,
     quantumResistant: true,
@@ -200,6 +206,7 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     publicKeySize: 32,
     privateKeySize: 64,
     ciphertextSize: 7856,
+    signatureSize: 7856,
     type: 'signature',
     nativeSupport: false,
     quantumResistant: true,
@@ -211,7 +218,8 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 5,
     publicKeySize: 64,
     privateKeySize: 128,
-    ciphertextSize: 29792,
+    ciphertextSize: 49856,
+    signatureSize: 49856,
     type: 'signature',
     nativeSupport: false,
     quantumResistant: true,
@@ -236,6 +244,7 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     publicKeySize: 64,
     privateKeySize: 32,
     ciphertextSize: 64,
+    signatureSize: 64,
     type: 'signature',
     nativeSupport: true,
     quantumResistant: false,
@@ -295,7 +304,7 @@ function providerResultError(algorithm: PQCAlgorithm, reason: string): Error {
 export class PQCHandler {
   private readonly version = '2.1.0';
 
-  constructor(private provider: PQCProvider | null = null) {}
+  constructor(private provider: PQCProvider | null = nativePQCProvider) {}
 
   /** Get module version */
   getVersion(): string {
@@ -514,7 +523,8 @@ export class PQCHandler {
     if (isPQCAlgorithm(algorithm)) {
       const provider = this.requireProvider(algorithm, 'verify');
       const info = this.getAlgorithmInfo(algorithm);
-      if (!hasByteLength(publicKey, info.publicKeySize) || !hasByteLength(signature, info.ciphertextSize)) {
+      const signatureSize = this.getSignatureSize(info);
+      if (!hasByteLength(publicKey, info.publicKeySize) || !hasByteLength(signature, signatureSize)) {
         return false;
       }
       return provider.verify!(message, signature, publicKey, algorithm);
@@ -874,15 +884,25 @@ export class PQCHandler {
     if (result.algorithm !== algorithm) {
       throw providerResultError(algorithm, `signature result algorithm was ${result.algorithm}`);
     }
-    if (!hasByteLength(result.signature, info.ciphertextSize)) {
-      throw providerResultError(algorithm, `signature expected ${info.ciphertextSize} bytes`);
+    const signatureSize = this.getSignatureSize(info);
+    if (!hasByteLength(result.signature, signatureSize)) {
+      throw providerResultError(algorithm, `signature expected ${signatureSize} bytes`);
     }
     return result;
+  }
+
+  private getSignatureSize(info: AlgorithmInfo): number {
+    if (info.type !== 'signature' || typeof info.signatureSize !== 'number') {
+      throw new Error(`[VRIL PQC] ${info.id} does not define a signature size`);
+    }
+    return info.signatureSize;
   }
 
 }
 
 // ─── Convenience Singleton ────────────────────────────────────────────────
+
+export { nativePQCProvider };
 
 /** Default PQCHandler instance */
 export const pqc = new PQCHandler();

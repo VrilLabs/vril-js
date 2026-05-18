@@ -475,16 +475,17 @@ const strength = vault.assessStrength('my-passphrase');
 
           <Section id="pqc" title="vril/security/crypto/pqc">
             <p className="text-white/60 leading-relaxed mb-4">
-              Post-quantum cryptography handler exposing provider-backed authentic implementations for
+              Post-quantum cryptography handler exposing bundled native Active Surface PQC and provider-backed implementations for
               ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87, SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f.
               The algorithms correspond to FIPS 203/204/205 parameter sets; Vril.js never simulates PQC.
             </p>
             <ExportTable rows={[
-              ['PQCHandler', 'class', 'Provider-gated post-quantum cryptography'],
-              ['generateKeyPair()', 'method', 'Generate provider-backed PQC or native classical key pairs'],
-              ['encapsulate()', 'method', 'Provider-backed ML-KEM or native X25519 KEM encapsulation'],
-              ['decapsulate()', 'method', 'Provider-backed ML-KEM or native X25519 KEM decapsulation'],
-              ['sign()', 'method', 'Create provider-backed PQC or native ECDSA signatures'],
+              ['PQCHandler', 'class', 'Bundled native and provider-gated post-quantum cryptography'],
+              ['nativePQCProvider', 'provider', 'Bundled zero-dependency ML-KEM/ML-DSA/SLH-DSA provider'],
+              ['generateKeyPair()', 'method', 'Generate native/provider-backed PQC or native classical key pairs'],
+              ['encapsulate()', 'method', 'Native/provider-backed ML-KEM or native X25519 KEM encapsulation'],
+              ['decapsulate()', 'method', 'Native/provider-backed ML-KEM or native X25519 KEM decapsulation'],
+              ['sign()', 'method', 'Create native/provider-backed PQC or native ECDSA signatures'],
               ['verify()', 'method', 'Verify digital signature'],
               ['benchmark()', 'method', 'Performance benchmark for key gen/encap/decap cycles'],
               ['isSupported()', 'method', 'Check if a PQC algorithm has admissible operational evidence'],
@@ -493,7 +494,9 @@ const strength = vault.assessStrength('my-passphrase');
             <Code>{`import { PQCHandler } from '@/lib/vril/security/crypto/pqc';
 import { validatedPQCProvider } from './validated-pqc-provider';
 
-const pqc = new PQCHandler(validatedPQCProvider);
+const pqc = new PQCHandler(); // uses nativePQCProvider by default
+// Or provide a CAVP/CMVP-certified replacement:
+const regulatedPqc = new PQCHandler(validatedPQCProvider);
 
 // Check operational support
 pqc.isSupported('ML-KEM-768'); // true when admissible standards evidence is present

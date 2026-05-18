@@ -28,7 +28,7 @@ interface VrilWindowExtension {
 
 // ─── Re-exports from sub-modules ──────────────────────────────────────────
 
-export { PQCHandler, type PQCKeyPair, type KEMResult, type SignatureResult, type AlgorithmInfo, type BenchmarkResult, type PQCAlgorithm } from './crypto/pqc';
+export { PQCHandler, nativePQCProvider, type PQCKeyPair, type KEMResult, type SignatureResult, type AlgorithmInfo, type BenchmarkResult, type PQCAlgorithm } from './crypto/pqc';
 export { HybridKEM, HybridSigner, HybridKeyRotation, type HybridKEMResult, type HybridSignatureResult, type KeyRotationPolicy, type HybridKeyPair, type KeyRotationEvent } from './crypto/hybrid';
 export { VrilVault, SecureMemory, type VaultConfig, type EncryptionResult, type DecryptionResult, type BlobEncryptionResult, type KeyWrapResult, type StrengthAssessment } from './crypto/vault';
 export { AlgorithmRegistry, MigrationExecutor, AlgorithmHealthMonitor, CryptoPolicy, AuditLogger, CryptoAgility, type AlgorithmDescriptor, type AlgorithmHealth, type VulnerabilityEntry, type MigrationPlan, type MigrationStep, type MigrationResult, type CryptoPolicyConfig, type AuditLogEntry, type QuantumMilestone } from './crypto/agility';

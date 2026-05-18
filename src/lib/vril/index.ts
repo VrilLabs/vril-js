@@ -69,6 +69,7 @@ export {
 
 export {
   PQCHandler,
+  nativePQCProvider,
   pqc,
   type PQCKeyPair,
   type KEMResult,
