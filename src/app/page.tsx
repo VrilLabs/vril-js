@@ -83,7 +83,7 @@ function UsersIcon({ className = "w-5 h-5" }: { className?: string }) {
 
 // ─── Feature Data ───────────────────────────────────────────────
 const FEATURES = [
-  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'Bundled native ML-KEM, ML-DSA, and SLH-DSA with FIPS 203/204/205 conformance checks — never simulated.', accent: 'violet' as const },
+  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'Bundled native ML-KEM, ML-DSA, and SLH-DSA with FIPS 203/204/205 conformance checks and in-tree SHA-3/SHAKE foundations.', accent: 'violet' as const },
   { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 + bundled ML-KEM hybrid KEM with SHA-256 combiner and provider override support.', accent: 'teal' as const },
   { icon: <RefreshIcon />, title: 'Crypto Agility', desc: 'NIST 2035 migration paths built in. Algorithm registry, versioning, and automated migration — zero downtime.', accent: 'blue' as const },
   { icon: <LockIcon />, title: '\u03A9Vault Encryption', desc: 'AES-256-GCM + PBKDF2-SHA-512 at 600K iterations. Zero-knowledge client-side encryption with visual KDF progress.', accent: 'amber' as const },

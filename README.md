@@ -736,7 +736,7 @@ Vril.js requires the **Web Crypto API** for all cryptographic operations. This i
 | Safari | 15.4+ |
 | Edge | 96+ |
 
-> **Note:** PQC algorithms (ML-KEM, ML-DSA, SLH-DSA) are not yet exposed by browser Web Crypto APIs. Vril.js ships bundled native Active Surface PQC implementations for the README-listed FIPS 203/204/205 parameter sets and never simulates PQC operations. Formal FIPS validation for regulated deployments still requires CAVP/ACVP and CMVP/FIPS 140-3 evidence for the exact implementation and module boundary. The hybrid mode (`X25519+ML-KEM-768`) combines real classical key agreement with native ML-KEM.
+> **Note:** Vril.js ships bundled, native, from-specification foundation primitives for FIPS 203 ML-KEM, FIPS 204 ML-DSA, and FIPS 205 SLH-DSA. PQC operations are performed entirely in native JavaScript with zero runtime npm dependencies; Web Crypto (`window.crypto.subtle`) is used for classical primitives such as AES-256-GCM and X25519 where available. Implementations conform to the FIPS 203/204/205 parameter sets; formal FIPS 140-3 module validation (CMVP) and CAVP/ACVP evidence require a separate evaluation process.
 >
 > `PQCHandler` now uses the bundled `nativePQCProvider` by default. Use `new PQCHandler(null)` only when you intentionally want metadata-only fail-closed behavior, or pass a certified `PQCProvider` to override the bundled implementation.
 >

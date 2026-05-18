@@ -471,7 +471,7 @@ export class MigrationExecutor {
               step.status = 'completed';
             } else if (toAlgo?.quantumResistant) {
               throw new Error(
-                `Migration to ${plan.toAlgorithm} requires an authentic PQC provider; Vril.js does not simulate PQC key generation`
+                `Migration to ${plan.toAlgorithm} requires an authentic PQC provider; placeholder PQC key generation is not permitted`
               );
             } else {
               // Asymmetric key generation must be handled by an algorithm-specific provider

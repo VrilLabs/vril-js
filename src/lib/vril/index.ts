@@ -82,6 +82,18 @@ export {
 } from './security/crypto/pqc';
 
 export {
+  fillRandomBytes,
+  randomBytes,
+  ShakeXof,
+  sha3_256,
+  sha3_512,
+  shake128,
+  shake256,
+  runSha3SelfTest,
+  type BytesLike,
+} from './security/crypto/primitives';
+
+export {
   HybridKEM,
   HybridSigner,
   HybridKeyRotation,

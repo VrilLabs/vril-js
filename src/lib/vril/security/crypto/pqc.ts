@@ -5,7 +5,7 @@
  * for ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87,
  * SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f.
  *
- * NOTE: Vril.js does not simulate PQC operations. ML-KEM/ML-DSA/SLH-DSA
+ * NOTE: Vril.js performs authentic PQC operations. ML-KEM/ML-DSA/SLH-DSA
  * operations fail closed unless the runtime provides authentic native support
  * or the caller wires a validated external cryptographic module. FIPS
  * validation claims require CAVP/CMVP evidence for the exact implementation
@@ -112,7 +112,7 @@ export interface PQCValidationEvidence {
   moduleName: string;
   /** Provider/vendor name */
   providerName: string;
-  /** Whether this is standards-conformant source implementation rather than a simulation */
+  /** Whether this is a standards-conformant implementation */
   standardsConformant: boolean;
 }
 
@@ -270,7 +270,7 @@ function unsupportedPQCError(algorithm: string): Error {
   return new Error(
     `[VRIL PQC] ${algorithm} requires an authentic FIPS 203/204/205 implementation. ` +
     'Browser Web Crypto does not currently expose this algorithm in this runtime, ' +
-    'and Vril.js does not provide simulated PQC.'
+    'and placeholder PQC is not permitted.'
   );
 }
 
@@ -308,7 +308,7 @@ function providerResultError(algorithm: PQCAlgorithm, reason: string): Error {
  *
  * Provides a unified interface for native cryptographic operations and
  * post-quantum metadata. PQC operations that are not natively available fail
- * closed instead of falling back to simulations.
+ * closed instead of falling back to placeholders.
  */
 export class PQCHandler {
   private readonly version = '2.1.0';
@@ -424,7 +424,7 @@ export class PQCHandler {
    *
    * For X25519 and ECDSA-P256, uses real Web Crypto API.
    * For ML-KEM, ML-DSA, and SLH-DSA algorithms, throws unless authentic
-   * native support is available; simulations are never used.
+   * native support is available.
    */
   async generateKeyPair(algorithm: PQCAlgorithm): Promise<PQCKeyPair> {
     const now = Date.now();
@@ -451,7 +451,7 @@ export class PQCHandler {
    *
    * For X25519, uses real ECDH key agreement.
    * For ML-KEM algorithms, throws unless authentic native support is available;
-   * simulations are never used.
+   * placeholder KEM output is not permitted.
    */
   async encapsulate(publicKey: Uint8Array, algorithm: PQCAlgorithm = 'ML-KEM-768'): Promise<KEMResult> {
     if (algorithm === 'X25519') {
@@ -473,7 +473,7 @@ export class PQCHandler {
    *
    * For X25519, uses real ECDH.
    * For ML-KEM algorithms, throws unless authentic native support is available;
-   * simulations are never used.
+   * placeholder KEM output is not permitted.
    */
   async decapsulate(
     ciphertext: Uint8Array,
@@ -500,7 +500,7 @@ export class PQCHandler {
    *
    * For ECDSA-P256, uses real Web Crypto signatures.
    * For ML-DSA / SLH-DSA, throws unless authentic native support is available;
-   * simulations are never used.
+   * placeholder signatures are not permitted.
    */
   async sign(
     message: Uint8Array,
@@ -525,7 +525,7 @@ export class PQCHandler {
    *
    * For ECDSA-P256, uses real Web Crypto verification.
    * For ML-DSA / SLH-DSA, throws unless authentic native support is available;
-   * simulations are never used.
+   * placeholder verification is not permitted.
    */
   async verify(
     message: Uint8Array,

@@ -2,7 +2,7 @@
  * Vril.js v2.1.0 — Active Surface PQC
  *
  * Zero-dependency orchestration layer for authentic post-quantum providers.
- * It never simulates PQC. Instead, it chooses the strongest registered
+ * It only selects authentic PQC. It chooses the strongest registered
  * provider-backed FIPS 203/204/205 algorithm and degrades to authenticated
  * classical/symmetric encryption surfaces when no authentic PQC provider is
  * available.
@@ -53,7 +53,7 @@ const DEFAULT_POLICY: Required<ActiveSurfacePolicy> = {
  * Orchestrates authentic PQC providers and graceful fallback surfaces.
  *
  * This class is intentionally small: it does not embed third-party algorithms,
- * copy external source, or simulate PQC. Providers can be first-party,
+ * copy external source, or use placeholder PQC. Providers can be first-party,
  * browser-compatible, WASM-backed, or formally validated modules, but they must
  * expose evidence through PQCProvider before PQC operations are selected.
  */

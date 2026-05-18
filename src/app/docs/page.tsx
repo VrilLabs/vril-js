@@ -477,7 +477,7 @@ const strength = vault.assessStrength('my-passphrase');
             <p className="text-white/60 leading-relaxed mb-4">
               Post-quantum cryptography handler exposing bundled native Active Surface PQC and provider-backed implementations for
               ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87, SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f.
-              The algorithms correspond to FIPS 203/204/205 parameter sets; Vril.js never simulates PQC.
+              The algorithms correspond to FIPS 203/204/205 parameter sets and execute as native JavaScript.
             </p>
             <ExportTable rows={[
               ['PQCHandler', 'class', 'Bundled native and provider-gated post-quantum cryptography'],
@@ -521,7 +521,7 @@ const info = pqc.getAlgorithmInfo('ML-KEM-768');
 // info.nativeSupport = false`}</Code>
             <SecurityNote>
               Truthful FIPS 203/204/205 compliance claims require a conforming ML-KEM, ML-DSA, or SLH-DSA
-              provider with matching algorithm evidence, correct key/ciphertext/signature sizes, and no simulation.
+              provider with matching algorithm evidence and correct key/ciphertext/signature sizes.
               The bundled nativePQCProvider provides standards-conformant native operations, but it is not formally
               FIPS-validated until CAVP/ACVP and CMVP/FIPS 140-3 certificate identifiers are attached.
               Formal FIPS validation claims for regulated deployments require CAVP/ACVP and CMVP/FIPS 140-3
