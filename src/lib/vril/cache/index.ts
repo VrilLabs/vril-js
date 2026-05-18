@@ -413,6 +413,16 @@ export class EncryptedCache {
     return this.cache.size;
   }
 
+  /** Get all non-expired keys */
+  keys(): string[] {
+    const now = Date.now();
+    const result: string[] = [];
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.expiresAt > now) result.push(key);
+    }
+    return result;
+  }
+
   private evictOldest(): void {
     let oldest: string | null = null;
     let oldestTime = Infinity;
@@ -487,8 +497,19 @@ export class CacheRegistry {
     let total = 0;
     for (const [, { cache: cacheInstance }] of this.caches) {
       for (const key of cacheInstance.keys()) {
+        // Reset lastIndex before each test so stateful g/y flags don't skip keys
+        regex.lastIndex = 0;
         if (regex.test(key)) {
           cacheInstance.delete(key);
+          total++;
+        }
+      }
+    }
+    for (const [, encryptedCache] of this.encryptedCaches) {
+      for (const key of encryptedCache.keys()) {
+        regex.lastIndex = 0;
+        if (regex.test(key)) {
+          encryptedCache.delete(key);
           total++;
         }
       }

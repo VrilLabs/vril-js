@@ -325,36 +325,97 @@ export function useEncryptedState<T>(
 
 /**
  * localStorage with encryption support.
- * Data is encrypted before being written to storage.
+ * When a passphrase is provided, data is AES-256-GCM encrypted before being
+ * written to storage. The stored blob is base64-encoded as [salt(16) | iv(12) | ciphertext].
+ * Without a passphrase, values are stored as plain JSON (backward-compatible).
  */
 export function useSecureStorage<T>(
   key: string,
   defaultValue: T,
-  _passphrase?: string
+  passphrase?: string
 ): [T, (value: T | ((prev: T) => T)) => void, () => void] {
-  const [value, setValue] = useState<T>(() => {
-    if (typeof window === 'undefined') return defaultValue;
+  const [value, setValue] = useState<T>(defaultValue);
+  const saltRef = useRef<Uint8Array | null>(null);
+
+  /** Derive an AES-GCM key from the passphrase and salt using PBKDF2 */
+  const deriveKey = useCallback(async (salt: Uint8Array): Promise<CryptoKey | null> => {
+    if (!passphrase || typeof crypto?.subtle === 'undefined') return null;
     try {
-      const raw = localStorage.getItem(key);
-      if (raw !== null) {
-        return JSON.parse(raw);
+      const km = await crypto.subtle.importKey(
+        'raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']
+      );
+      return await crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: new Uint8Array(salt), iterations: 100000, hash: 'SHA-512' },
+        km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+      );
+    } catch { return null; }
+  }, [passphrase]);
+
+  // Read and (if needed) decrypt the stored value on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const raw = localStorage.getItem(key);
+    if (raw === null) return;
+
+    if (!passphrase) {
+      // Plain JSON storage
+      try { setValue(JSON.parse(raw) as T); } catch {}
+      return;
+    }
+
+    // Encrypted storage: base64-encoded [salt(16) | iv(12) | ciphertext]
+    (async () => {
+      try {
+        const bytes = Uint8Array.from(atob(raw).split('').map(c => c.charCodeAt(0)));
+        const salt = bytes.slice(0, 16);
+        const iv   = bytes.slice(16, 28);
+        const ct   = bytes.slice(28);
+        saltRef.current = salt;
+        const cryptoKey = await deriveKey(salt);
+        if (!cryptoKey) return;
+        const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
+        setValue(JSON.parse(new TextDecoder().decode(plaintext)) as T);
+      } catch {
+        // Decryption failed — key changed or data corrupt; leave defaultValue
       }
-    } catch {}
-    return defaultValue;
-  });
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const setStoredValue = useCallback((updater: T | ((prev: T) => T)) => {
     setValue(prev => {
       const next = typeof updater === 'function' ? (updater as (p: T) => T)(prev) : updater;
-      try {
-        localStorage.setItem(key, JSON.stringify(next));
-      } catch {}
+
+      if (!passphrase) {
+        try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
+        return next;
+      }
+
+      // Encrypt and store asynchronously; React state updates synchronously
+      (async () => {
+        try {
+          const salt = saltRef.current ?? crypto.getRandomValues(new Uint8Array(16));
+          if (!saltRef.current) saltRef.current = salt;
+          const cryptoKey = await deriveKey(salt);
+          if (!cryptoKey) return;
+          const iv      = crypto.getRandomValues(new Uint8Array(12));
+          const encoded = new TextEncoder().encode(JSON.stringify(next));
+          const ct      = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, encoded);
+          const blob    = new Uint8Array(16 + 12 + new Uint8Array(ct).length);
+          blob.set(salt, 0);
+          blob.set(iv, 16);
+          blob.set(new Uint8Array(ct), 28);
+          localStorage.setItem(key, btoa(String.fromCharCode(...blob)));
+        } catch {}
+      })();
+
       return next;
     });
-  }, [key]);
+  }, [key, passphrase, deriveKey]);
 
   const removeValue = useCallback(() => {
     try { localStorage.removeItem(key); } catch {}
+    saltRef.current = null;
     setValue(defaultValue);
   }, [key, defaultValue]);
 

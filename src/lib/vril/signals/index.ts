@@ -252,6 +252,13 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
       cachedValue = fn();
     };
     tracker._id = id;
+    // Tag as 'computed' so notify() calls _invalidate() instead of scheduling
+    // this as a plain effect — which would recompute but not tell our own subscribers.
+    tracker._kind = 'computed';
+    tracker._invalidate = () => {
+      dirty = true;
+      notify(subscribers);
+    };
     currentEffect = tracker;
     try {
       tracker();

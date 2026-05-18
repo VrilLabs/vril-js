@@ -444,17 +444,29 @@ export function throttle<TThis, TArgs extends unknown[], TReturn>(
 
   return function (this: TThis, ...args: TArgs) {
     const now = Date.now();
-    pendingCall = { callContext: this, args };
 
     if (now - lastCall >= ms) {
+      // Cancel any trailing timer — we're running immediately so the deferred
+      // call is no longer needed and would double-fire otherwise.
+      if (timer !== undefined) {
+        clearTimeout(timer);
+        timer = undefined;
+      }
+      pendingCall = undefined;
       lastCall = now;
       fn.call(this, ...args);
-    } else if (timer === undefined) {
-      timer = setTimeout(() => {
-        lastCall = Date.now();
-        timer = undefined;
-        if (pendingCall !== undefined) fn.call(pendingCall.callContext, ...pendingCall.args);
-      }, ms - (now - lastCall));
+    } else {
+      pendingCall = { callContext: this, args };
+      if (timer === undefined) {
+        timer = setTimeout(() => {
+          lastCall = Date.now();
+          timer = undefined;
+          if (pendingCall !== undefined) {
+            fn.call(pendingCall.callContext, ...pendingCall.args);
+            pendingCall = undefined;
+          }
+        }, ms - (now - lastCall));
+      }
     }
   };
 }
