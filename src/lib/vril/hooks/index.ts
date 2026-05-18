@@ -437,10 +437,10 @@ export function useSecureStorage<T>(
           blob.set(salt, 0);
           blob.set(iv, 16);
           blob.set(new Uint8Array(ct), 28);
-          // Build the base64 string via a loop — using spread (`...blob`) throws
-          // a RangeError for large values because every byte becomes a function arg.
-          let binary = '';
-          for (let i = 0; i < blob.length; i++) binary += String.fromCharCode(blob[i]);
+          // Build the base64 string via Array.from + join — both spread (`...blob`)
+          // and naive string concatenation can fail or become quadratic for large
+          // blobs; a pre-sized array with a single join call is O(n) and safe.
+          const binary = Array.from(blob, (byte: number) => String.fromCharCode(byte)).join('');
           localStorage.setItem(key, btoa(binary));
         } catch {}
       })();

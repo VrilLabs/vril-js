@@ -272,8 +272,9 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
     // Snapshot the current deps BEFORE running fn() so we know what to clean up
     const prevDeps = entry ? new Set(entry.dependencies) : new Set<string>();
 
-    // Clear the registry's dep tracking for this computed so that
-    // trackDependency() calls during fn() rebuild it from scratch.
+    // Step 1 — registry-level cleanup: unlink this computed from each previous
+    // dependency's `dependents` set and clear its own `dependencies` set so that
+    // trackDependency() calls during fn() rebuild the graph from scratch.
     if (entry) {
       for (const dep of prevDeps) {
         const depEntry = signalRegistry.get(dep);
@@ -294,9 +295,12 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
     // After running, entry.dependencies now holds the new deps.
     const newDeps = entry ? entry.dependencies : new Set<string>();
 
-    // Unsubscribe tracker from signal subscriber Sets that are no longer deps.
-    // This prevents stale signal→computed edges that would fire _invalidate()
-    // for unrelated signal changes, causing unnecessary effect re-runs.
+    // Step 2 — subscriber-Set-level cleanup: for signals that are no longer
+    // dependencies, remove the tracker from their local subscriber Sets.
+    // This is distinct from step 1 (which cleans the abstract registry graph);
+    // here we are cleaning the actual notification Sets held inside signal()
+    // closures so that stale signal→computed edges no longer fire _invalidate()
+    // for changes to signals this computed no longer reads.
     for (const dep of prevDeps) {
       if (!newDeps.has(dep)) {
         signalSubscribersById.get(dep)?.delete(tracker);
