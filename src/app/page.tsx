@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
-import { VrilVault, type EncryptionResult } from '@/lib/vril/security/crypto/vault';
+import { VrilVault, type EncryptionResult, type StrengthAssessment } from '@/lib/vril/security/crypto/vault';
 
 /* ═══════════════════════════════════════════════════════════════
    Vril.js v2.1 — Showcase Landing Page
@@ -1023,7 +1023,7 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
   const [result, setResult] = useState('');
   const [resultLabel, setResultLabel] = useState('');
   const [kdfProgress, setKdfProgress] = useState(0);
-  const [strength, setStrength] = useState({ score: 0, max: 6, label: '' });
+  const [strength, setStrength] = useState<StrengthAssessment>({ score: 0, max: 10, label: 'very-weak', estimatedCrackTimeSeconds: 0, feedback: [] });
   const [activeBundle, setActiveBundle] = useState('');
   const [vault] = useState(() => new VrilVault());
 
@@ -1096,9 +1096,13 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
           <div className="space-y-1.5">
             <label className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30">Passphrase</label>
             <input type="password" value={passphrase} onChange={e => handlePass(e.target.value)} className="w-full px-3 py-2 bg-[#161b28] border border-white/10 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-olo-teal transition-colors" placeholder="Enter passphrase" />
-            <div className="flex gap-1">{Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className={`h-1 flex-1 rounded-full ${i < strength.score ? strength.score <= 2 ? 'bg-error' : strength.score <= 4 ? 'bg-amber' : 'bg-success' : 'bg-white/5'}`} />
-            ))}</div>
+            <div className="flex gap-1">{(() => {
+              const filledBars = strength.max > 0 ? Math.round((strength.score / strength.max) * 6) : 0;
+              const barColor = (strength.label === 'very-weak' || strength.label === 'weak') ? 'bg-error' : strength.label === 'moderate' ? 'bg-amber' : 'bg-success';
+              return Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className={`h-1 flex-1 rounded-full ${i < filledBars ? barColor : 'bg-white/5'}`} />
+              ));
+            })()}</div>
           </div>
           <div className="space-y-1.5">
             <label className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30">Input</label>
@@ -1118,8 +1122,8 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-white/8 bg-[#111520]">
           <span className="font-mono text-[10px] text-white/20">AES-256-GCM · PBKDF2-SHA-512 · 600K iter</span>
           <div className="flex gap-2">
-            <button onClick={handleEncrypt} disabled={!passphrase || !plaintext || status === 'encrypting'} className="px-4 py-2 bg-amber text-[#080a0e] font-semibold text-sm rounded-lg border border-amber hover:bg-amber/80 transition-all disabled:opacity-40">Seal</button>
-            <button onClick={handleDecrypt} disabled={!passphrase || (!plaintext && !activeBundle) || status === 'decrypting'} className="px-4 py-2 bg-transparent text-white/70 font-semibold text-sm rounded-lg border border-white/10 hover:border-olo-teal hover:text-olo-teal transition-all disabled:opacity-40">Unseal</button>
+            <button onClick={handleEncrypt} disabled={!passphrase || !plaintext || status === 'encrypting' || status === 'decrypting'} className="px-4 py-2 bg-amber text-[#080a0e] font-semibold text-sm rounded-lg border border-amber hover:bg-amber/80 transition-all disabled:opacity-40">Seal</button>
+            <button onClick={handleDecrypt} disabled={!passphrase || (!plaintext && !activeBundle) || status === 'encrypting' || status === 'decrypting'} className="px-4 py-2 bg-transparent text-white/70 font-semibold text-sm rounded-lg border border-white/10 hover:border-olo-teal hover:text-olo-teal transition-all disabled:opacity-40">Unseal</button>
           </div>
         </div>
       </div>

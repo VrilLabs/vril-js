@@ -222,3 +222,19 @@ body::before {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #222d40; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #2a3650; }
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .hero-ring,
+  .hero-ring-reverse,
+  .hero-core,
+  .hero-scanline,
+  .hero-data-ray,
+  .animate-orbit,
+  .animate-orbit-reverse,
+  .animate-vril-float,
+  .animate-vril-pulse,
+  .animate-vril-badge-pulse {
+    animation: none !important;
+  }
+}
