@@ -78,6 +78,7 @@ export const fipsPQCProvider: PQCProvider = {
   },
 
   async generateKeyPair(algorithm: PQCAlgorithm): Promise<PQCKeyPair> {
+    // native:true signals a Vril.js built-in implementation (not a platform Web Crypto call)
     if (FIPS203_ALGORITHMS.has(algorithm)) {
       const { ek, dk } = mlKEMKeyGen(algorithm as MLKEMVariant);
       return { publicKey: ek, privateKey: dk, algorithm, native: true, createdAt: Date.now() };

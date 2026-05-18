@@ -359,27 +359,11 @@ function packZ(z: Poly, gamma1: number): Uint8Array {
       out[base + 8] = (cs[3] >> 10) & 0xff;
     }
     return out;
-  } else { // gamma1 === 1 << 19
+  } else { // gamma1 === 1 << 19: pack 4 x 20-bit values into 10 bytes
     const out = new Uint8Array(640);
     for (let i = 0; i < 256; i += 4) {
       const cs = Array.from({ length: 4 }, (_, j) => gamma1 - centred(z[i + j]));
       const base = i * 20 / 8;
-      out[base]     =  cs[0] & 0xff;
-      out[base + 1] = (cs[0] >> 8) & 0xff;
-      out[base + 2] = ((cs[0] >> 16) & 0xf) | ((cs[1] & 0xf) << 4);
-      out[base + 3] = (cs[1] >> 4) & 0xff;
-      out[base + 4] = ((cs[1] >> 12) & 0xff);
-      out[base + 5] = ((cs[1] >> 20) & 0x0) | (cs[2] & 0xff);
-      // Recompute correctly for 20-bit values
-      out[base + 2] = ((cs[0] >> 16) & 0xf) | ((cs[1] & 0xf) << 4);
-      out[base + 4] = ((cs[1] >> 12) & 0xf) | ((cs[2] & 0xf) << 4);
-      out[base + 6] = ((cs[2] >> 12) & 0xf) | ((cs[3] & 0xf) << 4);
-      out[base + 3] = (cs[1] >> 4) & 0xff;
-      out[base + 5] = (cs[2] >> 4) & 0xff;
-      out[base + 7] = (cs[3] >> 4) & 0xff;
-      out[base + 8] = (cs[3] >> 12) & 0xff;
-      out[base + 9] = ((cs[3] >> 20) & 0x0);
-      // Cleaner: pack all 4 x 20-bit values into 10 bytes
       const c0 = cs[0], c1 = cs[1], c2 = cs[2], c3 = cs[3];
       out[base]     =  c0 & 0xff;
       out[base + 1] = (c0 >> 8) & 0xff;

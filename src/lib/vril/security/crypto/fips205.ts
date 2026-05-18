@@ -172,14 +172,26 @@ function baseW(x: Uint8Array, outLen: number): number[] {
   return out;
 }
 
-/** Compute WOTS+ checksum for a message digest. */
-function wotsChecksum(M: number[], len1: number): number[] {
+/**
+ * Compute WOTS+ checksum for a message digest.
+ * Per FIPS 205 Section 5: csum is encoded as big-endian in ceil(len2*lgW/8) bytes,
+ * shifted left so the len2 base-W digits occupy the MSBs.
+ */
+function wotsChecksum(M: number[], n: number): number[] {
+  const len1 = wotsLen1(n);
+  const len2 = wotsLen2(n);
   let csum = 0;
   for (let i = 0; i < len1; i++) csum += W - 1 - M[i];
-  const csumBytes = Math.ceil(Math.log2((len1 * (W - 1) + 1)) / 4) + 1;
-  const s = new Uint8Array(csumBytes);
-  new DataView(s.buffer).setUint32(csumBytes - 4, csum << (8 - (csumBytes * 8 % 8 || 8)));
-  return baseW(s, Math.ceil(Math.log2((len1 * (W - 1) + 1)) / 4));
+  // Pack csum into ceil(len2*4/8) bytes, MSB-aligned
+  const csumBits = len2 * 4; // lgW = 4
+  const csumBytesNeeded = Math.ceil(csumBits / 8);
+  const shift = 8 * csumBytesNeeded - csumBits; // bits to shift into MSB position
+  const csumShifted = csum << shift;
+  const s = new Uint8Array(csumBytesNeeded);
+  for (let i = 0; i < csumBytesNeeded; i++) {
+    s[i] = (csumShifted >>> (8 * (csumBytesNeeded - 1 - i))) & 0xff;
+  }
+  return baseW(s, len2);
 }
 
 /** WOTS+ chain function. */
@@ -220,7 +232,7 @@ function wotsSign(M: Uint8Array, sk: Uint8Array, pkSeed: Uint8Array, adrs: ADRS,
   const len1 = wotsLen1(n);
   const len = wotsLen(n);
   const msg = baseW(M, len1);
-  const cs = wotsChecksum(msg, len1);
+  const cs = wotsChecksum(msg, n);
   const allMsg = [...msg, ...cs];
   const sig: Uint8Array[] = [];
   for (let i = 0; i < len; i++) {
@@ -240,7 +252,7 @@ function wotsPKFromSig(sig: Uint8Array, M: Uint8Array, pkSeed: Uint8Array, adrs:
   const len1 = wotsLen1(n);
   const len = wotsLen(n);
   const msg = baseW(M, len1);
-  const cs = wotsChecksum(msg, len1);
+  const cs = wotsChecksum(msg, n);
   const allMsg = [...msg, ...cs];
   const pks: Uint8Array[] = [];
   for (let i = 0; i < len; i++) {

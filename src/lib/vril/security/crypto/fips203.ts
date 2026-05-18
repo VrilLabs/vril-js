@@ -344,9 +344,9 @@ function kPKEEncrypt(ek: Uint8Array, m: Uint8Array, r: Uint8Array, p: MLKEMParam
     for (let j = 0; j < k; j++) {
       col = addPoly(col, multiplyNTT(A[j][i], rHat[j]));
     }
-    const uc = Uint16Array.from(col);
-    intt(uc);
-    u.push(addPoly(uc, e1[i]));
+    const uAfterINTT = Uint16Array.from(col);
+    intt(uAfterINTT);
+    u.push(addPoly(uAfterINTT, e1[i]));
   }
 
   // mu = Decompress_1(ByteDecode_1(m))

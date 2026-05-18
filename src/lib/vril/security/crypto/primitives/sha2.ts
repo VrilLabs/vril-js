@@ -173,7 +173,7 @@ export function sha512(input: Uint8Array): Uint8Array {
   // 128-bit length in bits - for practical message sizes, upper 64 bits are zero
   const bitLen = BigInt(msgLen) * 8n;
   const dv = new DataView(padded.buffer);
-  // Write as 128-bit big-endian (upper 64 bits are 0 for any practical message)
+  // Write as 128-bit big-endian; padded buffer is zero-initialized so upper 64 bits are already 0
   dv.setUint32(padLen - 16, 0);
   dv.setUint32(padLen - 12, 0);
   dv.setUint32(padLen - 8, Number(bitLen >> 32n));
