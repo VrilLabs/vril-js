@@ -57,6 +57,8 @@ export interface PluginContext {
   config: Record<string, unknown>;
   logger: PluginLogger;
   crypto: PluginCrypto;
+  /** Convenience shorthand for logger.info */
+  log: (message: string, ...args: unknown[]) => void;
 }
 
 /** Logger interface available to plugins */
@@ -253,6 +255,14 @@ export class PluginRegistry {
     return enabled;
   }
 
+  /**
+   * Run the `onInit` lifecycle hook for all registered and enabled plugins.
+   * Call this once after all plugins have been registered.
+   */
+  async initializeAll(ctx: Record<string, unknown> = {}): Promise<void> {
+    await this.executeHooks('onInit', ctx);
+  }
+
   /** Get plugins that depend on a given plugin */
   private getDependents(name: string): string[] {
     const dependents: string[] = [];
@@ -266,14 +276,16 @@ export class PluginRegistry {
 
   /** Create an isolated context for a plugin */
   private createContext(pluginName: string, config: Record<string, unknown>): PluginContext {
+    const logger = createPluginLogger(pluginName);
     return {
       pluginName,
       version: this.version,
       state: new Map(),
       shared: {},
       config,
-      logger: createPluginLogger(pluginName),
+      logger,
       crypto: createPluginCrypto(),
+      log: (message: string, ...args: unknown[]) => logger.info(message, ...args),
     };
   }
 }
@@ -393,7 +405,7 @@ export class PluginLoader {
 // ─── Create Plugin Factory ────────────────────────────────────
 
 /** Fluent builder chain returned by createPlugin */
-interface PluginChain {
+export interface PluginChain {
   manifest: PluginManifest;
   hooks: Partial<Record<PluginLifecycle, PluginHook>>;
   middleware: PluginMiddleware[];
@@ -412,11 +424,19 @@ interface PluginChain {
 
 /**
  * Factory function for type-safe plugin creation.
+ * Accepts either a plugin name string (creates a minimal manifest) or a full PluginManifest.
  * Provides a fluent builder API for defining plugins.
+ *
+ * @example
+ * createPlugin('my-plugin').onInit(ctx => ctx.log('ready')).build()
  */
 export function createPlugin(
-  manifest: PluginManifest
+  manifest: string | PluginManifest
 ): PluginChain {
+  const resolvedManifest: PluginManifest =
+    typeof manifest === 'string'
+      ? { name: manifest, version: '1.0.0' }
+      : manifest;
   const hooks: Partial<Record<PluginLifecycle, PluginHook>> = {};
   const middlewares: PluginMiddleware[] = [];
   let configureFn: ((config: Record<string, unknown>) => void) | undefined;
@@ -424,7 +444,7 @@ export function createPlugin(
 
   function createChain(): PluginChain {
     return {
-      manifest,
+      manifest: resolvedManifest,
       hooks,
       middleware: middlewares,
       onInit(hook: PluginHook) { hooks.onInit = hook; return createChain(); },
@@ -439,7 +459,7 @@ export function createPlugin(
       destroy(fn: () => void | Promise<void>) { destroyFn = fn; return createChain(); },
       build(): VrilPlugin {
         return {
-          manifest,
+          manifest: resolvedManifest,
           hooks,
           middleware: middlewares.length > 0 ? middlewares : undefined,
           configure: configureFn,

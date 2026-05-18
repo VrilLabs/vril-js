@@ -308,10 +308,8 @@ export function deepClone<T>(obj: T): T {
   }
 
   if (ArrayBuffer.isView(obj)) {
-    type TypedArrayConstructor = new (buffer: ArrayBuffer, byteOffset: number, length: number) => ArrayBufferView;
-    const view = obj as unknown as ArrayBufferView & { length: number };
-    const srcBuffer = view.buffer instanceof ArrayBuffer ? view.buffer : view.buffer.slice(0);
-    return new (view.constructor as TypedArrayConstructor)(srcBuffer.slice(0) as ArrayBuffer, view.byteOffset, view.length) as unknown as T;
+    // All TypedArrays have .slice() which returns a copy backed by a new ArrayBuffer
+    return (obj as unknown as { slice(): T }).slice();
   }
 
   if (obj instanceof Date) {
