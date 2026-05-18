@@ -209,7 +209,7 @@ export default defineVrilConfig({
   // ─── Vril Runtime ─────────────────────────────────────────────
   // Built-in framework runtime options for SSR, routing, assets, and headers.
   framework: {
-    strictMode: true,
+    reactStrictMode: true,
     poweredByHeader: false,     // Don't expose X-Powered-By header
   },
 });

@@ -144,6 +144,8 @@ export interface VrilAuthConfig {
 // ─── Vril Framework Integration ──────────────────────────────
 export interface VrilFrameworkConfig {
   /** Enable React Strict Mode */
+  reactStrictMode?: boolean;
+  /** @deprecated Use reactStrictMode for React runtime strictness. */
   strictMode?: boolean;
   /** Don't expose X-Powered-By header */
   poweredByHeader?: boolean;
@@ -524,7 +526,7 @@ function buildPermissionsPolicyString(policy: Record<string, string[]>): string 
  *     pqcEnabled: true,
  *   },
  *   framework: {
- *     strictMode: true,
+ *     reactStrictMode: true,
  *   },
  * });
  * ```
@@ -631,7 +633,7 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
 
     toVrilRuntimeConfig: (): Record<string, unknown> => {
       const runtimeConfig: Record<string, unknown> = {
-        strictMode: resolved.framework.strictMode ?? resolved.build.strictMode,
+        reactStrictMode: resolved.framework.reactStrictMode ?? resolved.framework.strictMode ?? resolved.build.strictMode,
         poweredByHeader: false,
       };
 
@@ -658,7 +660,7 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
     },
 
     toNextConfig: (): Record<string, unknown> => ({
-      reactStrictMode: resolved.framework.strictMode ?? resolved.build.strictMode,
+      reactStrictMode: resolved.framework.reactStrictMode ?? resolved.framework.strictMode ?? resolved.build.strictMode,
       poweredByHeader: resolved.framework.poweredByHeader ?? false,
       env: resolved.framework.env,
       images: resolved.framework.images,

@@ -3,7 +3,7 @@ import { build as esbuild } from 'esbuild';
 import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, statSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -42,8 +42,16 @@ function resolveModulePath(basePath) {
     join(basePath, 'index.js'),
     join(basePath, 'index.jsx'),
   ];
-  const match = candidates.find(candidate => existsSync(candidate) && statSync(candidate).isFile());
+  const match = candidates.find(isFile);
   return match ?? basePath;
+}
+
+function isFile(path) {
+  try {
+    return statSync(path).isFile();
+  } catch {
+    return false;
+  }
 }
 
 const securityHeaders = {
