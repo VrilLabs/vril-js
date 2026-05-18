@@ -473,10 +473,10 @@ const strength = vault.assessStrength('my-passphrase');
 
           <Section id="pqc" title="vril/security/crypto/pqc">
             <p className="text-white/60 leading-relaxed mb-4">
-              Post-quantum cryptography handler supporting ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87,
-              SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f. All algorithms follow FIPS 203/204 standards.
-              Where browser support is not yet available, the module simulates PQC operations with real
-              classical fallbacks (ECDH-P256, ECDSA-P256).
+              Post-quantum cryptography handler exposing ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87,
+              SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f interfaces. The ML-KEM and ML-DSA metadata references
+              FIPS 203/204, but current browser-side PQC operations are documented simulations and are not
+              CAVP/CMVP validated FIPS implementations.
             </p>
             <ExportTable rows={[
               ['PQCHandler', 'class', 'Post-quantum key encapsulation and digital signatures'],
@@ -496,19 +496,21 @@ const pqc = new PQCHandler();
 pqc.isSupported('ML-KEM-768'); // true
 pqc.isSupported('ML-DSA-65');  // true
 
-// Generate hybrid key pair
-const keyPair = await pqc.generateKeyPair('X25519-ML-KEM-768');
+// Generate simulated ML-KEM-768 key material
+const keyPair = await pqc.generateKeyPair('ML-KEM-768');
 
 // Key encapsulation
-const result = await pqc.hybridKeyExchange(peerPublicKey);
+const result = await pqc.encapsulate(keyPair.publicKey, 'ML-KEM-768');
 
 // Get algorithm info
 const info = pqc.getAlgorithmInfo('ML-KEM-768');
-// info = { name: 'ML-KEM-768', standard: 'FIPS 203', securityLevel: 3, ... }`}</Code>
+// info.nistStandard = 'FIPS 203'
+// info.nativeSupport = false`}</Code>
             <SecurityNote>
-              PQC algorithms not yet natively supported in browsers are simulated. The hybrid approach
-              (X25519+ML-KEM-768) ensures classical security is always maintained. When browsers add native
-              PQC support, Vril.js will automatically use the real implementations.
+              Truthful FIPS 203/204 compliance or validation claims require a conforming ML-KEM/ML-DSA
+              implementation tested through the appropriate NIST validation programs (CAVP, and CMVP/FIPS 140-3
+              when packaged as a cryptographic module). Vril.js does not claim FIPS validation for simulated
+              browser PQC; production deployments that require FIPS must use a validated cryptographic module.
             </SecurityNote>
           </Section>
 

@@ -7,7 +7,8 @@
  * NOTE: PQC algorithms not yet natively supported in browsers are implemented
  * as SIMULATIONS with correct interfaces. Where Web Crypto API provides
  * real operations (X25519, ECDH, ECDSA-P256), those are used natively.
- * All simulated operations are clearly documented.
+ * All simulated operations are clearly documented and are not CAVP/CMVP
+ * validated FIPS 203/204/205 implementations.
  *
  * Zero external dependencies — Web Crypto API only.
  */

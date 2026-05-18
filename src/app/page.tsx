@@ -952,7 +952,7 @@ export default function VrilShowcase() {
             </div>
           </div>
           <div className="mt-10 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="font-mono text-[10px] text-white/20 tracking-wider">© 2025-2026 VRIL LABS · ALL RIGHTS RESERVED · FIPS 203/204 READY</p>
+            <p className="font-mono text-[10px] text-white/20 tracking-wider">© 2025-2026 VRIL LABS · ALL RIGHTS RESERVED · FIPS 203/204 REFERENCED · NOT VALIDATED</p>
             <div className="flex items-center gap-4">
               <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/4 border border-white/8 rounded-full font-mono text-[10px] text-white/25">
                 <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" />
