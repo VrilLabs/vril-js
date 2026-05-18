@@ -301,6 +301,29 @@ function hasSubtleCrypto(): boolean {
   return typeof crypto !== 'undefined' && typeof crypto.subtle !== 'undefined';
 }
 
+function nativeRuntimeSupportsOperations(algorithm: string, info: AlgorithmInfo): boolean {
+  if (!hasSubtleCrypto()) return false;
+  const subtle = crypto.subtle;
+  if (algorithm === 'X25519') {
+    return (
+      typeof subtle.generateKey === 'function' &&
+      typeof subtle.importKey === 'function' &&
+      typeof subtle.exportKey === 'function' &&
+      typeof subtle.deriveBits === 'function'
+    );
+  }
+  if (algorithm === 'ECDSA-P256') {
+    return (
+      typeof subtle.generateKey === 'function' &&
+      typeof subtle.importKey === 'function' &&
+      typeof subtle.exportKey === 'function' &&
+      typeof subtle.sign === 'function' &&
+      typeof subtle.verify === 'function'
+    );
+  }
+  return info.nativeSupport;
+}
+
 function providerResultError(algorithm: PQCAlgorithm, reason: string): Error {
   return new Error(`[VRIL PQC] Provider returned invalid ${algorithm} material: ${reason}`);
 }
@@ -376,7 +399,7 @@ export class PQCHandler {
   isSupported(algorithm: string): boolean {
     const info = ALGORITHM_INFO[algorithm];
     if (!info) return false;
-    if (info.nativeSupport) return hasSubtleCrypto();
+    if (info.nativeSupport) return nativeRuntimeSupportsOperations(algorithm, info);
 
     const pqcAlgorithm = algorithm as PQCAlgorithm;
     return (
@@ -555,7 +578,8 @@ export class PQCHandler {
       }
       try {
         return await provider.verify!(message, signature, publicKey, algorithm);
-      } catch {
+      } catch (error) {
+        this.reportProviderVerificationFailure(algorithm, error);
         return false;
       }
     }
@@ -889,6 +913,12 @@ export class PQCHandler {
       typeof this.provider.sign === 'function' &&
       typeof this.provider.verify === 'function'
     );
+  }
+
+  private reportProviderVerificationFailure(algorithm: PQCAlgorithm, error: unknown): void {
+    if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+      console.warn(`[VRIL PQC] Provider verification failed for ${algorithm}; returning false`, error);
+    }
   }
 
   private assertByteLength(value: Uint8Array, expectedLength: number, label: string): void {
