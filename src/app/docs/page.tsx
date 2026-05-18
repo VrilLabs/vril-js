@@ -518,6 +518,8 @@ const info = pqc.getAlgorithmInfo('ML-KEM-768');
             <SecurityNote>
               Truthful FIPS 203/204/205 compliance claims require a conforming ML-KEM, ML-DSA, or SLH-DSA
               provider with matching algorithm evidence, correct key/ciphertext/signature sizes, and no simulation.
+              The bundled nativePQCProvider provides standards-conformant native operations, but it is not formally
+              FIPS-validated until CAVP/ACVP and CMVP/FIPS 140-3 certificate identifiers are attached.
               Formal FIPS validation claims for regulated deployments require CAVP/ACVP and CMVP/FIPS 140-3
               certificate evidence for the exact implementation and module boundary.
             </SecurityNote>

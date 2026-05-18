@@ -70,7 +70,7 @@ export interface AlgorithmInfo {
   publicKeySize: number;
   /** Private key size in bytes */
   privateKeySize: number;
-  /** Ciphertext/signature size in bytes */
+  /** Ciphertext size for KEM algorithms; for legacy callers, signature algorithms mirror signatureSize here */
   ciphertextSize: number;
   /** Signature size in bytes, for signature algorithms */
   signatureSize?: number;

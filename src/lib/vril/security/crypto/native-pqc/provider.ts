@@ -62,7 +62,7 @@ export const nativePQCProvider: PQCProvider = {
     return {
       algorithm,
       standard,
-      moduleName: 'Vril.js native Active Surface PQC bundle (@noble/post-quantum 0.6.1 derived)',
+      moduleName: 'Vril.js native Active Surface PQC bundle (@noble/post-quantum@0.6.1 derived)',
       providerName: 'Vril.js',
       standardsConformant: true,
     };
