@@ -138,10 +138,6 @@ class KeccakSponge {
       }
       const laneIndex = Math.floor(this.squeezeOffset / 8);
       const laneOffset = this.squeezeOffset % 8;
-      // Defensive invariant check: rateBytes <= 168, so normal operation never reaches lane 25.
-      if (laneIndex >= 25) {
-        throw new Error('[VRIL SHA3] Invalid lane index during squeeze');
-      }
       const take = Math.min(8 - laneOffset, length - written);
       const lane = this.state[laneIndex];
       for (let i = 0; i < take; i++) {
@@ -231,7 +227,12 @@ export function shake256(input: BytesLike, outputLength: number): Uint8Array {
   return new ShakeXof(256).update(input).squeeze(outputLength);
 }
 
-/** Run built-in FIPS 202 known-answer checks for the empty message. */
+/**
+ * Run built-in FIPS 202 known-answer checks for the empty message.
+ *
+ * Call during diagnostics, CI, or security initialization to verify the native
+ * SHA-3/SHAKE implementation before enabling dependent PQC algorithms.
+ */
 export function runSha3SelfTest(): void {
   const bytesToHex = (bytes: Uint8Array): string =>
     Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');

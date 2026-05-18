@@ -11,7 +11,11 @@ function getCrypto(): Crypto {
   return crypto;
 }
 
-/** Fill an existing Uint8Array with cryptographically secure random bytes. */
+/**
+ * Fill an existing Uint8Array with cryptographically secure random bytes.
+ *
+ * The input array is mutated in-place and returned for convenience.
+ */
 export function fillRandomBytes(bytes: Uint8Array): Uint8Array {
   getCrypto().getRandomValues(bytes);
   return bytes;
