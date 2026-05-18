@@ -219,7 +219,7 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     publicKeySize: 64,
     privateKeySize: 128,
     ciphertextSize: 0,
-    signatureSize: 49856,
+    signatureSize: 49856, // FIPS 205 SLH-DSA-SHA2-256f signature byte length
     type: 'signature',
     nativeSupport: false,
     quantumResistant: true,
@@ -304,6 +304,13 @@ function providerResultError(algorithm: PQCAlgorithm, reason: string): Error {
 export class PQCHandler {
   private readonly version = '2.1.0';
 
+  /**
+   * Creates a PQC handler.
+   *
+   * By default, Vril.js uses the bundled native Active Surface PQC provider.
+   * Pass null to restore metadata-only/fail-closed behavior, or pass a
+   * certified provider to replace the bundled implementation.
+   */
   constructor(private provider: PQCProvider | null = nativePQCProvider) {}
 
   /** Get module version */
