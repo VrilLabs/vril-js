@@ -975,7 +975,7 @@ export class NavigationGuard {
   }
 
   /** Track redirects and enforce maximum count */
-  trackRedirect(sessionId: string, from: string, to: string): { allowed: boolean; redirectCount: number } {
+  trackRedirect(sessionId: string, from: string, _to: string): { allowed: boolean; redirectCount: number } {
     const key = `${sessionId}:${from}`;
     const count = (this.redirectCount.get(key) ?? 0) + 1;
     this.redirectCount.set(key, count);

@@ -66,8 +66,8 @@ export interface SignalGraph {
 
 type Subscriber = () => void;
 
-let currentEffect: Function | null = null;
-let pendingEffects: Function[] = [];
+let currentEffect: (() => void) | null = null;
+let pendingEffects: (() => void)[] = [];
 let batching = 0;
 
 /** Auto-incrementing ID for signal devtools tracking */
@@ -245,7 +245,7 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
       cachedValue = fn();
     };
     (tracker as any)._id = id;
-    currentEffect = tracker as unknown as Function;
+    currentEffect = tracker;
     try {
       tracker();
     } finally {
@@ -767,7 +767,7 @@ export function signalFromPromise<T>(
   read._kind = 'signal';
   read._id = id;
   read.peek = () => inner.peek();
-  read.set = (next) => { inner.set(typeof next === 'function' ? (next as Function)(inner.peek()) : next); };
+  read.set = (next) => { inner.set(typeof next === 'function' ? (next as (prev: AsyncSignalState<T>) => AsyncSignalState<T>)(inner.peek()) : next); };
 
   registerSignal(id, 'signal', () => inner.peek());
   return read;

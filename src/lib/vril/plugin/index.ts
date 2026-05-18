@@ -452,14 +452,6 @@ export function createPlugin(
   return createChain();
 }
 
-interface PluginBuilder {
-  manifest: PluginManifest;
-  hooks: Partial<Record<PluginLifecycle, PluginHook>>;
-  middleware: PluginMiddleware[];
-  configure?: (config: Record<string, unknown>) => void;
-  destroy?: () => void | Promise<void>;
-}
-
 // ─── Plugin Context Helpers ───────────────────────────────────
 
 /** Create a scoped logger for a plugin */

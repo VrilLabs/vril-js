@@ -511,7 +511,7 @@ export function createEdgeHandler(
       response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
 
       return response;
-    } catch (error) {
+    } catch {
       return new Response(
         JSON.stringify({
           error: 'Internal Server Error',

@@ -553,7 +553,7 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
   const environment = detectEnvironment();
 
   // Start with defaults
-  let resolved: VrilResolvedConfig = {
+  const resolved: VrilResolvedConfig = {
     version: VRIL_CONFIG_VERSION,
     environment,
     security: { ...DEFAULT_SECURITY },

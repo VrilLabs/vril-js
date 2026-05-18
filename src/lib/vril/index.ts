@@ -513,4 +513,4 @@ export { VrilProvider, useVril } from '@/components/vril-provider';
 export { CrystalWindow, useCrystalWindow } from '@/components/crystal-window';
 export { VaultDialog } from '@/components/vault-dialog';
 export { CommandPalette, type CommandItem } from '@/components/command-palette';
-export { VrilModal } from '@/components/modal';
+export { VrilModal, type VrilModalHandle } from '@/components/modal';

@@ -9,7 +9,7 @@ const eslintConfig = [
       // Enforce consistent imports
       "import/no-duplicates": "warn",
       // TypeScript-specific rules
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/consistent-type-imports": [
         "error",

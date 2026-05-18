@@ -1,10 +1,20 @@
 'use client';
 
-import { useState, useCallback, type ReactNode } from 'react';
+import { useState, useCallback, useImperativeHandle, forwardRef, type ReactNode } from 'react';
 
 type ModalVariant = 'info' | 'confirm' | 'destructive';
 
-export function VrilModal() {
+/** Imperative handle for programmatic control of VrilModal */
+export interface VrilModalHandle {
+  /** Show an informational dialog */
+  info: (opts: { title: string; subtitle?: string; body: ReactNode }) => void;
+  /** Show a confirmation dialog; resolves true when confirmed, false when cancelled */
+  confirm: (opts: { title: string; subtitle?: string; body: ReactNode }) => Promise<boolean>;
+  /** Show a destructive-action confirmation dialog */
+  destructive: (opts: { title: string; subtitle?: string; body: ReactNode }) => Promise<boolean>;
+}
+
+export const VrilModal = forwardRef<VrilModalHandle>(function VrilModal(_, ref) {
   const [state, setState] = useState<{
     open: boolean; variant: ModalVariant; title: string; subtitle?: string;
     body: ReactNode; resolve?: (v: boolean) => void;
@@ -16,6 +26,8 @@ export function VrilModal() {
   const destructive = useCallback((opts: { title: string; subtitle?: string; body: ReactNode }): Promise<boolean> =>
     new Promise(resolve => setState({ open: true, variant: 'destructive', ...opts, resolve })), []);
   const close = useCallback((value: boolean) => { state.resolve?.(value); setState(p => ({ ...p, open: false })); }, [state]);
+
+  useImperativeHandle(ref, () => ({ info, confirm, destructive }), [info, confirm, destructive]);
 
   if (!state.open) return null;
   const colors = { info: 'text-[#00FFC8] bg-[#00FFC8]/12 border-[#00FFC8]/30', confirm: 'text-[#f5a623] bg-[#f5a623]/12 border-[#f5a623]/30', destructive: 'text-[#ff4d6a] bg-[#ff4d6a]/12 border-[#ff4d6a]/30' };
@@ -50,4 +62,4 @@ export function VrilModal() {
       </div>
     </div>
   );
-}
+});

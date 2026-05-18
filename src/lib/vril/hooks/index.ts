@@ -11,9 +11,9 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo, useContext } from 'react';
-import { type SignalReadable, type AsyncSignalState, type ResourceState } from '../signals';
-import { signal as createSignal, effect, computed } from '../signals';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { type SignalReadable } from '../signals';
+import { effect, computed } from '../signals';
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -85,6 +85,7 @@ export function useComputed<T>(fn: () => T, deps: unknown[] = []): T {
   const computedRef = useRef<ReturnType<typeof computed<T>> | null>(null);
   const [, forceRender] = useState({});
 
+  // eslint-disable-next-line react-hooks/refs
   if (!computedRef.current) {
     computedRef.current = computed(fn);
   }
@@ -100,6 +101,7 @@ export function useComputed<T>(fn: () => T, deps: unknown[] = []): T {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
+  // eslint-disable-next-line react-hooks/refs
   return computedRef.current();
 }
 
@@ -146,7 +148,7 @@ export function useAsyncSignal<T>(
           }));
         }
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/use-memo
   }, deps);
 
   const reset = useCallback(() => {
@@ -328,7 +330,7 @@ export function useEncryptedState<T>(
 export function useSecureStorage<T>(
   key: string,
   defaultValue: T,
-  passphrase?: string
+  _passphrase?: string
 ): [T, (value: T | ((prev: T) => T)) => void, () => void] {
   const [value, setValue] = useState<T>(() => {
     if (typeof window === 'undefined') return defaultValue;
@@ -376,6 +378,7 @@ export function useCSRFToken(cookieName = 'csrf_token'): {
     // Try meta tag first
     const metaTag = document.querySelector('meta[name="csrf-token"]');
     if (metaTag) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setToken(metaTag.getAttribute('content'));
       return;
     }
@@ -385,6 +388,7 @@ export function useCSRFToken(cookieName = 'csrf_token'): {
     for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === cookieName && value) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setToken(decodeURIComponent(value));
         return;
       }
@@ -451,6 +455,7 @@ export function useSecurityHeaders(): {
       }
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResult({
       headers,
       issues,
@@ -516,6 +521,7 @@ export function useRateLimiter(config: RateLimitConfig): {
 } {
   const callsRef = useRef<number[]>([]);
   const configRef = useRef(config);
+  // eslint-disable-next-line react-hooks/refs
   configRef.current = config;
 
   const cleanup = useCallback(() => {

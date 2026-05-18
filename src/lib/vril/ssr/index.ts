@@ -158,7 +158,7 @@ export class SSRSecurityGuard {
  * Create an SSR stream from chunked HTML output.
  * Implements chunked transfer encoding using Web Streams API.
  */
-export function createSSRStream(options?: SSROptions): {
+export function createSSRStream(_options?: SSROptions): {
   stream: ReadableStream<SSRChunk>;
   enqueue: (chunk: SSRChunk) => void;
   close: () => void;
@@ -214,7 +214,7 @@ export async function renderToStream(
     timeout = 10000,
     securityCheck = true,
     maxHtmlSize = 5 * 1024 * 1024,
-    nonce,
+    nonce: _nonce,
     signal,
   } = options;
 

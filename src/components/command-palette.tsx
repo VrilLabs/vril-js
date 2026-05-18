@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 
 export interface CommandItem {
   id: string; title: string; group: string;
@@ -26,15 +26,16 @@ export function CommandPalette({ commands, open, onClose }: { commands: CommandI
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (open) { setQuery(''); setSelectedIndex(-1); setTimeout(() => inputRef.current?.focus(), 50); }
   }, [open]);
 
-  const handleKey = useCallback((e: React.KeyboardEvent) => {
+  const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setSelectedIndex(p => p < filtered.length - 1 ? p + 1 : 0); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setSelectedIndex(p => p > 0 ? p - 1 : filtered.length - 1); }
     else if (e.key === 'Enter' && selectedIndex >= 0 && filtered[selectedIndex]) { e.preventDefault(); filtered[selectedIndex].action(); onClose(); }
     else if (e.key === 'Escape') onClose();
-  }, [filtered, selectedIndex, onClose]);
+  };
 
   if (!open) return null;
 

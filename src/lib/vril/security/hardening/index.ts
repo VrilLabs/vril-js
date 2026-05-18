@@ -432,12 +432,13 @@ export class TimingAttackMitigation {
     if (a.length !== b.length) {
       // Still do a full comparison to avoid length-based timing leaks
       const maxLen = Math.max(a.length, b.length);
-      let _dummy = 0;
+      let result = 0;
       for (let i = 0; i < maxLen; i++) {
         const aVal = i < a.length ? a[i] : 0;
         const bVal = i < b.length ? b[i] : 0;
-        _dummy |= aVal ^ bVal;
+        result |= aVal ^ bVal;
       }
+      void result; // constant-time computation, result intentionally unused (lengths differ)
       return false;
     }
 

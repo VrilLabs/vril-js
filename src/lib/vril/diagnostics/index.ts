@@ -549,18 +549,17 @@ export class NetworkMonitor {
     if (this.intercepting || typeof window === 'undefined') return;
 
     this.originalFetch = window.fetch;
-    const self = this;
 
-    window.fetch = async function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
       const method = init?.method ?? 'GET';
       const start = performance.now();
 
       try {
-        const response = await self.originalFetch!.call(this, input, init);
+        const response = await this.originalFetch!(input, init);
         const duration = performance.now() - start;
 
-        self.recordMetric({
+        this.recordMetric({
           url,
           method,
           statusCode: response.status,
@@ -572,7 +571,7 @@ export class NetworkMonitor {
 
         return response;
       } catch (err) {
-        self.recordMetric({
+        this.recordMetric({
           url,
           method,
           statusCode: 0,

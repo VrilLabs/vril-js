@@ -597,7 +597,7 @@ export class SupplyChainIntegrity {
 
     // Check for missing dependency references
     const allComponents = new Set(this.sbom.components.map(c => c.name));
-    for (const [_, deps] of this.dependencyGraph) {
+    for (const [, deps] of this.dependencyGraph) {
       for (const dep of deps) {
         if (!allComponents.has(dep) && !this.dependencyGraph.has(dep)) {
           issues.push(`Missing dependency reference: ${dep}`);

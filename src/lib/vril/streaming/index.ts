@@ -241,13 +241,12 @@ export class RateLimitedStream {
 
   /** Create a rate-limited TransformStream */
   createTransformStream(): TransformStream<string, string> {
-    const self = this;
     return new TransformStream({
-      transform(chunk, controller) {
+      transform: (chunk, controller) => {
         const size = new TextEncoder().encode(chunk).length;
-        const check = self.canSend(size);
+        const check = this.canSend(size);
         if (check.allowed) {
-          self.recordSent(size);
+          this.recordSent(size);
           controller.enqueue(chunk);
         } else {
           controller.error(new Error(`[VRIL Stream] ${check.reason}`));
@@ -314,10 +313,9 @@ export class SecureStreamTransformer {
 
   /** Create a TransformStream for use in a pipeline */
   createTransformStream(): TransformStream<string, string> {
-    const self = this;
     return new TransformStream({
-      transform(chunk, controller) {
-        controller.enqueue(self.transform(chunk));
+      transform: (chunk, controller) => {
+        controller.enqueue(this.transform(chunk));
       },
     });
   }

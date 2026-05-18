@@ -517,6 +517,7 @@ export class CacheInvalidator {
     let total = 0;
     // We need access to the underlying maps — in production this would be more sophisticated
     for (const name of Object.keys(this.registry.getAllStats())) {
+      if (!regex.test(name)) continue;
       const cache = this.registry.get(name);
       if (cache) {
         // MemoryCache doesn't expose key iteration directly, so we use getStats
