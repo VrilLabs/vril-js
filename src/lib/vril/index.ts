@@ -92,6 +92,15 @@ export {
 } from './security/crypto/hybrid';
 
 export {
+  ActiveSurfacePQC,
+  type ActiveSurfaceMode,
+  type ActiveSurfacePolicy,
+  type ActiveSurfaceSelection,
+  type ActiveSurfaceKeyPair,
+  type ActiveSurfaceKEMResult,
+} from './security/crypto/active-surface-pqc';
+
+export {
   CryptoAgility,
   AlgorithmRegistry,
   MigrationExecutor,
