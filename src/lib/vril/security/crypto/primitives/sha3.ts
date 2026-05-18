@@ -43,7 +43,7 @@ function toBytes(input: BytesLike): Uint8Array {
 function readLaneLE(bytes: Uint8Array, offset: number): bigint {
   let lane = 0n;
   for (let i = 0; i < 8; i++) {
-    lane |= BigInt(bytes[offset + i] ?? 0) << BigInt(8 * i);
+    lane |= BigInt(bytes[offset + i]) << BigInt(8 * i);
   }
   return lane;
 }
@@ -138,6 +138,9 @@ class KeccakSponge {
       }
       const laneIndex = Math.floor(this.squeezeOffset / 8);
       const laneOffset = this.squeezeOffset % 8;
+      if (laneIndex >= 25) {
+        throw new Error('[VRIL SHA3] Invalid lane index during squeeze');
+      }
       const take = Math.min(8 - laneOffset, this.rateBytes - this.squeezeOffset, length - written);
       const lane = this.state[laneIndex];
       for (let i = 0; i < take; i++) {
@@ -159,7 +162,8 @@ class KeccakSponge {
   }
 
   private absorbBlock(): void {
-    for (let i = 0; i < this.rateBytes / 8; i++) {
+    const laneCount = this.rateBytes / 8;
+    for (let i = 0; i < laneCount; i++) {
       this.state[i] = (this.state[i] ^ readLaneLE(this.block, i * 8)) & MASK_64;
     }
     this.block.fill(0);
@@ -171,7 +175,8 @@ class KeccakSponge {
     if (this.finalized) return;
     this.block[this.blockOffset] ^= this.domain;
     this.block[this.rateBytes - 1] ^= 0x80;
-    for (let i = 0; i < this.rateBytes / 8; i++) {
+    const laneCount = this.rateBytes / 8;
+    for (let i = 0; i < laneCount; i++) {
       this.state[i] = (this.state[i] ^ readLaneLE(this.block, i * 8)) & MASK_64;
     }
     this.block.fill(0);
@@ -225,12 +230,11 @@ export function shake256(input: BytesLike, outputLength: number): Uint8Array {
   return new ShakeXof(256).update(input).squeeze(outputLength);
 }
 
-function bytesToHex(bytes: Uint8Array): string {
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
 /** Run built-in FIPS 202 known-answer checks for the empty message. */
 export function runSha3SelfTest(): void {
+  const bytesToHex = (bytes: Uint8Array): string =>
+    Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+
   const vectors: Array<[string, string]> = [
     ['SHA3-256', bytesToHex(sha3_256(''))],
     ['SHA3-512', bytesToHex(sha3_512(''))],
