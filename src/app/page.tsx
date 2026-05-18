@@ -1028,6 +1028,10 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
   const [vault] = useState(() => new VrilVault());
 
   const handlePass = (v: string) => { setPassphrase(v); setStrength(vault.assessStrength(v)); };
+  const handlePlaintextChange = (value: string) => {
+    setPlaintext(value);
+    setActiveBundle('');
+  };
 
   const handleEncrypt = async () => {
     if (!passphrase || !plaintext) return;
@@ -1098,7 +1102,7 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
           </div>
           <div className="space-y-1.5">
             <label className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30">Input</label>
-            <textarea value={plaintext} onChange={e => { setPlaintext(e.target.value); setActiveBundle(''); }} rows={3} className="w-full px-3 py-2 bg-[#161b28] border border-white/10 rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-olo-teal transition-colors" placeholder="Enter plaintext to Seal, or paste a ciphertext bundle to Unseal" />
+            <textarea value={plaintext} onChange={e => handlePlaintextChange(e.target.value)} rows={3} className="w-full px-3 py-2 bg-[#161b28] border border-white/10 rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-olo-teal transition-colors" placeholder="Enter plaintext to Seal, or paste a ciphertext bundle to Unseal" />
           </div>
           {result && (
             <div className="space-y-1.5">
