@@ -512,7 +512,7 @@ function HeroGraphic() {
             style={{ animationDuration: orbiter.speed, animationDelay: orbiter.delay }}
           >
             <div className={`absolute left-1/2 -top-1 -translate-x-1/2 ${orbiter.size} rounded-full ${orbiter.color}`} style={{ boxShadow: orbiter.shadow }} />
-            <div className="absolute left-1/2 top-7 -translate-x-1/2 rounded-full border border-white/10 bg-[#0d1017]/80 px-2 py-0.5 font-mono text-[9px] tracking-[0.14em] text-white/45 backdrop-blur-md" style={{ transform: `translateX(-50%) rotate(${index * 4}deg)` }}>
+            <div className="absolute left-1/2 top-7 -translate-x-1/2 rounded-full border border-white/10 bg-[#0d1017]/80 px-2 py-0.5 font-mono text-[9px] tracking-[0.14em] text-white/45 backdrop-blur-md" style={{ rotate: `${index * 4}deg` }}>
               {orbiter.label}
             </div>
           </div>
