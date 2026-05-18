@@ -256,6 +256,33 @@ function unsupportedPQCError(algorithm: string): Error {
   );
 }
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function hasByteLength(value: unknown, expectedLength: number): value is Uint8Array {
+  return value instanceof Uint8Array && value.byteLength === expectedLength;
+}
+
+function isAdmissibleEvidence(
+  evidence: PQCValidationEvidence | null | undefined,
+  algorithm: PQCAlgorithm,
+  info: AlgorithmInfo
+): evidence is PQCValidationEvidence {
+  return (
+    !!evidence &&
+    evidence.algorithm === algorithm &&
+    evidence.standard === info.nistStandard &&
+    evidence.standardsConformant === true &&
+    isNonEmptyString(evidence.moduleName) &&
+    isNonEmptyString(evidence.providerName)
+  );
+}
+
+function providerResultError(algorithm: PQCAlgorithm, reason: string): Error {
+  return new Error(`[VRIL PQC] Provider returned invalid ${algorithm} material: ${reason}`);
+}
+
 // ─── PQCHandler Class ─────────────────────────────────────────────────────
 
 /**
@@ -297,7 +324,19 @@ export class PQCHandler {
         standardsConformant: true,
       };
     }
-    return this.provider?.getValidationEvidence(algorithm) ?? null;
+    const evidence = this.provider?.getValidationEvidence(algorithm) ?? null;
+    return isAdmissibleEvidence(evidence, algorithm, info) ? evidence : null;
+  }
+
+  /**
+   * Check whether an algorithm has both admissible implementation evidence and
+   * explicit CAVP + CMVP certificate identifiers for regulated FIPS claims.
+   */
+  isFipsValidated(algorithm: string): boolean {
+    const info = ALGORITHM_INFO[algorithm];
+    if (!info || !info.nistStandard.startsWith('FIPS')) return false;
+    const evidence = this.getValidationEvidence(algorithm as PQCAlgorithm);
+    return !!evidence && isNonEmptyString(evidence.cavpCertificate) && isNonEmptyString(evidence.cmvpCertificate);
   }
 
   /**
@@ -374,7 +413,7 @@ export class PQCHandler {
 
     if (isPQCAlgorithm(algorithm)) {
       const provider = this.requireProvider(algorithm, 'generateKeyPair');
-      return provider.generateKeyPair!(algorithm);
+      return this.validateProviderKeyPair(await provider.generateKeyPair!(algorithm), algorithm);
     }
 
     throw new Error(`[VRIL PQC] Unsupported key generation algorithm: ${algorithm}`);
@@ -395,7 +434,8 @@ export class PQCHandler {
 
     if (isPQCAlgorithm(algorithm)) {
       const provider = this.requireProvider(algorithm, 'encapsulate');
-      return provider.encapsulate!(publicKey, algorithm);
+      this.assertByteLength(publicKey, this.getAlgorithmInfo(algorithm).publicKeySize, `${algorithm} public key`);
+      return this.validateProviderKEMResult(await provider.encapsulate!(publicKey, algorithm), algorithm);
     }
 
     throw new Error(`[VRIL PQC] Unsupported KEM algorithm: ${algorithm}`);
@@ -420,7 +460,10 @@ export class PQCHandler {
 
     if (isPQCAlgorithm(algorithm)) {
       const provider = this.requireProvider(algorithm, 'decapsulate');
-      return provider.decapsulate!(ciphertext, privateKey, algorithm);
+      const info = this.getAlgorithmInfo(algorithm);
+      this.assertByteLength(ciphertext, info.ciphertextSize, `${algorithm} ciphertext`);
+      this.assertByteLength(privateKey, info.privateKeySize, `${algorithm} private key`);
+      return this.validateProviderKEMResult(await provider.decapsulate!(ciphertext, privateKey, algorithm), algorithm);
     }
 
     throw new Error(`[VRIL PQC] Unsupported KEM algorithm: ${algorithm}`);
@@ -444,7 +487,8 @@ export class PQCHandler {
 
     if (isPQCAlgorithm(algorithm)) {
       const provider = this.requireProvider(algorithm, 'sign');
-      return provider.sign!(message, privateKey, algorithm);
+      this.assertByteLength(privateKey, this.getAlgorithmInfo(algorithm).privateKeySize, `${algorithm} private key`);
+      return this.validateProviderSignatureResult(await provider.sign!(message, privateKey, algorithm), algorithm);
     }
 
     throw new Error(`[VRIL PQC] Unsupported signature algorithm: ${algorithm}`);
@@ -469,6 +513,10 @@ export class PQCHandler {
 
     if (isPQCAlgorithm(algorithm)) {
       const provider = this.requireProvider(algorithm, 'verify');
+      const info = this.getAlgorithmInfo(algorithm);
+      if (!hasByteLength(publicKey, info.publicKeySize) || !hasByteLength(signature, info.ciphertextSize)) {
+        return false;
+      }
       return provider.verify!(message, signature, publicKey, algorithm);
     }
 
@@ -779,12 +827,57 @@ export class PQCHandler {
     algorithm: PQCAlgorithm,
     operation: K
   ): PQCProvider & Required<Pick<PQCProvider, K>> {
-    const info = this.getAlgorithmInfo(algorithm);
-    const evidence = this.provider?.getValidationEvidence(algorithm);
-    if (!this.provider || evidence?.standard !== info.nistStandard || typeof this.provider[operation] !== 'function') {
+    const evidence = this.getValidationEvidence(algorithm);
+    if (!this.provider || !evidence || typeof this.provider[operation] !== 'function') {
       throw unsupportedPQCError(algorithm);
     }
     return this.provider as PQCProvider & Required<Pick<PQCProvider, K>>;
+  }
+
+  private assertByteLength(value: Uint8Array, expectedLength: number, label: string): void {
+    const actualLength = value.byteLength;
+    if (actualLength !== expectedLength) {
+      throw new Error(`[VRIL PQC] Invalid ${label}: expected ${expectedLength} bytes, received ${actualLength}`);
+    }
+  }
+
+  private validateProviderKeyPair(keyPair: PQCKeyPair, algorithm: PQCAlgorithm): PQCKeyPair {
+    const info = this.getAlgorithmInfo(algorithm);
+    if (keyPair.algorithm !== algorithm) {
+      throw providerResultError(algorithm, `key pair algorithm was ${keyPair.algorithm}`);
+    }
+    if (!hasByteLength(keyPair.publicKey, info.publicKeySize)) {
+      throw providerResultError(algorithm, `public key expected ${info.publicKeySize} bytes`);
+    }
+    if (!hasByteLength(keyPair.privateKey, info.privateKeySize)) {
+      throw providerResultError(algorithm, `private key expected ${info.privateKeySize} bytes`);
+    }
+    return keyPair;
+  }
+
+  private validateProviderKEMResult(result: KEMResult, algorithm: PQCAlgorithm): KEMResult {
+    const info = this.getAlgorithmInfo(algorithm);
+    if (result.algorithm !== algorithm) {
+      throw providerResultError(algorithm, `KEM result algorithm was ${result.algorithm}`);
+    }
+    if (!hasByteLength(result.ciphertext, info.ciphertextSize)) {
+      throw providerResultError(algorithm, `ciphertext expected ${info.ciphertextSize} bytes`);
+    }
+    if (!hasByteLength(result.sharedSecret, 32)) {
+      throw providerResultError(algorithm, 'shared secret expected 32 bytes');
+    }
+    return result;
+  }
+
+  private validateProviderSignatureResult(result: SignatureResult, algorithm: PQCAlgorithm): SignatureResult {
+    const info = this.getAlgorithmInfo(algorithm);
+    if (result.algorithm !== algorithm) {
+      throw providerResultError(algorithm, `signature result algorithm was ${result.algorithm}`);
+    }
+    if (!hasByteLength(result.signature, info.ciphertextSize)) {
+      throw providerResultError(algorithm, `signature expected ${info.ciphertextSize} bytes`);
+    }
+    return result;
   }
 
 }
