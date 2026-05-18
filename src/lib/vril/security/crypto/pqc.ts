@@ -2,19 +2,20 @@
  * Vril.js v2.0.0 — Post-Quantum Cryptography Handler
  *
  * Post-quantum cryptography metadata and native Web Crypto integration points
- * for ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87,
- * SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f.
+ * for all FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), and FIPS 205 (SLH-DSA)
+ * algorithm families.
  *
  * NOTE: Vril.js performs authentic PQC operations. ML-KEM/ML-DSA/SLH-DSA
  * operations fail closed unless the runtime provides authentic native support
  * or the caller wires a validated external cryptographic module. FIPS
- * validation claims require CAVP/CMVP evidence for the exact implementation
+ * validation claims require CAVP/ACVP evidence for the exact implementation
  * and deployment boundary.
  *
  * Zero external dependencies — Web Crypto API and caller-supplied providers.
  */
 
 import { nativePQCProvider } from './native-pqc/provider';
+export { fipsPQCProvider } from './fips-provider';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -136,12 +137,29 @@ export interface PQCProvider {
 
 /** Supported PQC algorithm identifiers */
 export type PQCAlgorithm =
+  // FIPS 203 ML-KEM
+  | 'ML-KEM-512'
   | 'ML-KEM-768'
   | 'ML-KEM-1024'
+  // FIPS 204 ML-DSA
+  | 'ML-DSA-44'
   | 'ML-DSA-65'
   | 'ML-DSA-87'
+  // FIPS 205 SLH-DSA SHA2 variants
   | 'SLH-DSA-SHA2-128s'
+  | 'SLH-DSA-SHA2-128f'
+  | 'SLH-DSA-SHA2-192s'
+  | 'SLH-DSA-SHA2-192f'
+  | 'SLH-DSA-SHA2-256s'
   | 'SLH-DSA-SHA2-256f'
+  // FIPS 205 SLH-DSA SHAKE variants
+  | 'SLH-DSA-SHAKE-128s'
+  | 'SLH-DSA-SHAKE-128f'
+  | 'SLH-DSA-SHAKE-192s'
+  | 'SLH-DSA-SHAKE-192f'
+  | 'SLH-DSA-SHAKE-256s'
+  | 'SLH-DSA-SHAKE-256f'
+  // Classical (non-PQC)
   | 'X25519'
   | 'ECDSA-P256';
 
@@ -224,6 +242,165 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     nativeSupport: false,
     quantumResistant: true,
   },
+  // ─── FIPS 203 additional parameter set ────────────────────────────────────
+  'ML-KEM-512': {
+    id: 'ML-KEM-512',
+    name: 'ML-KEM-512 (Kyber-512)',
+    nistStandard: 'FIPS 203',
+    securityLevel: 1,
+    publicKeySize: 800,
+    privateKeySize: 1632,
+    ciphertextSize: 768,
+    type: 'kem',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  // ─── FIPS 204 additional parameter set ────────────────────────────────────
+  'ML-DSA-44': {
+    id: 'ML-DSA-44',
+    name: 'ML-DSA-44 (Dilithium-II)',
+    nistStandard: 'FIPS 204',
+    securityLevel: 2,
+    publicKeySize: 1312,
+    privateKeySize: 2560,
+    ciphertextSize: 0,
+    signatureSize: 2420,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  // ─── FIPS 205 additional SHA2 parameter sets ──────────────────────────────
+  'SLH-DSA-SHA2-128f': {
+    id: 'SLH-DSA-SHA2-128f',
+    name: 'SLH-DSA-SHA2-128f',
+    nistStandard: 'FIPS 205',
+    securityLevel: 1,
+    publicKeySize: 32,
+    privateKeySize: 64,
+    ciphertextSize: 0,
+    signatureSize: 17088,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHA2-192s': {
+    id: 'SLH-DSA-SHA2-192s',
+    name: 'SLH-DSA-SHA2-192s',
+    nistStandard: 'FIPS 205',
+    securityLevel: 3,
+    publicKeySize: 48,
+    privateKeySize: 96,
+    ciphertextSize: 0,
+    signatureSize: 16224,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHA2-192f': {
+    id: 'SLH-DSA-SHA2-192f',
+    name: 'SLH-DSA-SHA2-192f',
+    nistStandard: 'FIPS 205',
+    securityLevel: 3,
+    publicKeySize: 48,
+    privateKeySize: 96,
+    ciphertextSize: 0,
+    signatureSize: 35664,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHA2-256s': {
+    id: 'SLH-DSA-SHA2-256s',
+    name: 'SLH-DSA-SHA2-256s',
+    nistStandard: 'FIPS 205',
+    securityLevel: 5,
+    publicKeySize: 64,
+    privateKeySize: 128,
+    ciphertextSize: 0,
+    signatureSize: 29792,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  // ─── FIPS 205 SHAKE parameter sets ────────────────────────────────────────
+  'SLH-DSA-SHAKE-128s': {
+    id: 'SLH-DSA-SHAKE-128s',
+    name: 'SLH-DSA-SHAKE-128s',
+    nistStandard: 'FIPS 205',
+    securityLevel: 1,
+    publicKeySize: 32,
+    privateKeySize: 64,
+    ciphertextSize: 0,
+    signatureSize: 7856,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHAKE-128f': {
+    id: 'SLH-DSA-SHAKE-128f',
+    name: 'SLH-DSA-SHAKE-128f',
+    nistStandard: 'FIPS 205',
+    securityLevel: 1,
+    publicKeySize: 32,
+    privateKeySize: 64,
+    ciphertextSize: 0,
+    signatureSize: 17088,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHAKE-192s': {
+    id: 'SLH-DSA-SHAKE-192s',
+    name: 'SLH-DSA-SHAKE-192s',
+    nistStandard: 'FIPS 205',
+    securityLevel: 3,
+    publicKeySize: 48,
+    privateKeySize: 96,
+    ciphertextSize: 0,
+    signatureSize: 16224,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHAKE-192f': {
+    id: 'SLH-DSA-SHAKE-192f',
+    name: 'SLH-DSA-SHAKE-192f',
+    nistStandard: 'FIPS 205',
+    securityLevel: 3,
+    publicKeySize: 48,
+    privateKeySize: 96,
+    ciphertextSize: 0,
+    signatureSize: 35664,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHAKE-256s': {
+    id: 'SLH-DSA-SHAKE-256s',
+    name: 'SLH-DSA-SHAKE-256s',
+    nistStandard: 'FIPS 205',
+    securityLevel: 5,
+    publicKeySize: 64,
+    privateKeySize: 128,
+    ciphertextSize: 0,
+    signatureSize: 29792,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHAKE-256f': {
+    id: 'SLH-DSA-SHAKE-256f',
+    name: 'SLH-DSA-SHAKE-256f',
+    nistStandard: 'FIPS 205',
+    securityLevel: 5,
+    publicKeySize: 64,
+    privateKeySize: 128,
+    ciphertextSize: 0,
+    signatureSize: 49856,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
   'X25519': {
     id: 'X25519',
     name: 'X25519 (Curve25519 ECDH)',
@@ -258,12 +435,24 @@ function isPQCAlgorithm(algorithm: string): boolean {
 }
 
 const BUNDLED_PQC_ALGORITHMS: PQCAlgorithm[] = [
+  'ML-KEM-512',
   'ML-KEM-768',
   'ML-KEM-1024',
+  'ML-DSA-44',
   'ML-DSA-65',
   'ML-DSA-87',
   'SLH-DSA-SHA2-128s',
+  'SLH-DSA-SHA2-128f',
+  'SLH-DSA-SHA2-192s',
+  'SLH-DSA-SHA2-192f',
+  'SLH-DSA-SHA2-256s',
   'SLH-DSA-SHA2-256f',
+  'SLH-DSA-SHAKE-128s',
+  'SLH-DSA-SHAKE-128f',
+  'SLH-DSA-SHAKE-192s',
+  'SLH-DSA-SHAKE-192f',
+  'SLH-DSA-SHAKE-256s',
+  'SLH-DSA-SHAKE-256f',
 ];
 
 function unsupportedPQCError(algorithm: string): Error {
