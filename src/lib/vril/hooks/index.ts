@@ -354,12 +354,13 @@ export function useSecureStorage<T>(
 
   /** Derive an AES-GCM key from the passphrase and salt using PBKDF2 */
   const deriveKey = useCallback(async (salt: Uint8Array): Promise<CryptoKey | null> => {
-    if (!passphrase || typeof crypto?.subtle === 'undefined') return null;
+    if (!passphrase || typeof crypto === 'undefined' || !crypto.subtle) return null;
     try {
-      const km = await crypto.subtle.importKey(
+      const webCrypto = crypto;
+      const km = await webCrypto.subtle.importKey(
         'raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']
       );
-      return await crypto.subtle.deriveKey(
+      return await webCrypto.subtle.deriveKey(
         { name: 'PBKDF2', salt: new Uint8Array(salt), iterations: 100000, hash: 'SHA-512' },
         km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
       );
@@ -391,7 +392,9 @@ export function useSecureStorage<T>(
         const cryptoKey = await deriveKey(salt);
         // Bail if: key derivation failed, component unmounted, or a write arrived first
         if (!cryptoKey || mountDecryptStaleRef.current) return;
-        const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
+        const webCrypto = typeof crypto !== 'undefined' && crypto.subtle ? crypto : null;
+        if (!webCrypto) return;
+        const plaintext = await webCrypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
         if (!mountDecryptStaleRef.current) {
           // Only store the salt after successful decryption; a malformed or
           // tampered payload must not corrupt saltRef with a short/wrong salt
@@ -430,13 +433,15 @@ export function useSecureStorage<T>(
       const myVersion = ++writeVersionRef.current;
       (async () => {
         try {
-          const salt = saltRef.current ?? crypto.getRandomValues(new Uint8Array(16));
+          if (typeof crypto === 'undefined' || !crypto.subtle) return;
+          const webCrypto = crypto;
+          const salt = saltRef.current ?? webCrypto.getRandomValues(new Uint8Array(16));
           if (!saltRef.current) saltRef.current = salt;
           const cryptoKey = await deriveKey(salt);
           if (!cryptoKey || writeVersionRef.current !== myVersion) return;
-          const iv      = crypto.getRandomValues(new Uint8Array(12));
+          const iv      = webCrypto.getRandomValues(new Uint8Array(12));
           const encoded = new TextEncoder().encode(JSON.stringify(next));
-          const ct      = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, encoded);
+          const ct      = await webCrypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, encoded);
           if (writeVersionRef.current !== myVersion) return;
           const blob    = new Uint8Array(16 + 12 + new Uint8Array(ct).length);
           blob.set(salt, 0);
@@ -455,6 +460,11 @@ export function useSecureStorage<T>(
   }, [key, passphrase, deriveKey]);
 
   const removeValue = useCallback(() => {
+    // Cancel all pending async work: mount decrypts must not restore the old
+    // value. Write versions are issued monotonically, so advancing once past
+    // the latest issued version invalidates every currently pending write.
+    writeVersionRef.current++;
+    mountDecryptStaleRef.current = true;
     try { localStorage.removeItem(key); } catch {}
     saltRef.current = null;
     setValue(defaultValue);

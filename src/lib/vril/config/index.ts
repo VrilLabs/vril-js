@@ -253,7 +253,7 @@ export const SPA_PRESET: Partial<VrilFullConfig> = {
     ...DEFAULT_SECURITY,
     csp: {
       ...DEFAULT_SECURITY.csp,
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
     },
   },
   build: { ...DEFAULT_BUILD, sriHashes: false, cspNonce: false },
@@ -536,7 +536,7 @@ export class EnvironmentConfig {
         ...DEFAULT_SECURITY,
         csp: {
           ...DEFAULT_SECURITY.csp,
-          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
         },
       },
       server: { ...DEFAULT_SERVER, https: false },

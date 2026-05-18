@@ -593,12 +593,12 @@ export class VrilVault {
     const guessesPerSecond = 10_000_000_000;
     const estimatedCrackTimeSeconds = combinations / (2 * guessesPerSecond);
 
-    const max = 10;
+    const max = 8;
     let label: StrengthAssessment['label'];
     if (score <= 2) label = 'very-weak';
     else if (score <= 4) label = 'weak';
     else if (score <= 6) label = 'moderate';
-    else if (score <= 8) label = 'strong';
+    else if (score <= 7) label = 'strong';
     else label = 'very-strong';
 
     if (feedback.length === 0) {

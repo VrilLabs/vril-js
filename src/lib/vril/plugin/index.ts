@@ -12,7 +12,7 @@
 export type PluginLifecycle = 'onInit' | 'onReady' | 'onRequest' | 'onResponse' | 'onError' | 'onBuild' | 'onSecurityCheck';
 
 /** A hook callback that can modify context or perform side effects */
-export type PluginHook = (ctx: PluginContext) => void | PluginContext | Promise<void | PluginContext>;
+export type PluginHook = (ctx: RuntimePluginContext) => void | PluginContext | Promise<void | PluginContext>;
 
 /** Metadata describing a plugin */
 export interface PluginManifest {
@@ -44,7 +44,7 @@ export interface VrilPlugin {
 
 /** Middleware function that can intercept and modify requests */
 export type PluginMiddleware = (
-  ctx: PluginContext,
+  ctx: RuntimePluginContext,
   next: () => Promise<void>
 ) => Promise<void>;
 
@@ -59,6 +59,12 @@ export interface PluginContext {
   crypto: PluginCrypto;
   /** Convenience shorthand for logger.info; optional for backward compatibility with external mocks */
   log?: (message: string, ...args: unknown[]) => void;
+}
+
+/** Context shape supplied by PluginRegistry at runtime */
+export interface RuntimePluginContext extends PluginContext {
+  /** Convenience shorthand for logger.info, always present in registry-created contexts */
+  log: (message: string, ...args: unknown[]) => void;
 }
 
 /** Logger interface available to plugins */
@@ -275,7 +281,7 @@ export class PluginRegistry {
   }
 
   /** Create an isolated context for a plugin */
-  private createContext(pluginName: string, config: Record<string, unknown>): PluginContext {
+  private createContext(pluginName: string, config: Record<string, unknown>): RuntimePluginContext {
     const logger = createPluginLogger(pluginName);
     return {
       pluginName,

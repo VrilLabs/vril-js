@@ -713,7 +713,7 @@ function buildAllSecurityHeaders(config: VrilResolvedConfig): Record<string, str
 export const SPA_PRESET = {
   security: {
     csp: {
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
     },
   },
   build: {

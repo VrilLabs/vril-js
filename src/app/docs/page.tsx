@@ -178,21 +178,21 @@ export default function DocsPage() {
             <p className="text-white/60 leading-relaxed mb-4">
               Vril.js is the security-first React framework by VRIL LABS. It provides post-quantum cryptography,
               zero-trust security membranes, and crypto agility built into every layer of the React framework —
-              with zero external dependencies. Every cryptographic operation uses the Web Crypto API natively
+              with zero external dependencies. Native cryptographic primitives use the Web Crypto API
               available in modern browsers, ensuring maximum performance and minimum attack surface.
             </p>
             <p className="text-white/60 leading-relaxed mb-4">
-              With 26 framework modules, 200+ exports, and full post-quantum support (ML-KEM-768, ML-DSA-65,
-              SLH-DSA), Vril.js is designed for applications where security is not optional — it is foundational.
+              With 22 framework modules, 200+ exports, and post-quantum-ready interfaces (ML-KEM-768, ML-DSA-65,
+              SLH-DSA simulations until native browser PQC is available), Vril.js is designed for applications where security is not optional — it is foundational.
               The framework implements a 5-layer security architecture spanning browser hardening, transport
               security, cryptographic operations, application-level protections, and build-time integrity verification.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 my-6">
               {[
-                ['26', 'Modules'],
+                ['22', 'Modules'],
                 ['200+', 'Exports'],
                 ['0', 'Dependencies'],
-                ['Full', 'PQC'],
+                ['PQC', 'Ready'],
               ].map(([val, label]) => (
                 <div key={label} className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/6">
                   <div className="text-xl font-bold gradient-text font-[family-name:var(--font-display)]">{val}</div>
@@ -268,7 +268,7 @@ export default defineVrilConfig({
 
           {/* Quick Start */}
           <Section id="quickstart" title="Quick Start">
-            <Code>{`import { createVrilApp, VrilVault, PQCHandler, signal } from '@/lib/vril';
+            <Code>{`import { createVrilApp, VrilVault, HybridKEM, signal, computed, effect } from '@/lib/vril';
 
 // 1. Create your secure app
 const app = createVrilApp({
@@ -281,9 +281,9 @@ const vault = new VrilVault(600000);
 const encrypted = await vault.encrypt('passphrase', 'sensitive data');
 const decrypted = await vault.decrypt('passphrase', encrypted);
 
-// 3. Post-quantum key exchange
-const pqc = new PQCHandler();
-const hybridKey = await pqc.generateHybridKeyPair();
+// 3. Hybrid post-quantum key exchange
+const kem = new HybridKEM('X25519MLKEM768');
+const hybridKey = await kem.generateKeyPair();
 
 // 4. Reactive state with ΩSignal
 const count = signal(0);
@@ -322,7 +322,7 @@ console.log(env.isServer, env.isClient, env.isEdge);
 
 // Feature flags with gradual rollout
 const flags = new FeatureFlags();
-flags.register('pqc-v2', { enabled: true, rollout: 25 }); // 25% rollout
+flags.register({ name: 'pqc-v2', enabled: true, rolloutPercentage: 25 }); // 25% rollout
 if (flags.isEnabled('pqc-v2')) { /* use new PQC API */ }`}</Code>
           </Section>
 
@@ -447,7 +447,7 @@ const result = validator.validate(userUrl, { allowedProtocols: ['https:'] });`}<
               ['encryptBlob()', 'method', 'Encrypt binary data (ArrayBuffer)'],
               ['wrapKey()', 'method', 'AES-KW key wrapping for secure key storage'],
               ['rotatePassphrase()', 'method', 'Re-encrypt bundle with new passphrase'],
-              ['assessStrength()', 'method', 'Password strength scoring (0-6 scale)'],
+              ['assessStrength()', 'method', 'Password strength scoring (0-8 scale)'],
               ['SecureMemory', 'class', 'Best-effort zeroization of sensitive data in memory'],
             ]} />
             <Code>{`import { VrilVault } from '@/lib/vril/security/crypto/vault';
@@ -464,7 +464,7 @@ const decrypted = await vault.decrypt('my-passphrase', encrypted);
 
 // Check passphrase strength
 const strength = vault.assessStrength('my-passphrase');
-// strength = { score: 4, max: 6, label: 'moderate' }`}</Code>
+// strength = { score: 4, max: 8, label: 'weak' }`}</Code>
             <SecurityNote>
               Never store passphrases in localStorage or cookies. Use the SecureMemory class to zero out
               passphrase variables after use. KDF iterations below 600,000 do not meet OWASP 2023 recommendations.
@@ -832,7 +832,7 @@ registry.register({ path: '/api/*', security: { csrf: true, rateLimit: 60 } });
 const handler = RouteMiddleware.compose(
   RouteMiddleware.withAuth,
   RouteMiddleware.withCSRF,
-  RouteMiddleware.withRateLimit({ max: 100 }),
+  RouteMiddleware.withRateLimit(100),
 )(async (req) => Response.json({ ok: true }));`}</Code>
           </Section>
 

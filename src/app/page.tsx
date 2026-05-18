@@ -83,8 +83,8 @@ function UsersIcon({ className = "w-5 h-5" }: { className?: string }) {
 
 // ─── Feature Data ───────────────────────────────────────────────
 const FEATURES = [
-  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'ML-KEM-768 (FIPS 203) and ML-DSA-65 (FIPS 204) with hybrid key exchange. Quantum-resistant by default.', accent: 'violet' as const },
-  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 + ML-KEM-768 hybrid KEM. Classical + post-quantum security in every handshake. Belt and suspenders.', accent: 'teal' as const },
+  { icon: <ShieldIcon />, title: 'Post-Quantum-Ready Cryptography', desc: 'ML-KEM-768 and ML-DSA-65 interfaces with documented simulations until native browser PQC lands.', accent: 'violet' as const },
+  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 + simulated ML-KEM-768 hybrid KEM. Classical security today with a post-quantum migration path.', accent: 'teal' as const },
   { icon: <RefreshIcon />, title: 'Crypto Agility', desc: 'NIST 2035 migration paths built in. Algorithm registry, versioning, and automated migration — zero downtime.', accent: 'blue' as const },
   { icon: <LockIcon />, title: '\u03A9Vault Encryption', desc: 'AES-256-GCM + PBKDF2-SHA-512 at 600K iterations. Zero-knowledge client-side encryption with visual KDF progress.', accent: 'amber' as const },
   { icon: <ZapIcon />, title: '\u03A9Signal Reactivity', desc: 'Fine-grained reactive primitives — signal, computed, effect, batch, untrack — with auto dependency tracking. Zero deps.', accent: 'violet' as const },
@@ -133,27 +133,31 @@ const app = createVrilApp({
     id: 'pqc',
     label: 'PQC Key Exchange',
     lang: 'typescript',
-    code: `import { PQCHandler, HybridKeyExchange } from 'vril';
+    code: `import { PQCHandler, HybridKEM, CryptoAgility } from 'vril';
 
 const pqc = new PQCHandler();
 
-// Generate hybrid keypair
-// (X25519 + ML-KEM-768)
-const keyPair = await pqc.generateHybridKeyPair();
+// Generate a simulated ML-KEM-768 keypair
+// until browsers expose native PQC.
+const pqcKeyPair = await pqc.generateKeyPair('ML-KEM-768');
 
-// Negotiate shared secret
-// Classical + Post-Quantum combined
-const { combinedSecret } = await new HybridKeyExchange()
-  .negotiate();
+// Generate hybrid X25519 + ML-KEM-768 keys.
+const kem = new HybridKEM('X25519MLKEM768');
+const hybridKeys = await kem.generateKeyPair();
+
+// Encapsulate a combined shared secret.
+const { sharedSecret } = await kem.encapsulate(
+  hybridKeys.combinedPublicKey
+);
 
 // Crypto agility: migrate algorithms
-// without downtime
+// without downtime.
 const agility = new CryptoAgility();
 agility.getRegistry()
   .migrate('x25519', 'ml-kem-768');
 
 agility.getStatus();
-// \u2192 8 total, 7 active, 0 deprecated`,
+// \u2192 { totalAlgorithms, activeAlgorithms, ... }`,
   },
   {
     id: 'vault',
@@ -188,32 +192,39 @@ const newBundle = await vault.rotatePassphrase(
     id: 'route',
     label: 'Secure Route',
     lang: 'typescript',
-    code: `import { createAPIRoute, withCSRF, withRateLimit } from 'vril';
+    code: `import { createAPIRoute, APISchema } from 'vril';
 
-export const POST = createAPIRoute()
-  .method('POST')
-  .use(withCSRF())
-  .use(withRateLimit({
-    maxRequests: 100,
-    windowMs: 60_000,
-  }))
-  .body(schema => schema.object({
-    email: schema.string().email(),
-    password: schema.string().min(12),
-  }))
-  .handler(async (ctx) => {
-    const { email, password } = ctx.body;
+const validateBody = APISchema.object({
+  email: APISchema.string({ email: true }),
+  password: APISchema.string({ min: 12 }),
+});
+
+export const POST = createAPIRoute({
+  method: 'POST',
+  path: '/api/login',
+  csrfProtection: true,
+  rateLimit: { maxRequests: 100, windowMs: 60_000 },
+  validateBody,
+  async handler(req) {
+    const { email, password } = req.body;
 
     // PBKDF2-SHA-512 at 600K iterations
-    const hash = await PasswordHandler
-      .hash(password);
+    const hash = await PasswordHandler.hash(password);
 
     // HMAC-SHA-256 session token
     const session = await SessionManager
       .create({ userId: user.id });
 
-    return { session, user: user.safe };
-  });`,
+    return {
+      status: 200,
+      data: { session, user: user.safe },
+      headers: {},
+      timestamp: Date.now(),
+      requestId: req.requestId,
+      version: '2.1.0',
+    };
+  },
+});`,
   },
 ];
 
@@ -371,7 +382,7 @@ function highlightLine(line: string): ReactNode {
 function highlightTokens(text: string, startKey: number): ReactNode[] {
   const tokens: ReactNode[] = [];
   const keywords = new Set(['import', 'from', 'const', 'let', 'var', 'async', 'await', 'export', 'function', 'return', 'new', 'if', 'else', 'typeof', 'instanceof']);
-  const types = new Set(['PQCHandler', 'HybridKeyExchange', 'CryptoAgility', 'VrilVault', 'PasswordHandler', 'SessionManager', 'VrilConfig']);
+  const types = new Set(['PQCHandler', 'HybridKEM', 'CryptoAgility', 'VrilVault', 'PasswordHandler', 'SessionManager', 'VrilConfig']);
 
   // Split by word boundaries
   const regex = /(\b\w+\b|\S)/g;
@@ -667,7 +678,7 @@ export default function VrilShowcase() {
                 </span>
                 <span className="w-1 h-1 rounded-full bg-white/10" />
                 <span className="flex items-center gap-2 text-olo-teal/60">
-                  <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" /> Full PQC
+                  <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" /> PQC-ready
                 </span>
               </div>
             </div>
@@ -680,7 +691,7 @@ export default function VrilShowcase() {
             <div className="text-center mb-14">
               <span className="font-mono text-xs tracking-[0.16em] uppercase text-ionic-blue">Developer Experience</span>
               <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-[-0.035em] mt-2 mb-4">Security by Default, Not by Config</h2>
-              <p className="text-white/45 text-lg max-w-2xl mx-auto">Zero-config security. Intuitive APIs. Full TypeScript. Every cryptographic operation uses the Web Crypto API — no polyfills, no dependencies.</p>
+              <p className="text-white/45 text-lg max-w-2xl mx-auto">Zero-config security. Intuitive APIs. Full TypeScript. Native cryptographic primitives use the Web Crypto API — no polyfills, no dependencies.</p>
             </div>
 
             <div className="max-w-4xl mx-auto">
@@ -941,7 +952,7 @@ export default function VrilShowcase() {
             </div>
           </div>
           <div className="mt-10 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="font-mono text-[10px] text-white/20 tracking-wider">© 2025-2026 VRIL LABS · ALL RIGHTS RESERVED · FIPS 203/204 COMPLIANT</p>
+            <p className="font-mono text-[10px] text-white/20 tracking-wider">© 2025-2026 VRIL LABS · ALL RIGHTS RESERVED · FIPS 203/204 READY</p>
             <div className="flex items-center gap-4">
               <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/4 border border-white/8 rounded-full font-mono text-[10px] text-white/25">
                 <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" />
@@ -1020,7 +1031,7 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
   const [result, setResult] = useState('');
   const [resultLabel, setResultLabel] = useState('');
   const [kdfProgress, setKdfProgress] = useState(0);
-  const [strength, setStrength] = useState<StrengthAssessment>({ score: 0, max: 10, label: 'very-weak', estimatedCrackTimeSeconds: 0, feedback: [] });
+  const [strength, setStrength] = useState<StrengthAssessment>({ score: 0, max: 8, label: 'very-weak', estimatedCrackTimeSeconds: 0, feedback: [] });
   const [activeBundle, setActiveBundle] = useState('');
   const [vault] = useState(() => new VrilVault());
 
