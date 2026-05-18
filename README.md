@@ -32,7 +32,7 @@ Vril.js is a production-grade React framework where security is the architecture
 
 The web is facing a cryptographic reckoning. NIST finalized post-quantum standards in 2024 (FIPS 203, 204, 205). The "harvest now, decrypt later" threat is real. Yet most frameworks still treat security as a plugin you install after the fact.
 
-Vril.js inverts this. Every module — from routing to reactivity, from SSR to state management — is built on a foundation of cryptographic integrity and zero-trust principles. And because it uses only the Web Crypto API, there are zero supply chain attack vectors from npm dependencies.
+Vril.js inverts this. Every module — from routing to reactivity, from SSR to state management — is built on a foundation of cryptographic integrity and zero-trust principles. And because it ships its security primitives directly with the framework and uses Web Crypto where appropriate, there are zero runtime npm dependency attack vectors.
 
 **The result:** Applications that are secure by default, quantum-resistant out of the box, and fast enough to run at the edge.
 
@@ -736,7 +736,7 @@ Vril.js requires the **Web Crypto API** for all cryptographic operations. This i
 | Safari | 15.4+ |
 | Edge | 96+ |
 
-> **Note:** PQC algorithms (ML-KEM, ML-DSA, SLH-DSA) are not yet natively supported in any browser. Vril.js provides these with correct interfaces and key sizes using deterministic simulation with Web Crypto API primitives. When browsers add native PQC support, Vril.js will automatically use the native implementations. The hybrid mode (`X25519+ML-KEM-768`) uses real X25519 for the classical component today.
+> **Note:** PQC algorithms (ML-KEM, ML-DSA, SLH-DSA) are not yet exposed by browser Web Crypto APIs. Vril.js ships bundled native Active Surface PQC implementations for the README-listed FIPS 203/204/205 parameter sets and never simulates PQC operations. Formal FIPS validation for regulated deployments still requires CAVP/ACVP and CMVP/FIPS 140-3 evidence for the exact implementation and module boundary. The hybrid mode (`X25519+ML-KEM-768`) combines real classical key agreement with native ML-KEM.
 
 ---
 

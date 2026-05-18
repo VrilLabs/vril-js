@@ -1,4 +1,4 @@
-/* eslint-disable -- Vendored @noble/post-quantum bundle with preserved notices. */
+/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-unused-expressions -- Vendored @noble/post-quantum bundle with preserved notices. */
 // node_modules/@noble/hashes/_u64.js
 var U32_MASK64 = /* @__PURE__ */ BigInt(2 ** 32 - 1);
 var _32n = /* @__PURE__ */ BigInt(32);

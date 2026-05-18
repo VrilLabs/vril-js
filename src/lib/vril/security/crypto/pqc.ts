@@ -70,7 +70,7 @@ export interface AlgorithmInfo {
   publicKeySize: number;
   /** Private key size in bytes */
   privateKeySize: number;
-  /** Ciphertext size for KEM algorithms; for legacy callers, signature algorithms mirror signatureSize here */
+  /** Ciphertext size for KEM algorithms; 0 for signature-only algorithms */
   ciphertextSize: number;
   /** Signature size in bytes, for signature algorithms */
   signatureSize?: number;
@@ -179,7 +179,7 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 3,
     publicKeySize: 1952,
     privateKeySize: 4032,
-    ciphertextSize: 3309,
+    ciphertextSize: 0,
     signatureSize: 3309,
     type: 'signature',
     nativeSupport: false,
@@ -192,7 +192,7 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 5,
     publicKeySize: 2592,
     privateKeySize: 4896,
-    ciphertextSize: 4627,
+    ciphertextSize: 0,
     signatureSize: 4627,
     type: 'signature',
     nativeSupport: false,
@@ -205,7 +205,7 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 1,
     publicKeySize: 32,
     privateKeySize: 64,
-    ciphertextSize: 7856,
+    ciphertextSize: 0,
     signatureSize: 7856,
     type: 'signature',
     nativeSupport: false,
@@ -218,7 +218,7 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 5,
     publicKeySize: 64,
     privateKeySize: 128,
-    ciphertextSize: 49856,
+    ciphertextSize: 0,
     signatureSize: 49856,
     type: 'signature',
     nativeSupport: false,
@@ -243,7 +243,7 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 1,
     publicKeySize: 64,
     privateKeySize: 32,
-    ciphertextSize: 64,
+    ciphertextSize: 0,
     signatureSize: 64,
     type: 'signature',
     nativeSupport: true,
@@ -341,10 +341,10 @@ export class PQCHandler {
    * Check whether an algorithm has both admissible implementation evidence and
    * explicit CAVP + CMVP certificate identifiers for regulated FIPS claims.
    */
-  isFipsValidated(algorithm: string): boolean {
+  isFipsValidated(algorithm: PQCAlgorithm): boolean {
     const info = ALGORITHM_INFO[algorithm];
     if (!info || !info.nistStandard.startsWith('FIPS')) return false;
-    const evidence = this.getValidationEvidence(algorithm as PQCAlgorithm);
+    const evidence = this.getValidationEvidence(algorithm);
     return !!evidence && isNonEmptyString(evidence.cavpCertificate) && isNonEmptyString(evidence.cmvpCertificate);
   }
 
