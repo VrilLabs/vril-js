@@ -143,10 +143,10 @@ export interface VrilAuthConfig {
 
 // ─── Vril Framework Integration ──────────────────────────────
 export interface VrilFrameworkConfig {
-  /** Enable React Strict Mode */
-  reactStrictMode?: boolean;
   /** @deprecated Use reactStrictMode for React runtime strictness. */
   strictMode?: boolean;
+  /** Enable React Strict Mode */
+  reactStrictMode?: boolean;
   /** Don't expose X-Powered-By header */
   poweredByHeader?: boolean;
   /** Custom environment variables available at build time */

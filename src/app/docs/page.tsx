@@ -190,7 +190,7 @@ export default function DocsPage() {
               {[
                 ['22', 'Modules'],
                 ['200+', 'Exports'],
-                ['0', 'Next.js'],
+                ['0', 'Next.js deps'],
                 ['PQC', 'Ready'],
               ].map(([val, label]) => (
                 <div key={label} className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/6">

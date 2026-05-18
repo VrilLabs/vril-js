@@ -3,7 +3,7 @@ import { build as esbuild } from 'esbuild';
 import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { createReadStream, statSync } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -16,9 +16,9 @@ const apiBundle = resolve(root, '.vril/api.mjs');
 const aliasPlugin = {
   name: 'vril-alias',
   setup(build) {
-    build.onResolve({ filter: /^@\// }, args => {
+    build.onResolve({ filter: /^@\// }, async args => {
       const basePath = resolve(root, 'src', args.path.slice(2));
-      return { path: resolveModulePath(basePath) };
+      return { path: await resolveModulePath(basePath) };
     });
   },
 };
@@ -30,7 +30,7 @@ const ignoreCssPlugin = {
   },
 };
 
-function resolveModulePath(basePath) {
+async function resolveModulePath(basePath) {
   const candidates = [
     basePath,
     `${basePath}.ts`,
@@ -42,12 +42,18 @@ function resolveModulePath(basePath) {
     join(basePath, 'index.js'),
     join(basePath, 'index.jsx'),
   ];
-  const match = candidates.find(isFile);
-  return match ?? basePath;
+  for (const candidate of candidates) {
+    if (await isFile(candidate)) return candidate;
+  }
+  return basePath;
 }
 
-function isFile(path) {
-  return statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
+async function isFile(path) {
+  try {
+    return (await stat(path)).isFile();
+  } catch {
+    return false;
+  }
 }
 
 const securityHeaders = {
