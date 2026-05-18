@@ -11,7 +11,7 @@
  * Zero external dependencies — Web Crypto API only.
  */
 
-import { PQCHandler, type PQCKeyPair, type PQCAlgorithm } from './pqc';
+import { PQCHandler, type PQCKeyPair, type PQCAlgorithm, type PQCProvider } from './pqc';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ export interface HybridKEMResult {
   classicalAlgorithm: string;
   /** PQC algorithm used */
   pqcAlgorithm: string;
-  /** Whether the combined secret was derived from real or simulated PQC */
+  /** Whether the PQC component used native authenticated PQC support */
   nativePQC: boolean;
   /** Timestamp */
   createdAt: number;
@@ -43,7 +43,7 @@ export interface HybridSignatureResult {
   classicalAlgorithm: string;
   /** PQC algorithm used */
   pqcAlgorithm: string;
-  /** Whether PQC signature was native or simulated */
+  /** Whether the PQC signature used native authenticated PQC support */
   nativePQC: boolean;
   /** Timestamp */
   signedAt: number;
@@ -142,9 +142,10 @@ export class HybridKEM {
 
   constructor(
     mode: 'X25519MLKEM768' | 'ECDSAP256MLDSA65' = 'X25519MLKEM768',
-    contextInfo: string = 'vril-hybrid-kem-v2'
+    contextInfo: string = 'vril-hybrid-kem-v2',
+    provider?: PQCProvider
   ) {
-    this.pqc = new PQCHandler();
+    this.pqc = new PQCHandler(provider ?? null);
     this.contextInfo = contextInfo;
 
     if (mode === 'X25519MLKEM768') {
@@ -298,8 +299,8 @@ export class HybridSigner {
   private classicalAlgorithm: string;
   private pqcAlgorithm: string;
 
-  constructor(mode: 'X25519MLKEM768' | 'ECDSAP256MLDSA65' = 'ECDSAP256MLDSA65') {
-    this.pqc = new PQCHandler();
+  constructor(mode: 'X25519MLKEM768' | 'ECDSAP256MLDSA65' = 'ECDSAP256MLDSA65', provider?: PQCProvider) {
+    this.pqc = new PQCHandler(provider ?? null);
 
     if (mode === 'X25519MLKEM768') {
       this.classicalAlgorithm = 'X25519';

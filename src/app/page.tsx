@@ -83,8 +83,8 @@ function UsersIcon({ className = "w-5 h-5" }: { className?: string }) {
 
 // ─── Feature Data ───────────────────────────────────────────────
 const FEATURES = [
-  { icon: <ShieldIcon />, title: 'Post-Quantum-Ready Cryptography', desc: 'ML-KEM-768 and ML-DSA-65 interfaces with documented simulations until native browser PQC lands.', accent: 'violet' as const },
-  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 + simulated ML-KEM-768 hybrid KEM. Classical security today with a post-quantum migration path.', accent: 'teal' as const },
+  { icon: <ShieldIcon />, title: 'Post-Quantum-Ready Cryptography', desc: 'ML-KEM-768 and ML-DSA-65 metadata with fail-closed execution until authentic native or validated module support is present.', accent: 'violet' as const },
+  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 classical KEM today, with ML-KEM hybrid mode gated on authentic FIPS 203-capable implementations.', accent: 'teal' as const },
   { icon: <RefreshIcon />, title: 'Crypto Agility', desc: 'NIST 2035 migration paths built in. Algorithm registry, versioning, and automated migration — zero downtime.', accent: 'blue' as const },
   { icon: <LockIcon />, title: '\u03A9Vault Encryption', desc: 'AES-256-GCM + PBKDF2-SHA-512 at 600K iterations. Zero-knowledge client-side encryption with visual KDF progress.', accent: 'amber' as const },
   { icon: <ZapIcon />, title: '\u03A9Signal Reactivity', desc: 'Fine-grained reactive primitives — signal, computed, effect, batch, untrack — with auto dependency tracking. Zero deps.', accent: 'violet' as const },
@@ -134,18 +134,24 @@ const app = createVrilApp({
     label: 'PQC Key Exchange',
     lang: 'typescript',
     code: `import { PQCHandler, HybridKEM, CryptoAgility } from 'vril';
+import { fipsProvider } from './validated-pqc-provider';
 
-const pqc = new PQCHandler();
+const pqc = new PQCHandler(fipsProvider);
 
-// Generate a simulated ML-KEM-768 keypair
-// until browsers expose native PQC.
-const pqcKeyPair = await pqc.generateKeyPair('ML-KEM-768');
+// Fail closed unless authentic ML-KEM is present.
+if (!pqc.isSupported('ML-KEM-768')) {
+  throw new Error(
+    'Attach a CAVP/CMVP-validated FIPS 203 module'
+  );
+}
 
-// Generate hybrid X25519 + ML-KEM-768 keys.
-const kem = new HybridKEM('X25519MLKEM768');
+// Hybrid mode only runs with real PQC support.
+const kem = new HybridKEM(
+  'X25519MLKEM768',
+  'vril-hybrid-kem-v2',
+  fipsProvider
+);
 const hybridKeys = await kem.generateKeyPair();
-
-// Encapsulate a combined shared secret.
 const { sharedSecret } = await kem.encapsulate(
   hybridKeys.combinedPublicKey
 );

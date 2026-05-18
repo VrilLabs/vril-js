@@ -76,6 +76,8 @@ export {
   type AlgorithmInfo,
   type BenchmarkResult,
   type PQCAlgorithm,
+  type PQCProvider,
+  type PQCValidationEvidence,
 } from './security/crypto/pqc';
 
 export {

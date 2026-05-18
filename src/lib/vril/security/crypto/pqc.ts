@@ -1,14 +1,15 @@
 /**
  * Vril.js v2.0.0 — Post-Quantum Cryptography Handler
  *
- * Comprehensive PQC implementation supporting ML-KEM-768, ML-KEM-1024,
- * ML-DSA-65, ML-DSA-87, SLH-DSA-SHA2-128s, SLH-DSA-SHA2-256f.
+ * Post-quantum cryptography metadata and native Web Crypto integration points
+ * for ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87,
+ * SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f.
  *
- * NOTE: PQC algorithms not yet natively supported in browsers are implemented
- * as SIMULATIONS with correct interfaces. Where Web Crypto API provides
- * real operations (X25519, ECDH, ECDSA-P256), those are used natively.
- * All simulated operations are clearly documented and are not CAVP/CMVP
- * validated FIPS 203/204/205 implementations.
+ * NOTE: Vril.js does not simulate PQC operations. ML-KEM/ML-DSA/SLH-DSA
+ * operations fail closed unless the runtime provides authentic native support
+ * or the caller wires a validated external cryptographic module. FIPS
+ * validation claims require CAVP/CMVP evidence for the exact implementation
+ * and deployment boundary.
  *
  * Zero external dependencies — Web Crypto API only.
  */
@@ -23,7 +24,7 @@ export interface PQCKeyPair {
   privateKey: Uint8Array;
   /** Algorithm identifier */
   algorithm: string;
-  /** Whether key generation used native browser crypto or simulation */
+  /** Whether key generation used native browser crypto */
   native: boolean;
   /** Timestamp of generation */
   createdAt: number;
@@ -37,7 +38,7 @@ export interface KEMResult {
   sharedSecret: Uint8Array;
   /** Algorithm used */
   algorithm: string;
-  /** Whether operation was native or simulated */
+  /** Whether operation used native browser crypto */
   native: boolean;
 }
 
@@ -47,7 +48,7 @@ export interface SignatureResult {
   signature: Uint8Array;
   /** Algorithm used */
   algorithm: string;
-  /** Whether operation was native or simulated */
+  /** Whether operation used native browser crypto */
   native: boolean;
   /** Timestamp of signing */
   signedAt: number;
@@ -89,8 +90,42 @@ export interface BenchmarkResult {
   inverseMs: number;
   /** Number of iterations averaged over */
   iterations: number;
-  /** Whether operations were native or simulated */
+  /** Whether operations used native browser crypto */
   native: boolean;
+}
+
+/** Evidence that a provider-backed implementation has FIPS validation */
+export interface PQCValidationEvidence {
+  /** Algorithm identifier covered by the evidence */
+  algorithm: PQCAlgorithm;
+  /** Applicable FIPS standard */
+  standard: 'FIPS 203' | 'FIPS 204' | 'FIPS 205' | 'RFC 7748' | 'FIPS 186-5';
+  /** CAVP/ACVP algorithm certificate identifier, when applicable */
+  cavpCertificate?: string;
+  /** CMVP/FIPS 140-3 module certificate identifier, when packaged as a module */
+  cmvpCertificate?: string;
+  /** Validated module or implementation name */
+  moduleName: string;
+  /** Provider/vendor name */
+  providerName: string;
+}
+
+/** External authentic PQC provider contract */
+export interface PQCProvider {
+  /** Provider name for diagnostics and validation evidence */
+  readonly name: string;
+  /** Return validation evidence for an algorithm, or null if unsupported/unvalidated */
+  getValidationEvidence: (algorithm: PQCAlgorithm) => PQCValidationEvidence | null;
+  /** Generate an authentic key pair */
+  generateKeyPair?: (algorithm: PQCAlgorithm) => Promise<PQCKeyPair>;
+  /** Perform authentic KEM encapsulation */
+  encapsulate?: (publicKey: Uint8Array, algorithm: PQCAlgorithm) => Promise<KEMResult>;
+  /** Perform authentic KEM decapsulation */
+  decapsulate?: (ciphertext: Uint8Array, privateKey: Uint8Array, algorithm: PQCAlgorithm) => Promise<KEMResult>;
+  /** Perform authentic signature generation */
+  sign?: (message: Uint8Array, privateKey: Uint8Array, algorithm: PQCAlgorithm) => Promise<SignatureResult>;
+  /** Perform authentic signature verification */
+  verify?: (message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array, algorithm: PQCAlgorithm) => Promise<boolean>;
 }
 
 /** Supported PQC algorithm identifiers */
@@ -207,35 +242,16 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
 
 // ─── Helper Utilities ─────────────────────────────────────────────────────
 
-function concatArrays(...arrays: Uint8Array[]): Uint8Array {
-  const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const arr of arrays) {
-    result.set(arr, offset);
-    offset += arr.length;
-  }
-  return result;
+function isPQCAlgorithm(algorithm: string): boolean {
+  return algorithm.startsWith('ML-') || algorithm.startsWith('SLH-');
 }
 
-async function sha256(data: Uint8Array): Promise<Uint8Array> {
-  const hash = await crypto.subtle.digest('SHA-256', data as BufferSource);
-  return new Uint8Array(hash);
-}
-
-async function deriveDeterministicSeed(
-  seed: Uint8Array,
-  context: string,
-  length: number
-): Promise<Uint8Array> {
-  const ctxBytes = new TextEncoder().encode(context);
-  const combined = concatArrays(seed, ctxBytes);
-  const hash = await sha256(combined);
-  const result = new Uint8Array(length);
-  for (let i = 0; i < length; i++) {
-    result[i] = hash[i % hash.length] ^ (i > 32 ? hash[(i - 32) % hash.length] : 0);
-  }
-  return result;
+function unsupportedPQCError(algorithm: string): Error {
+  return new Error(
+    `[VRIL PQC] ${algorithm} requires an authentic FIPS 203/204/205 implementation. ` +
+    'Browser Web Crypto does not currently expose this algorithm in this runtime, ' +
+    'and Vril.js does not provide simulated PQC.'
+  );
 }
 
 // ─── PQCHandler Class ─────────────────────────────────────────────────────
@@ -243,30 +259,60 @@ async function deriveDeterministicSeed(
 /**
  * Post-Quantum Cryptography handler for Vril.js v2.0.
  *
- * Provides unified interface for PQC key generation, KEM operations,
- * and digital signatures. Algorithms not natively supported in browsers
- * are simulated with correct interfaces using deterministic key derivation.
+ * Provides a unified interface for native cryptographic operations and
+ * post-quantum metadata. PQC operations that are not natively available fail
+ * closed instead of falling back to simulations.
  */
 export class PQCHandler {
   private readonly version = '2.1.0';
+
+  constructor(private provider: PQCProvider | null = null) {}
 
   /** Get module version */
   getVersion(): string {
     return this.version;
   }
 
-  /**
-   * Check if a specific algorithm is supported by this handler.
-   */
-  isSupported(algorithm: string): boolean {
-    return algorithm in ALGORITHM_INFO;
+  /** Register or replace the external authentic PQC provider */
+  registerProvider(provider: PQCProvider): void {
+    this.provider = provider;
+  }
+
+  /** Remove the external PQC provider */
+  clearProvider(): void {
+    this.provider = null;
+  }
+
+  /** Get validation evidence for an algorithm, if an authentic provider supplies it */
+  getValidationEvidence(algorithm: PQCAlgorithm): PQCValidationEvidence | null {
+    const info = this.getAlgorithmInfo(algorithm);
+    if (info.nativeSupport) {
+      return {
+        algorithm,
+        standard: info.nistStandard as PQCValidationEvidence['standard'],
+        moduleName: 'Web Crypto API',
+        providerName: 'runtime',
+      };
+    }
+    return this.provider?.getValidationEvidence(algorithm) ?? null;
   }
 
   /**
-   * Get list of all supported algorithm identifiers.
+   * Check if a specific algorithm is operationally supported by this handler.
+   * Metadata-only PQC entries return false until native support is available.
+   */
+  isSupported(algorithm: string): boolean {
+    const info = ALGORITHM_INFO[algorithm];
+    if (!info) return false;
+    if (info.nativeSupport) return true;
+    return this.provider?.getValidationEvidence(algorithm as PQCAlgorithm)?.standard === info.nistStandard;
+  }
+
+  /**
+   * Get list of operationally supported algorithm identifiers.
    */
   getSupportedAlgorithms(): string[] {
-    return Object.keys(ALGORITHM_INFO);
+    return Object.keys(ALGORITHM_INFO).filter((algorithm) => this.isSupported(algorithm));
   }
 
   /**
@@ -309,11 +355,10 @@ export class PQCHandler {
    * Generate a PQC key pair.
    *
    * For X25519 and ECDSA-P256, uses real Web Crypto API.
-   * For ML-KEM and ML-DSA algorithms, uses SIMULATION with
-   * deterministic key derivation from a random seed.
+   * For ML-KEM, ML-DSA, and SLH-DSA algorithms, throws unless authentic
+   * native support is available; simulations are never used.
    */
   async generateKeyPair(algorithm: PQCAlgorithm): Promise<PQCKeyPair> {
-    const info = this.getAlgorithmInfo(algorithm);
     const now = Date.now();
 
     // Native algorithms — use real Web Crypto
@@ -324,8 +369,12 @@ export class PQCHandler {
       return this.generateECDSAP256KeyPair(now);
     }
 
-    // PQC algorithms — simulation
-    return this.generateSimulatedKeyPair(algorithm, info, now);
+    if (isPQCAlgorithm(algorithm)) {
+      const provider = this.requireProvider(algorithm, 'generateKeyPair');
+      return provider.generateKeyPair!(algorithm);
+    }
+
+    throw new Error(`[VRIL PQC] Unsupported key generation algorithm: ${algorithm}`);
   }
 
   /**
@@ -333,32 +382,20 @@ export class PQCHandler {
    * for the recipient's public key.
    *
    * For X25519, uses real ECDH key agreement.
-   * For ML-KEM, uses SIMULATION with deterministic derivation.
+   * For ML-KEM algorithms, throws unless authentic native support is available;
+   * simulations are never used.
    */
   async encapsulate(publicKey: Uint8Array, algorithm: PQCAlgorithm = 'ML-KEM-768'): Promise<KEMResult> {
-    const info = this.getAlgorithmInfo(algorithm);
-
     if (algorithm === 'X25519') {
       return this.encapsulateX25519(publicKey);
     }
 
-    // ML-KEM simulation
-    const ephemeralSeed = crypto.getRandomValues(new Uint8Array(32));
-    const ciphertext = await deriveDeterministicSeed(
-      ephemeralSeed,
-      `vril-pqc-kem-encap-${algorithm}`,
-      info.ciphertextSize
-    );
+    if (isPQCAlgorithm(algorithm)) {
+      const provider = this.requireProvider(algorithm, 'encapsulate');
+      return provider.encapsulate!(publicKey, algorithm);
+    }
 
-    const secretInput = concatArrays(publicKey, ephemeralSeed);
-    const sharedSecret = await sha256(secretInput);
-
-    return {
-      ciphertext,
-      sharedSecret,
-      algorithm,
-      native: false,
-    };
+    throw new Error(`[VRIL PQC] Unsupported KEM algorithm: ${algorithm}`);
   }
 
   /**
@@ -366,7 +403,8 @@ export class PQCHandler {
    * using the private key.
    *
    * For X25519, uses real ECDH.
-   * For ML-KEM, uses SIMULATION.
+   * For ML-KEM algorithms, throws unless authentic native support is available;
+   * simulations are never used.
    */
   async decapsulate(
     ciphertext: Uint8Array,
@@ -377,60 +415,44 @@ export class PQCHandler {
       return this.decapsulateX25519(ciphertext, privateKey);
     }
 
-    // ML-KEM simulation: re-derive shared secret from private key + ciphertext
-    const secretInput = concatArrays(privateKey, ciphertext.slice(0, 32));
-    const sharedSecret = await sha256(secretInput);
+    if (isPQCAlgorithm(algorithm)) {
+      const provider = this.requireProvider(algorithm, 'decapsulate');
+      return provider.decapsulate!(ciphertext, privateKey, algorithm);
+    }
 
-    return {
-      ciphertext,
-      sharedSecret,
-      algorithm,
-      native: false,
-    };
+    throw new Error(`[VRIL PQC] Unsupported KEM algorithm: ${algorithm}`);
   }
 
   /**
    * Sign a message with a private key.
    *
    * For ECDSA-P256, uses real Web Crypto signatures.
-   * For ML-DSA / SLH-DSA, uses SIMULATION.
+   * For ML-DSA / SLH-DSA, throws unless authentic native support is available;
+   * simulations are never used.
    */
   async sign(
     message: Uint8Array,
     privateKey: Uint8Array,
     algorithm: PQCAlgorithm = 'ML-DSA-65'
   ): Promise<SignatureResult> {
-    const info = this.getAlgorithmInfo(algorithm);
-
     if (algorithm === 'ECDSA-P256') {
       return this.signECDSAP256(message, privateKey);
     }
 
-    // ML-DSA / SLH-DSA simulation
-    const messageHash = await sha256(message);
-    const signInput = concatArrays(privateKey, messageHash);
-    const signatureSeed = await sha256(signInput);
+    if (isPQCAlgorithm(algorithm)) {
+      const provider = this.requireProvider(algorithm, 'sign');
+      return provider.sign!(message, privateKey, algorithm);
+    }
 
-    // Generate deterministic signature of correct size
-    const signature = await deriveDeterministicSeed(
-      signatureSeed,
-      `vril-pqc-sig-${algorithm}`,
-      info.ciphertextSize
-    );
-
-    return {
-      signature,
-      algorithm,
-      native: false,
-      signedAt: Date.now(),
-    };
+    throw new Error(`[VRIL PQC] Unsupported signature algorithm: ${algorithm}`);
   }
 
   /**
    * Verify a signature against a message and public key.
    *
    * For ECDSA-P256, uses real Web Crypto verification.
-   * For ML-DSA / SLH-DSA, uses SIMULATION.
+   * For ML-DSA / SLH-DSA, throws unless authentic native support is available;
+   * simulations are never used.
    */
   async verify(
     message: Uint8Array,
@@ -442,26 +464,12 @@ export class PQCHandler {
       return this.verifyECDSAP256(message, signature, publicKey);
     }
 
-    // ML-DSA / SLH-DSA simulation verification
-    // In simulation mode, we re-derive the expected signature and compare
-    const messageHash = await sha256(message);
+    if (isPQCAlgorithm(algorithm)) {
+      const provider = this.requireProvider(algorithm, 'verify');
+      return provider.verify!(message, signature, publicKey, algorithm);
+    }
 
-    // Derive the private key's signing seed from public key (simulation artifact)
-    const privateSeedInput = concatArrays(publicKey, new TextEncoder().encode('vril-sim-priv'));
-    const privateSeed = await sha256(privateSeedInput);
-
-    const signInput = concatArrays(privateSeed, messageHash);
-    const signatureSeed = await sha256(signInput);
-
-    const info = this.getAlgorithmInfo(algorithm);
-    const expectedSignature = await deriveDeterministicSeed(
-      signatureSeed,
-      `vril-pqc-sig-${algorithm}`,
-      info.ciphertextSize
-    );
-
-    // Constant-time comparison
-    return this.constantTimeEqual(signature, expectedSignature);
+    throw new Error(`[VRIL PQC] Unsupported signature algorithm: ${algorithm}`);
   }
 
   /**
@@ -563,36 +571,6 @@ export class PQCHandler {
     const publicKey = new Uint8Array(await crypto.subtle.exportKey('raw', keyPair.publicKey));
     const privateKey = new Uint8Array(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey));
     return { publicKey, privateKey, algorithm: 'ECDSA-P256', native: true, createdAt };
-  }
-
-  // ─── Private: Simulated PQC Key Generation ──────────────────────────
-
-  private async generateSimulatedKeyPair(
-    algorithm: string,
-    info: AlgorithmInfo,
-    createdAt: number
-  ): Promise<PQCKeyPair> {
-    const seed = crypto.getRandomValues(new Uint8Array(64));
-
-    const publicKey = await deriveDeterministicSeed(
-      seed,
-      `vril-pqc-pub-${algorithm}`,
-      info.publicKeySize
-    );
-
-    const privateKey = await deriveDeterministicSeed(
-      seed,
-      `vril-pqc-priv-${algorithm}`,
-      info.privateKeySize
-    );
-
-    return {
-      publicKey,
-      privateKey,
-      algorithm,
-      native: false,
-      createdAt,
-    };
   }
 
   // ─── Private: X25519 Encapsulation ──────────────────────────────────
@@ -794,16 +772,18 @@ export class PQCHandler {
     }
   }
 
-  // ─── Private: Constant-Time Comparison ──────────────────────────────
-
-  private constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
-    if (a.length !== b.length) return false;
-    let result = 0;
-    for (let i = 0; i < a.length; i++) {
-      result |= a[i] ^ b[i];
+  private requireProvider<K extends keyof PQCProvider>(
+    algorithm: PQCAlgorithm,
+    operation: K
+  ): PQCProvider & Required<Pick<PQCProvider, K>> {
+    const info = this.getAlgorithmInfo(algorithm);
+    const evidence = this.provider?.getValidationEvidence(algorithm);
+    if (!this.provider || evidence?.standard !== info.nistStandard || typeof this.provider[operation] !== 'function') {
+      throw unsupportedPQCError(algorithm);
     }
-    return result === 0;
+    return this.provider as PQCProvider & Required<Pick<PQCProvider, K>>;
   }
+
 }
 
 // ─── Convenience Singleton ────────────────────────────────────────────────

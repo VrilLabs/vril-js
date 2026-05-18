@@ -183,7 +183,7 @@ export default function DocsPage() {
             </p>
             <p className="text-white/60 leading-relaxed mb-4">
               With 22 framework modules, 200+ exports, and post-quantum-ready interfaces (ML-KEM-768, ML-DSA-65,
-              SLH-DSA simulations until native browser PQC is available), Vril.js is designed for applications where security is not optional — it is foundational.
+              SLH-DSA metadata that fails closed until authentic native or validated module support is available), Vril.js is designed for applications where security is not optional — it is foundational.
               The framework implements a 5-layer security architecture spanning browser hardening, transport
               security, cryptographic operations, application-level protections, and build-time integrity verification.
             </p>
@@ -268,7 +268,8 @@ export default defineVrilConfig({
 
           {/* Quick Start */}
           <Section id="quickstart" title="Quick Start">
-            <Code>{`import { createVrilApp, VrilVault, HybridKEM, signal, computed, effect } from '@/lib/vril';
+            <Code>{`import { createVrilApp, VrilVault, PQCHandler, signal, computed, effect } from '@/lib/vril';
+import { fipsProvider } from './validated-pqc-provider';
 
 // 1. Create your secure app
 const app = createVrilApp({
@@ -281,9 +282,11 @@ const vault = new VrilVault(600000);
 const encrypted = await vault.encrypt('passphrase', 'sensitive data');
 const decrypted = await vault.decrypt('passphrase', encrypted);
 
-// 3. Hybrid post-quantum key exchange
-const kem = new HybridKEM('X25519MLKEM768');
-const hybridKey = await kem.generateKeyPair();
+// 3. Gate PQC on authentic implementation availability
+const pqc = new PQCHandler(fipsProvider);
+if (!pqc.isSupported('ML-KEM-768')) {
+  throw new Error('Attach a validated FIPS 203 module before enabling ML-KEM');
+}
 
 // 4. Reactive state with ΩSignal
 const count = signal(0);
@@ -475,32 +478,32 @@ const strength = vault.assessStrength('my-passphrase');
             <p className="text-white/60 leading-relaxed mb-4">
               Post-quantum cryptography handler exposing ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87,
               SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f interfaces. The ML-KEM and ML-DSA metadata references
-              FIPS 203/204, but current browser-side PQC operations are documented simulations and are not
-              CAVP/CMVP validated FIPS implementations.
+              FIPS 203/204, but browser-side PQC operations fail closed unless authentic native support or a
+              validated external cryptographic module is wired in. Vril.js does not simulate PQC.
             </p>
             <ExportTable rows={[
-              ['PQCHandler', 'class', 'Post-quantum key encapsulation and digital signatures'],
-              ['generateKeyPair()', 'method', 'Generate PQC key pairs for KEM or signatures'],
-              ['encapsulate()', 'method', 'KEM encapsulation (generate shared secret + ciphertext)'],
-              ['decapsulate()', 'method', 'KEM decapsulation (recover shared secret)'],
-              ['sign()', 'method', 'Create digital signature (ECDSA-P256 real, ML-DSA simulated)'],
+              ['PQCHandler', 'class', 'Post-quantum metadata and validated provider integration gate'],
+              ['generateKeyPair()', 'method', 'Generate native key pairs; PQC throws until authentic support exists'],
+              ['encapsulate()', 'method', 'Native KEM encapsulation; PQC throws until authentic support exists'],
+              ['decapsulate()', 'method', 'Native KEM decapsulation; PQC throws until authentic support exists'],
+              ['sign()', 'method', 'Create native digital signatures; ML-DSA throws until authentic support exists'],
               ['verify()', 'method', 'Verify digital signature'],
               ['benchmark()', 'method', 'Performance benchmark for key gen/encap/decap cycles'],
               ['isSupported()', 'method', 'Check if a PQC algorithm is available'],
             ]} />
             <Code>{`import { PQCHandler } from '@/lib/vril/security/crypto/pqc';
+import { fipsProvider } from './validated-pqc-provider';
 
-const pqc = new PQCHandler();
+const pqc = new PQCHandler(fipsProvider);
 
-// Check algorithm support
-pqc.isSupported('ML-KEM-768'); // true
-pqc.isSupported('ML-DSA-65');  // true
+// Check operational support. Metadata exists, but operations
+// fail closed until authentic native/validated support exists.
+pqc.isSupported('ML-KEM-768'); // true only with FIPS 203 evidence
+pqc.isSupported('ML-DSA-65');  // true only with FIPS 204 evidence
 
-// Generate simulated ML-KEM-768 key material
-const keyPair = await pqc.generateKeyPair('ML-KEM-768');
-
-// Key encapsulation
-const result = await pqc.encapsulate(keyPair.publicKey, 'ML-KEM-768');
+// Inspect validation evidence before enabling production PQC
+const evidence = pqc.getValidationEvidence('ML-KEM-768');
+// evidence.cavpCertificate / evidence.cmvpCertificate
 
 // Get algorithm info
 const info = pqc.getAlgorithmInfo('ML-KEM-768');
@@ -509,8 +512,8 @@ const info = pqc.getAlgorithmInfo('ML-KEM-768');
             <SecurityNote>
               Truthful FIPS 203/204 compliance or validation claims require a conforming ML-KEM/ML-DSA
               implementation tested through the appropriate NIST validation programs (CAVP, and CMVP/FIPS 140-3
-              when packaged as a cryptographic module). Vril.js does not claim FIPS validation for simulated
-              browser PQC; production deployments that require FIPS must use a validated cryptographic module.
+              when packaged as a cryptographic module). Vril.js does not claim FIPS validation for browser PQC;
+              production deployments that require FIPS must use a validated cryptographic module.
             </SecurityNote>
           </Section>
 
