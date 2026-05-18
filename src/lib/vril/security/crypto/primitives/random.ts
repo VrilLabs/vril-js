@@ -23,7 +23,8 @@ const GET_RANDOM_VALUES_MAX_BYTES = 65_536;
 export function fillRandomBytes(bytes: Uint8Array): Uint8Array {
   const runtimeCrypto = getCrypto();
   for (let offset = 0; offset < bytes.byteLength; offset += GET_RANDOM_VALUES_MAX_BYTES) {
-    runtimeCrypto.getRandomValues(bytes.subarray(offset, offset + GET_RANDOM_VALUES_MAX_BYTES));
+    const end = Math.min(offset + GET_RANDOM_VALUES_MAX_BYTES, bytes.byteLength);
+    runtimeCrypto.getRandomValues(bytes.subarray(offset, end));
   }
   return bytes;
 }

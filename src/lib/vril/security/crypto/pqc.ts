@@ -328,6 +328,12 @@ function providerResultError(algorithm: PQCAlgorithm, reason: string): Error {
   return new Error(`[VRIL PQC] Provider returned invalid ${algorithm} material: ${reason}`);
 }
 
+function warnDiagnostic(message: string, ...details: unknown[]): void {
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn(message, ...details);
+  }
+}
+
 // ─── PQCHandler Class ─────────────────────────────────────────────────────
 
 /**
@@ -916,9 +922,7 @@ export class PQCHandler {
   }
 
   private reportProviderVerificationFailure(algorithm: PQCAlgorithm, error: unknown): void {
-    if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-      console.warn(`[VRIL PQC] Provider verification failed for ${algorithm}; returning false`, error);
-    }
+    warnDiagnostic(`[VRIL PQC] Provider verification failed for ${algorithm}; returning false`, error);
   }
 
   private assertByteLength(value: Uint8Array, expectedLength: number, label: string): void {
