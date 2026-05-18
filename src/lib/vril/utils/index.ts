@@ -419,10 +419,10 @@ export function debounce<TThis, TArgs extends unknown[], TReturn>(
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   return function (this: TThis, ...args: TArgs) {
-    const callContext = this;
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(() => {
-      fn.call(callContext, ...args);
+      // Arrow function lexically captures 'this' from the enclosing function wrapper
+      fn.call(this, ...args);
       timer = undefined;
     }, ms);
   };

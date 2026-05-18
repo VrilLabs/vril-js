@@ -334,7 +334,17 @@ export function useSecureStorage<T>(
   defaultValue: T,
   passphrase?: string
 ): [T, (value: T | ((prev: T) => T)) => void, () => void] {
-  const [value, setValue] = useState<T>(defaultValue);
+  // Without a passphrase: read from localStorage synchronously via lazy initializer
+  // (avoids setState-in-effect). With a passphrase: start with defaultValue and
+  // decrypt asynchronously in useEffect below.
+  const [value, setValue] = useState<T>(() => {
+    if (passphrase || typeof window === 'undefined') return defaultValue;
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw !== null) return JSON.parse(raw) as T;
+    } catch {}
+    return defaultValue;
+  });
   const saltRef = useRef<Uint8Array | null>(null);
 
   /** Derive an AES-GCM key from the passphrase and salt using PBKDF2 */
@@ -351,17 +361,11 @@ export function useSecureStorage<T>(
     } catch { return null; }
   }, [passphrase]);
 
-  // Read and (if needed) decrypt the stored value on mount
+  // Decrypt stored value on mount (only runs when a passphrase is provided)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!passphrase || typeof window === 'undefined') return;
     const raw = localStorage.getItem(key);
     if (raw === null) return;
-
-    if (!passphrase) {
-      // Plain JSON storage
-      try { setValue(JSON.parse(raw) as T); } catch {}
-      return;
-    }
 
     // Encrypted storage: base64-encoded [salt(16) | iv(12) | ciphertext]
     (async () => {
