@@ -2,11 +2,10 @@
  * Vril.js v2.1.0 — Configuration File
  * ────────────────────────────────────
  * This is the user-facing configuration file for Vril.js.
- * Similar to next.config.ts for Next.js, this file controls
- * every aspect of the Vril.js framework behavior.
+ * This file controls every aspect of the Vril.js framework behavior.
  *
  * Edit this file to customize security, cryptography, routing,
- * server, build, auth, and Next.js integration settings.
+ * server, build, auth, and built-in runtime settings.
  */
 
 import { defineVrilConfig } from './src/lib/vril/config/define';
@@ -207,11 +206,10 @@ export default defineVrilConfig({
     lockoutDuration: 900000,    // 15 minutes
   },
 
-  // ─── Next.js Integration ─────────────────────────────────────
-  // Pass through any Next.js configuration options here.
-  // These are forwarded directly to Next.js when using toNextConfig().
-  nextjs: {
-    reactStrictMode: true,
+  // ─── Vril Runtime ─────────────────────────────────────────────
+  // Built-in framework runtime options for SSR, routing, assets, and headers.
+  framework: {
+    strictMode: true,
     poweredByHeader: false,     // Don't expose X-Powered-By header
   },
 });

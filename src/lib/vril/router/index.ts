@@ -1,7 +1,7 @@
 /**
  * Vril.js v2.0.0 — Secure Router
  * File-system based routing with security annotations per route.
- * Extends Next.js App Router with route-level security policies,
+ * Extends the built-in Vril router with route-level security policies,
  * composable middleware, route groups, route scanning, and navigation guards.
  */
 

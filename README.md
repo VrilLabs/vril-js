@@ -20,7 +20,7 @@
 
 **Post-quantum cryptography · Zero-trust membrane · Crypto agility · ΩSignal reactivity**
 
-Vril.js is a production-grade React framework where security is the architecture, not an afterthought. Its security and post-quantum primitives are implemented in-tree with zero runtime npm dependencies, while this repository uses React/Next.js to host the current app shell, documentation, and deployment proxy.
+Vril.js is a production-grade React framework where security is the architecture, not an afterthought. Its app shell, routing, API responses, security proxy, SSR/hydration, and static build pipeline are now provided by the built-in Vril runtime instead of Next.js.
 
 [Documentation](https://vril-js.vercel.app/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/VrilLabs/vril-js)
 

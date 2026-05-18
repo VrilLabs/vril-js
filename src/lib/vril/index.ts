@@ -35,6 +35,14 @@ export {
   PerformanceProfiler,
 } from './core';
 
+// ─── Framework Runtime ─────────────────────────────────────────
+export {
+  json,
+  type VrilRouteContext,
+  type VrilRouteHandler,
+  type VrilMetadata,
+} from './framework';
+
 // ─── Security ────────────────────────────────────────────────
 export {
   installTrustedTypes,

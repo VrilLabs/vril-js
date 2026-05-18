@@ -1,10 +1,3 @@
-/// <reference types="next" />
-/// <reference types="next/image-types/global" />
-
-// NOTE: The reference directives above are managed automatically by Next.js.
-// The environment variable declarations below must be kept up-to-date manually.
-// See https://nextjs.org/docs/app/building-your-application/configuring/typescript for more information.
-
 // ─── Vril.js Environment Variables ─────────────────────────────────────────
 // Extend the NodeJS ProcessEnv interface to provide strict types for all
 // environment variables used by Vril.js. Add new variables here as needed.
@@ -15,7 +8,11 @@ declare global {
       // ── Runtime ────────────────────────────────────────────────────────────
       readonly NODE_ENV: "development" | "test" | "production";
       /** The public URL of the deployed application (e.g. https://vril.js.org) */
-      readonly NEXT_PUBLIC_APP_URL?: string;
+      readonly VRIL_PUBLIC_APP_URL?: string;
+      /** Port used by the built-in Vril.js development/production server */
+      readonly PORT?: string;
+      /** Host used by the built-in Vril.js development/production server */
+      readonly HOST?: string;
 
       // ── Cryptography / Secrets ─────────────────────────────────────────────
       /** Master secret used for HMAC token signing (min 32 bytes, base64-encoded) */

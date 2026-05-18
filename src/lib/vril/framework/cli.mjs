@@ -3,7 +3,7 @@ import { build as esbuild } from 'esbuild';
 import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { createReadStream } from 'node:fs';
+import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -16,11 +16,35 @@ const apiBundle = resolve(root, '.vril/api.mjs');
 const aliasPlugin = {
   name: 'vril-alias',
   setup(build) {
-    build.onResolve({ filter: /^@\// }, args => ({
-      path: resolve(root, 'src', args.path.slice(2)),
-    }));
+    build.onResolve({ filter: /^@\// }, args => {
+      const basePath = resolve(root, 'src', args.path.slice(2));
+      return { path: resolveModulePath(basePath) };
+    });
   },
 };
+
+const ignoreCssPlugin = {
+  name: 'vril-ignore-css-imports',
+  setup(build) {
+    build.onLoad({ filter: /\.css$/ }, () => ({ contents: '', loader: 'js' }));
+  },
+};
+
+function resolveModulePath(basePath) {
+  const candidates = [
+    basePath,
+    `${basePath}.ts`,
+    `${basePath}.tsx`,
+    `${basePath}.js`,
+    `${basePath}.jsx`,
+    join(basePath, 'index.ts'),
+    join(basePath, 'index.tsx'),
+    join(basePath, 'index.js'),
+    join(basePath, 'index.jsx'),
+  ];
+  const match = candidates.find(candidate => existsSync(candidate) && statSync(candidate).isFile());
+  return match ?? basePath;
+}
 
 const securityHeaders = {
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
@@ -64,7 +88,7 @@ async function bundle() {
     platform: 'browser',
     format: 'esm',
     jsx: 'automatic',
-    plugins: [aliasPlugin],
+    plugins: [aliasPlugin, ignoreCssPlugin],
     define: { 'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV ?? 'production') },
   });
 
@@ -74,8 +98,9 @@ async function bundle() {
     bundle: true,
     platform: 'node',
     format: 'esm',
+    packages: 'external',
     jsx: 'automatic',
-    plugins: [aliasPlugin],
+    plugins: [aliasPlugin, ignoreCssPlugin],
     define: { 'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV ?? 'production') },
   });
 
@@ -85,7 +110,7 @@ async function bundle() {
     bundle: true,
     platform: 'node',
     format: 'esm',
-    plugins: [aliasPlugin],
+    plugins: [aliasPlugin, ignoreCssPlugin],
     define: { 'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV ?? 'production') },
   });
 

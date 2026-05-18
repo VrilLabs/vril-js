@@ -10,10 +10,13 @@
     "vril-env.d.ts"
   ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node src/lib/vril/framework/cli.mjs dev",
+    "build": "node src/lib/vril/framework/cli.mjs build",
+    "start": "node src/lib/vril/framework/cli.mjs start",
     "lint": "eslint"
+  },
+  "bin": {
+    "vril": "src/lib/vril/framework/cli.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -31,6 +34,7 @@
     "@types/react-dom": "^19",
     "esbuild": "^0.28.0",
     "eslint": "^9",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "typescript-eslint": "^8.59.3"

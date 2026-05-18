@@ -190,7 +190,7 @@ export default function DocsPage() {
               {[
                 ['22', 'Modules'],
                 ['200+', 'Exports'],
-                ['0', 'Dependencies'],
+                ['0', 'Next.js'],
                 ['PQC', 'Ready'],
               ].map(([val, label]) => (
                 <div key={label} className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/6">
@@ -204,7 +204,7 @@ export default function DocsPage() {
           {/* Installation */}
           <Section id="install" title="Installation">
             <p className="text-white/60 leading-relaxed mb-4">
-              Create a new Vril.js project with the official CLI, or add Vril.js to an existing Next.js project.
+              Create a new Vril.js project with the official CLI, or add the Vril runtime to an existing React project.
             </p>
             <Code>{`# Create a new project
 npx create-vril-app@latest my-app
@@ -225,7 +225,7 @@ npx vril doctor`}</Code>
           <Section id="config" title="Configuration (vril.config.ts)">
             <p className="text-white/60 leading-relaxed mb-4">
               Vril.js uses a <code className="text-[#00FFC8] bg-[#00FFC8]/8 px-1.5 py-0.5 rounded text-sm">vril.config.ts</code> file
-              at the project root, similar to Next.js&apos;s <code className="text-white/50 bg-white/5 px-1.5 py-0.5 rounded text-sm">next.config.ts</code>.
+              at the project root as the single source of truth for the built-in framework runtime.
               This file controls all framework behavior including security policies, cryptography settings, routing,
               build security, and authentication.
             </p>
