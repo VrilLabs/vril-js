@@ -489,6 +489,8 @@ const strength = vault.assessStrength('my-passphrase');
               ['verify()', 'method', 'Verify digital signature'],
               ['benchmark()', 'method', 'Performance benchmark for key gen/encap/decap cycles'],
               ['isSupported()', 'method', 'Check if a PQC algorithm has admissible operational evidence'],
+              ['supportsPQC()', 'method', 'Check if Vril.js can execute real bundled/provider PQC'],
+              ['browserSupportsPQC()', 'method', 'Check if the browser can run Vril.js Active Surface PQC'],
               ['isFipsValidated()', 'method', 'Check for explicit CAVP + CMVP certificate evidence'],
             ]} />
             <Code>{`import { PQCHandler } from '@/lib/vril/security/crypto/pqc';
@@ -501,6 +503,8 @@ const regulatedPqc = new PQCHandler(validatedPQCProvider);
 // Check operational support
 pqc.isSupported('ML-KEM-768'); // true when admissible standards evidence is present
 pqc.isSupported('ML-DSA-65');  // true when admissible standards evidence is present
+pqc.supportsPQC(); // true with bundled Active Surface PQC
+await pqc.browserSupportsPQC(); // true in browsers when bundled/provider PQC is available
 pqc.isFipsValidated('ML-KEM-768'); // true only with CAVP + CMVP certificate IDs
 
 // Generate and use ML-KEM-768

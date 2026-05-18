@@ -257,6 +257,15 @@ function isPQCAlgorithm(algorithm: string): boolean {
   return algorithm.startsWith('ML-') || algorithm.startsWith('SLH-');
 }
 
+const BUNDLED_PQC_ALGORITHMS: PQCAlgorithm[] = [
+  'ML-KEM-768',
+  'ML-KEM-1024',
+  'ML-DSA-65',
+  'ML-DSA-87',
+  'SLH-DSA-SHA2-128s',
+  'SLH-DSA-SHA2-256f',
+];
+
 function unsupportedPQCError(algorithm: string): Error {
   return new Error(
     `[VRIL PQC] ${algorithm} requires an authentic FIPS 203/204/205 implementation. ` +
@@ -357,13 +366,19 @@ export class PQCHandler {
 
   /**
    * Check if a specific algorithm is operationally supported by this handler.
-   * Metadata-only PQC entries return false until native support is available.
+   * Bundled Active Surface PQC and admissible providers make PQC algorithms
+   * operational in browsers even before Web Crypto exposes native PQC.
    */
   isSupported(algorithm: string): boolean {
     const info = ALGORITHM_INFO[algorithm];
     if (!info) return false;
     if (info.nativeSupport) return true;
-    return this.provider?.getValidationEvidence(algorithm as PQCAlgorithm)?.standard === info.nistStandard;
+    return this.getValidationEvidence(algorithm as PQCAlgorithm)?.standard === info.nistStandard;
+  }
+
+  /** Check whether this handler can run at least one real PQC algorithm. */
+  supportsPQC(): boolean {
+    return BUNDLED_PQC_ALGORITHMS.some((algorithm) => this.isSupported(algorithm));
   }
 
   /**
@@ -374,20 +389,15 @@ export class PQCHandler {
   }
 
   /**
-   * Check if the browser natively supports PQC algorithms.
-   * Currently no browser ships native ML-KEM/ML-DSA.
+   * Check whether this browser runtime can execute Vril.js PQC.
+   *
+   * Browsers do not currently expose ML-KEM/ML-DSA/SLH-DSA through Web Crypto,
+   * so Vril.js brings actual browser PQC via the bundled Active Surface PQC
+   * provider or a caller-supplied admissible provider.
    */
   async browserSupportsPQC(): Promise<boolean> {
     if (typeof window === 'undefined') return false;
-    try {
-      // Check if Web Crypto API exists
-      const subtle = crypto.subtle;
-      if (!subtle?.generateKey) return false;
-      // Future: check for ML-KEM support when browsers add it
-      return false;
-    } catch {
-      return false;
-    }
+    return this.supportsPQC();
   }
 
   /**
@@ -546,8 +556,6 @@ export class PQCHandler {
    */
   async benchmark(algorithm: PQCAlgorithm, iterations: number = 10): Promise<BenchmarkResult> {
     const info = this.getAlgorithmInfo(algorithm);
-    const isNative = info.nativeSupport;
-
     // Key generation benchmark
     const kgStart = performance.now();
     for (let i = 0; i < iterations; i++) {
@@ -595,7 +603,7 @@ export class PQCHandler {
       operationMs,
       inverseMs,
       iterations,
-      native: isNative,
+      native: keyPair.native,
     };
   }
 
