@@ -1,5 +1,5 @@
 /**
- * Vril.js v2.1.0 — The Security-First React Framework
+ * Vril.js v2.2.0 — The Security-First React Framework
  * by VRIL LABS
  *
  * Post-quantum cryptography · Zero-trust membrane · Crypto agility
@@ -7,7 +7,7 @@
  * Streaming SSR · Edge Runtime · Plugin Architecture
  */
 
-export const VRIL_VERSION = '2.1.0';
+export const VRIL_VERSION = '2.2.0';
 
 // ─── Core ────────────────────────────────────────────────────
 export {
@@ -421,6 +421,20 @@ export {
   type ConfigBuilderOptions,
   type SecretEntry,
 } from './config';
+
+export {
+  defineVrilConfig,
+  VRIL_CONFIG_VERSION,
+  type VrilUserConfig,
+  type VrilResolvedConfig,
+  type VrilSecurityConfig,
+  type VrilCryptoConfig,
+  type VrilRouterConfig,
+  type VrilBuildConfig,
+  type VrilServerConfig,
+  type VrilAuthConfig,
+  type VrilFrameworkConfig,
+} from './config/define';
 
 // ─── Auth ────────────────────────────────────────────────────
 export {

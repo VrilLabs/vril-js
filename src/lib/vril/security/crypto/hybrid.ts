@@ -135,7 +135,7 @@ function generateId(): string {
  */
 export class HybridKEM {
   private readonly pqc: PQCHandler;
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
   private classicalAlgorithm: string;
   private pqcAlgorithm: string;
   private contextInfo: string;
@@ -295,7 +295,7 @@ export class HybridKEM {
  */
 export class HybridSigner {
   private readonly pqc: PQCHandler;
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
   private classicalAlgorithm: string;
   private pqcAlgorithm: string;
 
@@ -453,7 +453,7 @@ export class HybridSigner {
  * The rotation history is maintained for audit purposes.
  */
 export class HybridKeyRotation {
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
   private policy: KeyRotationPolicy;
   private keyPairs: Map<string, HybridKeyPair> = new Map();
   private activeKeyId: string | null = null;

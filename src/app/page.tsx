@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
 import { VrilVault, type EncryptionResult, type StrengthAssessment } from '@/lib/vril/security/crypto/vault';
 
 /* ═══════════════════════════════════════════════════════════════
-   Vril.js v2.1 — Showcase Landing Page
+   Vril.js v2.2 — Showcase Landing Page
    World-class · Security-First · VRIL LABS
    ═══════════════════════════════════════════════════════════════ */
 
@@ -225,7 +225,7 @@ export const POST = createAPIRoute({
       headers: {},
       timestamp: Date.now(),
       requestId: req.requestId,
-      version: '2.1.0',
+      version: '2.2.0',
     };
   },
 });`,
@@ -612,7 +612,7 @@ export default function VrilShowcase() {
           <a href="#" className="flex items-center gap-2.5 text-white no-underline">
             <VrilLogoIcon className="w-7 h-7 text-olo-teal" />
             <span className="font-display font-extrabold text-lg tracking-tight">Vril<span className="text-white/40 font-medium">.js</span></span>
-            <span className="hidden sm:inline-flex items-center px-2 py-0.5 bg-olo-teal/10 border border-olo-teal/20 rounded-full font-mono text-[9px] text-olo-teal tracking-wider">v2.1</span>
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 bg-olo-teal/10 border border-olo-teal/20 rounded-full font-mono text-[9px] text-olo-teal tracking-wider">v2.2</span>
           </a>
 
           <div className="hidden md:flex items-center gap-6">
@@ -650,7 +650,7 @@ export default function VrilShowcase() {
               {/* Badge */}
               <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-olo-teal/8 border border-olo-teal/20 rounded-full mb-8 animate-vril-badge-pulse">
                 <span className="w-1.5 h-1.5 rounded-full bg-olo-teal glow-dot-teal" />
-                <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">v2.1.0 — Security-First Evolution</span>
+                <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">v2.2.0 — Security-First Evolution</span>
               </div>
 
               {/* Headline */}
@@ -972,7 +972,7 @@ export default function VrilShowcase() {
             <div className="flex items-center gap-4">
               <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/4 border border-white/8 rounded-full font-mono text-[10px] text-white/25">
                 <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" />
-                Built with Vril.js v2.1.0
+                Built with Vril.js v2.2.0
               </span>
               <span className="font-mono text-[10px] text-white/15">MIT License</span>
             </div>

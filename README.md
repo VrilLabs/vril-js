@@ -9,11 +9,11 @@
               /___/        
 ```
 
-# Vril.js v2.1
+# Vril.js v2.2
 
 ### The Security-First React Framework
 
-[![Version](https://img.shields.io/badge/version-2.1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
+[![Version](https://img.shields.io/badge/version-2.2.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
 [![License](https://img.shields.io/badge/license-VRIL_LABS_OSL_v1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js/blob/main/LICENSE)
 [![Zero-Dependency Security Core](https://img.shields.io/badge/security_core-0_runtime_deps-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
 [![PQC-Ready](https://img.shields.io/badge/PQC-Ready-00d4aa?style=flat-square&labelColor=1a1a2e)](https://csrc.nist.gov/projects/post-quantum-cryptography)
@@ -89,33 +89,43 @@ bun add vril-js
 
 ```typescript
 // vril.config.ts
-import { createVrilApp } from 'vril-js';
+import { defineVrilConfig } from 'vril-js';
 
-export const app = createVrilApp({
+export default defineVrilConfig({
   security: {
     trustedTypes: true,
     apiMembrane: true,
     blockedAPIs: ['WebTransport', 'RTCPeerConnection'],
     csp: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'strict-dynamic'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
       objectSrc: ["'none'"],
       frameAncestors: ["'none'"],
+      upgradeInsecureRequests: true,
     },
     headers: {
       strictTransportSecurity: 'max-age=63072000; includeSubDomains; preload',
+      xContentTypeOptions: 'nosniff',
       xFrameOptions: 'DENY',
       referrerPolicy: 'strict-origin-when-cross-origin',
+      crossOriginOpenerPolicy: 'same-origin',
+      crossOriginEmbedderPolicy: 'credentialless',
+      crossOriginResourcePolicy: 'same-origin',
     },
   },
   crypto: {
-    defaultAlgorithm: 'x25519-mlkem768',
+    defaultAlgorithm: 'aes-256-gcm',
     kdfIterations: 600000,
     pqcEnabled: true,
     hybridMode: true,
   },
-  signals: {
-    enabled: true,
+  framework: {
+    reactStrictMode: true,
+    poweredByHeader: false,
   },
 });
 ```
@@ -330,7 +340,7 @@ Vril.js ships with environment-optimized presets:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                       VRIL.JS v2.1 ARCHITECTURE                 │
+│                       VRIL.JS v2.2 ARCHITECTURE                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌─────────── BROWSER HARDENING ───────────┐                    │
@@ -427,7 +437,7 @@ Vril.js ships with environment-optimized presets:
 
 ### Vril.js vs Next.js vs Remix vs Astro
 
-| Security Feature | Vril.js v2.1 | Next.js 15 | Remix | Astro |
+| Security Feature | Vril.js v2.2 | Next.js 15 | Remix | Astro |
 |---|---|---|---|---|
 | Post-Quantum Cryptography | ML-KEM, ML-DSA, SLH-DSA (FIPS 203/204/205) | None | None | None |
 | Hybrid Key Exchange | X25519+ML-KEM-768, ECDSA+ML-DSA-65 | None | None | None |
@@ -597,7 +607,7 @@ const sbom = await sbomGen.generate('./package.json');
 import { createVrilApp } from 'vril-js';
 const app = createVrilApp({ /* partial config */ });
 app.config;   // Fully merged VrilConfig
-app.version;   // '2.1.0'
+app.version;   // '2.2.0'
 ```
 
 ### Cryptographic APIs

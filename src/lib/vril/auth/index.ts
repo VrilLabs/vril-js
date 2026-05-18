@@ -4,7 +4,7 @@
  * All cryptographic operations use Web Crypto API — ZERO npm dependencies.
  */
 
-export const AUTH_MODULE_VERSION = '2.1.0';
+export const AUTH_MODULE_VERSION = '2.2.0';
 
 // ─── Core Types ──────────────────────────────────────────────
 export interface Session {

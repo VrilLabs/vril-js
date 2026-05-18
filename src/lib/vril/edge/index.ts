@@ -60,7 +60,7 @@ export interface EdgeEnvironment {
 export class EdgeRuntime {
   private config: EdgeConfig;
   private env: EdgeEnvironment;
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor(config: EdgeConfig = {}) {
     this.config = config;
@@ -127,7 +127,7 @@ export class EdgeRuntime {
 export class EdgeKV<V = unknown> {
   private store = new Map<string, { value: V; expiresAt: number }>();
   private namespace: string;
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor(namespace: string = 'default') {
     this.namespace = namespace;
@@ -234,7 +234,7 @@ const GEO_HEADERS: Record<string, (value: string) => Partial<GeoData>> = {
  */
 export class EdgeGeo {
   private privacyMode: 'full' | 'approximate' | 'none';
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor(privacyMode: 'full' | 'approximate' | 'none' = 'approximate') {
     this.privacyMode = privacyMode;
@@ -314,7 +314,7 @@ const BOT_PATTERNS: RegExp[] = [
  */
 export class EdgeSecurity {
   private config: EdgeConfig;
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor(config: EdgeConfig = {}) {
     this.config = config;

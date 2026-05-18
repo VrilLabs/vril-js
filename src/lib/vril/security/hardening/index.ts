@@ -1,5 +1,5 @@
 /**
- * Vril.js v2.1.0 — Browser Hardening Module
+ * Vril.js v2.2.0 — Browser Hardening Module
  *
  * Comprehensive browser security hardening including cross-origin isolation,
  * fingerprint resistance, timing attack mitigation, clickjacking protection,
@@ -96,7 +96,7 @@ const DEFAULT_HARDENING_CONFIG: HardeningConfig = {
  * and CORP (Cross-Origin-Resource-Policy) headers.
  */
 export class CrossOriginIsolation {
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
   private config: HardeningConfig;
   private isIsolated = false;
 
@@ -203,7 +203,7 @@ export class CrossOriginIsolation {
  * to make the browser less identifiable without breaking functionality.
  */
 export class FingerprintResistance {
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
   private noiseEnabled = false;
   private canvasNoiseLevel: number;
   private audioNoiseLevel: number;
@@ -410,7 +410,7 @@ export class FingerprintResistance {
  * request timing normalization, and jitter injection.
  */
 export class TimingAttackMitigation {
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
   private requestTimings: number[] = [];
   private minResponseTimeMs: number;
 
@@ -558,7 +558,7 @@ export class TimingAttackMitigation {
  * and JavaScript frame-busting.
  */
 export class ClickjackingProtection {
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
   private frameBustingEnabled = false;
 
   /** Get version */
@@ -652,7 +652,7 @@ export class ClickjackingProtection {
  * URL scheme validation, and dangerous pattern detection.
  */
 export class XSSShield {
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   /** Dangerous HTML patterns */
   private static readonly DANGEROUS_PATTERNS = [
@@ -847,7 +847,7 @@ export class XSSShield {
  * Secure, HttpOnly enforcement.
  */
 export class CookieFortress {
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   /** Get version */
   getVersion(): string {
@@ -1036,7 +1036,7 @@ export class CookieFortress {
  */
 export class SecurityHeadersBuilder {
   private headers: SecurityHeaderSet = {};
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   /** Get version */
   getVersion(): string {
@@ -1149,7 +1149,7 @@ export class SecurityHeadersBuilder {
       .csp("default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
       .permissionsPolicy('camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()')
       .xssProtection('block')
-      .custom('X-Vril-Version', '2.1.0')
+      .custom('X-Vril-Version', '2.2.0')
       .custom('Server', 'Vril.js');
   }
 

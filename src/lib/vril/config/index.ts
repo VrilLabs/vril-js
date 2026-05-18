@@ -4,7 +4,7 @@
  * environment-specific configs, secrets management, and config watching.
  */
 
-export const CONFIG_MODULE_VERSION = '2.1.0';
+export const CONFIG_MODULE_VERSION = '2.2.0';
 
 // ─── Core Types ──────────────────────────────────────────────
 export type Environment = 'development' | 'staging' | 'production' | 'test';
@@ -235,7 +235,7 @@ const DEFAULT_AUTH: AuthConfig = {
 
 /** Full default configuration */
 export const DEFAULT_FULL_CONFIG: VrilFullConfig = {
-  version: '2.1.0',
+  version: '2.2.0',
   environment: 'development',
   security: DEFAULT_SECURITY,
   crypto: DEFAULT_CRYPTO,
@@ -840,6 +840,6 @@ export function createConfig(options: ConfigBuilderOptions = {}): {
       return watcher;
     },
 
-    version: '2.1.0',
+    version: '2.2.0',
   };
 }
