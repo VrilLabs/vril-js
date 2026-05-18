@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { VrilVault, type EncryptionResult } from '@/lib/vril/security/crypto/vault';
 
 /* ═══════════════════════════════════════════════════════════════
    Vril.js v2.1 — Showcase Landing Page
@@ -488,6 +489,62 @@ function TerminalBlock({ lines }: { lines: string[] }) {
   );
 }
 
+// ─── Hero Security Graphic ─────────────────────────────────────
+function HeroGraphic() {
+  const orbiters = [
+    { label: 'PQC', color: 'bg-olo-teal', shadow: '0 0 18px rgba(0,255,200,0.75)', size: 'w-3 h-3', speed: '18s', delay: '0s' },
+    { label: 'KEM', color: 'bg-ionic-blue', shadow: '0 0 16px rgba(10,132,255,0.7)', size: 'w-2.5 h-2.5', speed: '24s', delay: '-6s' },
+    { label: 'CSP', color: 'bg-violet', shadow: '0 0 16px rgba(155,94,255,0.7)', size: 'w-2 h-2', speed: '30s', delay: '-12s' },
+  ];
+
+  return (
+    <div className="absolute top-1/2 right-[6%] -translate-y-1/2 hidden lg:block pointer-events-none" aria-hidden="true">
+      <div className="hero-graphic relative w-[25rem] h-[25rem]">
+        <div className="absolute inset-0 rounded-full bg-olo-teal/8 blur-3xl animate-vril-float" />
+        <div className="absolute inset-6 rounded-full border border-white/8 hero-ring" />
+        <div className="absolute inset-16 rounded-full border border-olo-teal/20 hero-ring hero-ring-reverse" />
+        <div className="absolute inset-28 rounded-full border border-violet/25 hero-ring" style={{ animationDuration: '16s' }} />
+
+        {orbiters.map((orbiter, index) => (
+          <div
+            key={orbiter.label}
+            className="absolute inset-0 rounded-full animate-orbit"
+            style={{ animationDuration: orbiter.speed, animationDelay: orbiter.delay }}
+          >
+            <div className={`absolute left-1/2 -top-1 -translate-x-1/2 ${orbiter.size} rounded-full ${orbiter.color}`} style={{ boxShadow: orbiter.shadow }} />
+            <div className="absolute left-1/2 top-7 -translate-x-1/2 rounded-full border border-white/10 bg-[#0d1017]/80 px-2 py-0.5 font-mono text-[9px] tracking-[0.14em] text-white/45 backdrop-blur-md" style={{ transform: `translateX(-50%) rotate(${index * 4}deg)` }}>
+              {orbiter.label}
+            </div>
+          </div>
+        ))}
+
+        <div className="absolute inset-20 rounded-[2rem] border border-white/10 bg-[#0d1017]/60 shadow-2xl backdrop-blur-xl hero-core">
+          <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_30%_20%,rgba(0,255,200,0.22),transparent_34%),radial-gradient(circle_at_72%_80%,rgba(155,94,255,0.18),transparent_36%)]" />
+          <div className="absolute inset-0 rounded-[2rem] hero-scanline" />
+          <div className="relative h-full flex flex-col items-center justify-center gap-4">
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl border border-olo-teal/30 bg-olo-teal/10 text-olo-teal glow-teal animate-vril-float">
+              <VrilLogoIcon className="w-12 h-12" />
+              <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border border-amber/40 bg-amber/15 text-amber">
+                <LockIcon className="w-3.5 h-3.5" />
+              </span>
+            </div>
+            <div className="text-center">
+              <div className="font-mono text-[10px] tracking-[0.18em] text-olo-teal/80 uppercase">zero-trust membrane</div>
+              <div className="mt-2 flex items-center justify-center gap-2 text-[10px] text-white/30">
+                <span className="h-1.5 w-1.5 rounded-full bg-success animate-vril-pulse" />
+                Quantum-ready
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute left-4 top-24 h-px w-28 bg-gradient-to-r from-transparent via-olo-teal/50 to-transparent hero-data-ray" />
+        <div className="absolute bottom-24 right-2 h-px w-32 bg-gradient-to-r from-transparent via-violet/50 to-transparent hero-data-ray" style={{ animationDelay: '-1.4s' }} />
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ═══════════════════════════════════════════════════════════════
@@ -565,26 +622,7 @@ export default function VrilShowcase() {
           {/* Background effects */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[700px] opacity-25 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, rgba(0,255,200,0.18) 0%, rgba(10,132,255,0.08) 40%, transparent 70%)' }} />
 
-          {/* Orbital rings (CSS-only) */}
-          <div className="absolute top-1/2 right-[10%] -translate-y-1/2 hidden lg:block" aria-hidden="true">
-            <div className="relative w-72 h-72">
-              {/* Outer ring */}
-              <div className="absolute inset-0 rounded-full border border-white/5 animate-orbit" />
-              {/* Middle ring */}
-              <div className="absolute inset-8 rounded-full border border-olo-teal/15 animate-orbit-reverse" style={{ animationDuration: '22s' }} />
-              {/* Inner ring */}
-              <div className="absolute inset-16 rounded-full border border-violet/20 animate-orbit" style={{ animationDuration: '10s' }} />
-              {/* Center symbol */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-olo-teal/20 to-violet/20 border border-olo-teal/30 flex items-center justify-center animate-vril-float">
-                  <span className="font-display font-extrabold text-3xl gradient-text">Ω</span>
-                </div>
-              </div>
-              {/* Orbiting dots */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-olo-teal animate-orbit" style={{ boxShadow: '0 0 12px rgba(0,255,200,0.6)' }} />
-              <div className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-violet animate-orbit-reverse" style={{ boxShadow: '0 0 8px rgba(155,94,255,0.6)' }} />
-            </div>
-          </div>
+          <HeroGraphic />
 
           <div className="max-w-7xl mx-auto px-5 relative z-10">
             <div className="max-w-3xl">
@@ -986,67 +1024,33 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
   const [resultLabel, setResultLabel] = useState('');
   const [kdfProgress, setKdfProgress] = useState(0);
   const [strength, setStrength] = useState({ score: 0, max: 6, label: '' });
+  const [activeBundle, setActiveBundle] = useState('');
+  const vaultRef = useRef(new VrilVault());
 
-  const assessStrength = (p: string) => {
-    let score = 0;
-    if (p.length >= 4) score++;
-    if (p.length >= 8) score++;
-    if (p.length >= 12) score++;
-    if (/[A-Z]/.test(p)) score++;
-    if (/[0-9]/.test(p)) score++;
-    if (/[^A-Za-z0-9]/.test(p)) score++;
-    return { score, max: 6, label: score <= 2 ? 'weak' : score <= 4 ? 'moderate' : 'strong' };
-  };
-
-  const handlePass = (v: string) => { setPassphrase(v); setStrength(assessStrength(v)); };
-
-  const deriveKey = async (pass: string, salt: Uint8Array): Promise<CryptoKey> => {
-    const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
-    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt as BufferSource, iterations: 600000, hash: 'SHA-512' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-  };
-
-  const ab2b64 = (buffer: ArrayBuffer | Uint8Array): string => {
-    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-    return btoa(binary);
-  };
-
-  const b642ab = (b64: string): ArrayBuffer => {
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return bytes.buffer;
-  };
+  const handlePass = (v: string) => { setPassphrase(v); setStrength(vaultRef.current.assessStrength(v)); };
 
   const handleEncrypt = async () => {
     if (!passphrase || !plaintext) return;
     setStatus('encrypting'); setKdfProgress(0);
     const iv = setInterval(() => setKdfProgress(p => Math.min(p + Math.random() * 15, 90)), 80);
     try {
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      const ivBytes = crypto.getRandomValues(new Uint8Array(12));
-      const key = await deriveKey(passphrase, salt);
-      const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: ivBytes }, key, new TextEncoder().encode(plaintext));
+      const bundle = await vaultRef.current.encrypt(passphrase, plaintext);
+      const bundleJson = JSON.stringify(bundle, null, 2);
       clearInterval(iv); setKdfProgress(100);
-      const bundle = { v: 2, salt: ab2b64(salt), iv: ab2b64(ivBytes), ciphertext: ab2b64(ciphertext), algorithm: 'AES-256-GCM', kdf: 'PBKDF2-SHA-512', kdfIterations: 600000 };
-      setResult(JSON.stringify(bundle, null, 2)); setResultLabel('Ciphertext Bundle'); setStatus('done');
+      setActiveBundle(bundleJson); setResult(bundleJson); setResultLabel('Ciphertext Bundle'); setStatus('done');
     } catch (e) { clearInterval(iv); setResult(e instanceof Error ? e.message : 'Failed'); setResultLabel('Error'); setStatus('error'); }
   };
 
   const handleDecrypt = async () => {
-    if (!passphrase || !plaintext) return;
+    const bundleSource = activeBundle || plaintext;
+    if (!passphrase || !bundleSource) return;
     setStatus('decrypting'); setKdfProgress(0);
     const ivInterval = setInterval(() => setKdfProgress(p => Math.min(p + Math.random() * 15, 90)), 80);
     try {
-      const bundle = JSON.parse(plaintext);
-      const salt = new Uint8Array(b642ab(bundle.salt));
-      const ivBytes = new Uint8Array(b642ab(bundle.iv));
-      const ciphertextBuf = b642ab(bundle.ciphertext);
-      const key = await deriveKey(passphrase, salt);
-      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivBytes }, key, ciphertextBuf);
+      const bundle = JSON.parse(bundleSource) as EncryptionResult;
+      const decrypted = await vaultRef.current.decrypt(passphrase, bundle);
       clearInterval(ivInterval); setKdfProgress(100);
-      setResult(new TextDecoder().decode(decrypted)); setResultLabel('Plaintext'); setStatus('done');
+      setResult(decrypted.plaintext); setResultLabel('Plaintext'); setStatus('done');
     } catch { clearInterval(ivInterval); setResult('Wrong passphrase or corrupted bundle'); setResultLabel('Error'); setStatus('error'); }
   };
 
@@ -1094,7 +1098,7 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
           </div>
           <div className="space-y-1.5">
             <label className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30">Input</label>
-            <textarea value={plaintext} onChange={e => setPlaintext(e.target.value)} rows={3} className="w-full px-3 py-2 bg-[#161b28] border border-white/10 rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-olo-teal transition-colors" placeholder="Enter plaintext or paste a ciphertext bundle" />
+            <textarea value={plaintext} onChange={e => { setPlaintext(e.target.value); setActiveBundle(''); }} rows={3} className="w-full px-3 py-2 bg-[#161b28] border border-white/10 rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-olo-teal transition-colors" placeholder="Enter plaintext to seal, or paste a ciphertext bundle to unseal" />
           </div>
           {result && (
             <div className="space-y-1.5">
@@ -1103,6 +1107,7 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
                 <CopyButton text={result} />
               </div>
               <pre className="px-3 py-2 bg-[#0a0c10] border border-white/10 rounded-lg text-olo-teal font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-32">{result}</pre>
+              {activeBundle && resultLabel === 'Ciphertext Bundle' && <p className="font-mono text-[10px] text-white/25">Bundle staged for Unseal — keep the same passphrase and click Unseal to verify.</p>}
             </div>
           )}
         </div>
@@ -1110,7 +1115,7 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
           <span className="font-mono text-[10px] text-white/20">AES-256-GCM · PBKDF2-SHA-512 · 600K iter</span>
           <div className="flex gap-2">
             <button onClick={handleEncrypt} disabled={!passphrase || !plaintext || status === 'encrypting'} className="px-4 py-2 bg-amber text-[#080a0e] font-semibold text-sm rounded-lg border border-amber hover:bg-amber/80 transition-all disabled:opacity-40">Seal</button>
-            <button onClick={handleDecrypt} disabled={!passphrase || !plaintext || status === 'decrypting'} className="px-4 py-2 bg-transparent text-white/70 font-semibold text-sm rounded-lg border border-white/10 hover:border-olo-teal hover:text-olo-teal transition-all disabled:opacity-40">Unseal</button>
+            <button onClick={handleDecrypt} disabled={!passphrase || (!plaintext && !activeBundle) || status === 'decrypting'} className="px-4 py-2 bg-transparent text-white/70 font-semibold text-sm rounded-lg border border-white/10 hover:border-olo-teal hover:text-olo-teal transition-all disabled:opacity-40">Unseal</button>
           </div>
         </div>
       </div>
