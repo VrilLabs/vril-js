@@ -57,8 +57,8 @@ export interface PluginContext {
   config: Record<string, unknown>;
   logger: PluginLogger;
   crypto: PluginCrypto;
-  /** Convenience shorthand for logger.info */
-  log: (message: string, ...args: unknown[]) => void;
+  /** Convenience shorthand for logger.info; optional for backward compatibility with external mocks */
+  log?: (message: string, ...args: unknown[]) => void;
 }
 
 /** Logger interface available to plugins */

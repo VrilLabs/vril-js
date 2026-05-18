@@ -334,6 +334,12 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
     if (dirty) recompute();
     return cachedValue;
   });
+  // Register the computed's subscriber Set so that OTHER computed signals that
+  // depend on this one can remove themselves from this Set when they drop this
+  // dependency during their own recompute. Without this, a computed that
+  // conditionally stops reading another computed would leave its tracker in
+  // this Set and receive spurious _invalidate() calls forever.
+  signalSubscribersById.set(id, subscribers);
 
   return self;
 }

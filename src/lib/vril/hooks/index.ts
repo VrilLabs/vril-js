@@ -383,15 +383,20 @@ export function useSecureStorage<T>(
     (async () => {
       try {
         const bytes = Uint8Array.from(atob(raw).split('').map(c => c.charCodeAt(0)));
+        // Minimum valid payload: 16-byte salt + 12-byte IV + 16-byte GCM tag = 44 bytes
+        if (bytes.length < 44) return;
         const salt = bytes.slice(0, 16);
         const iv   = bytes.slice(16, 28);
         const ct   = bytes.slice(28);
-        saltRef.current = salt;
         const cryptoKey = await deriveKey(salt);
         // Bail if: key derivation failed, component unmounted, or a write arrived first
         if (!cryptoKey || mountDecryptStaleRef.current) return;
         const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
         if (!mountDecryptStaleRef.current) {
+          // Only store the salt after successful decryption; a malformed or
+          // tampered payload must not corrupt saltRef with a short/wrong salt
+          // that would make the next write produce an unrecoverable blob.
+          saltRef.current = salt;
           setValue(JSON.parse(new TextDecoder().decode(plaintext)) as T);
         }
       } catch {

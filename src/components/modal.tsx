@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useImperativeHandle, forwardRef, type ReactNode } from 'react';
+import { useState, useRef, useCallback, useImperativeHandle, forwardRef, type ReactNode } from 'react';
 
 type ModalVariant = 'info' | 'confirm' | 'destructive';
 
@@ -20,12 +20,35 @@ export const VrilModal = forwardRef<VrilModalHandle>(function VrilModal(_, ref) 
     body: ReactNode; resolve?: (v: boolean) => void;
   }>({ open: false, variant: 'info', title: '', body: null });
 
-  const info = useCallback((opts: { title: string; subtitle?: string; body: ReactNode }) => setState({ open: true, variant: 'info', ...opts }), []);
+  // Tracks the pending resolve of any open confirm/destructive dialog so it can
+  // be cancelled before a new dialog replaces it, preventing promise leaks.
+  const pendingResolveRef = useRef<((v: boolean) => void) | undefined>(undefined);
+
+  const info = useCallback((opts: { title: string; subtitle?: string; body: ReactNode }) => {
+    // Cancel any pending dialog before opening a new one
+    pendingResolveRef.current?.(false);
+    pendingResolveRef.current = undefined;
+    setState({ open: true, variant: 'info', ...opts });
+  }, []);
   const confirm = useCallback((opts: { title: string; subtitle?: string; body: ReactNode }): Promise<boolean> =>
-    new Promise(resolve => setState({ open: true, variant: 'confirm', ...opts, resolve })), []);
+    new Promise(resolve => {
+      pendingResolveRef.current?.(false);
+      pendingResolveRef.current = resolve;
+      setState({ open: true, variant: 'confirm', ...opts, resolve });
+    }), []);
   const destructive = useCallback((opts: { title: string; subtitle?: string; body: ReactNode }): Promise<boolean> =>
-    new Promise(resolve => setState({ open: true, variant: 'destructive', ...opts, resolve })), []);
-  const close = useCallback((value: boolean) => { state.resolve?.(value); setState(p => ({ ...p, open: false })); }, [state]);
+    new Promise(resolve => {
+      pendingResolveRef.current?.(false);
+      pendingResolveRef.current = resolve;
+      setState({ open: true, variant: 'destructive', ...opts, resolve });
+    }), []);
+  // Use pendingResolveRef instead of reading state.resolve so close() does not
+  // need state in its dependency array and can safely be called at any time.
+  const close = useCallback((value: boolean) => {
+    pendingResolveRef.current?.(value);
+    pendingResolveRef.current = undefined;
+    setState(p => ({ ...p, open: false }));
+  }, []);
 
   useImperativeHandle(ref, () => ({ info, confirm, destructive }), [info, confirm, destructive]);
 
