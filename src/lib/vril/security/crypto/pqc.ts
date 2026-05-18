@@ -11,8 +11,12 @@
  * validation claims require CAVP/CMVP evidence for the exact implementation
  * and deployment boundary.
  *
- * Zero external dependencies — Web Crypto API only.
+ * Browser-compatible implementation powered by @noble/post-quantum.
  */
+
+import { ml_kem768, ml_kem1024 } from '@noble/post-quantum/ml-kem.js';
+import { ml_dsa65, ml_dsa87 } from '@noble/post-quantum/ml-dsa.js';
+import { slh_dsa_sha2_128s, slh_dsa_sha2_256f } from '@noble/post-quantum/slh-dsa.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -108,6 +112,8 @@ export interface PQCValidationEvidence {
   moduleName: string;
   /** Provider/vendor name */
   providerName: string;
+  /** Whether this is standards-conformant source implementation rather than a simulation */
+  standardsConformant: boolean;
 }
 
 /** External authentic PQC provider contract */
@@ -254,6 +260,96 @@ function unsupportedPQCError(algorithm: string): Error {
   );
 }
 
+const NOBLE_PROVIDER_NAME = '@noble/post-quantum';
+const NOBLE_PROVIDER_VERSION = '0.6.1';
+
+const nobleKEMs = {
+  'ML-KEM-768': ml_kem768,
+  'ML-KEM-1024': ml_kem1024,
+} as const;
+
+const nobleSigners = {
+  'ML-DSA-65': ml_dsa65,
+  'ML-DSA-87': ml_dsa87,
+  'SLH-DSA-SHA2-128s': slh_dsa_sha2_128s,
+  'SLH-DSA-SHA2-256f': slh_dsa_sha2_256f,
+} as const;
+
+function createNobleEvidence(algorithm: PQCAlgorithm): PQCValidationEvidence | null {
+  const info = ALGORITHM_INFO[algorithm];
+  if (!info || !(algorithm in nobleKEMs || algorithm in nobleSigners)) return null;
+  return {
+    algorithm,
+    standard: info.nistStandard as PQCValidationEvidence['standard'],
+    moduleName: `${NOBLE_PROVIDER_NAME}@${NOBLE_PROVIDER_VERSION}`,
+    providerName: 'noble',
+    standardsConformant: true,
+  };
+}
+
+/** Default browser-compatible authentic PQC provider */
+export const noblePQCProvider: PQCProvider = {
+  name: NOBLE_PROVIDER_NAME,
+  getValidationEvidence: createNobleEvidence,
+  async generateKeyPair(algorithm) {
+    if (algorithm in nobleKEMs) {
+      const pair = nobleKEMs[algorithm as keyof typeof nobleKEMs].keygen();
+      return {
+        publicKey: new Uint8Array(pair.publicKey),
+        privateKey: new Uint8Array(pair.secretKey),
+        algorithm,
+        native: false,
+        createdAt: Date.now(),
+      };
+    }
+    if (algorithm in nobleSigners) {
+      const pair = nobleSigners[algorithm as keyof typeof nobleSigners].keygen();
+      return {
+        publicKey: new Uint8Array(pair.publicKey),
+        privateKey: new Uint8Array(pair.secretKey),
+        algorithm,
+        native: false,
+        createdAt: Date.now(),
+      };
+    }
+    throw unsupportedPQCError(algorithm);
+  },
+  async encapsulate(publicKey, algorithm) {
+    if (!(algorithm in nobleKEMs)) throw unsupportedPQCError(algorithm);
+    const result = nobleKEMs[algorithm as keyof typeof nobleKEMs].encapsulate(publicKey);
+    return {
+      ciphertext: new Uint8Array(result.cipherText),
+      sharedSecret: new Uint8Array(result.sharedSecret),
+      algorithm,
+      native: false,
+    };
+  },
+  async decapsulate(ciphertext, privateKey, algorithm) {
+    if (!(algorithm in nobleKEMs)) throw unsupportedPQCError(algorithm);
+    const sharedSecret = nobleKEMs[algorithm as keyof typeof nobleKEMs].decapsulate(ciphertext, privateKey);
+    return {
+      ciphertext,
+      sharedSecret: new Uint8Array(sharedSecret),
+      algorithm,
+      native: false,
+    };
+  },
+  async sign(message, privateKey, algorithm) {
+    if (!(algorithm in nobleSigners)) throw unsupportedPQCError(algorithm);
+    const signature = nobleSigners[algorithm as keyof typeof nobleSigners].sign(message, privateKey);
+    return {
+      signature: new Uint8Array(signature),
+      algorithm,
+      native: false,
+      signedAt: Date.now(),
+    };
+  },
+  async verify(message, signature, publicKey, algorithm) {
+    if (!(algorithm in nobleSigners)) throw unsupportedPQCError(algorithm);
+    return nobleSigners[algorithm as keyof typeof nobleSigners].verify(signature, message, publicKey);
+  },
+};
+
 // ─── PQCHandler Class ─────────────────────────────────────────────────────
 
 /**
@@ -266,7 +362,7 @@ function unsupportedPQCError(algorithm: string): Error {
 export class PQCHandler {
   private readonly version = '2.1.0';
 
-  constructor(private provider: PQCProvider | null = null) {}
+  constructor(private provider: PQCProvider | null = noblePQCProvider) {}
 
   /** Get module version */
   getVersion(): string {
@@ -283,6 +379,11 @@ export class PQCHandler {
     this.provider = null;
   }
 
+  /** Restore the default browser-compatible @noble/post-quantum provider */
+  useDefaultProvider(): void {
+    this.provider = noblePQCProvider;
+  }
+
   /** Get validation evidence for an algorithm, if an authentic provider supplies it */
   getValidationEvidence(algorithm: PQCAlgorithm): PQCValidationEvidence | null {
     const info = this.getAlgorithmInfo(algorithm);
@@ -292,6 +393,7 @@ export class PQCHandler {
         standard: info.nistStandard as PQCValidationEvidence['standard'],
         moduleName: 'Web Crypto API',
         providerName: 'runtime',
+        standardsConformant: true,
       };
     }
     return this.provider?.getValidationEvidence(algorithm) ?? null;

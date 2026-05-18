@@ -83,8 +83,8 @@ function UsersIcon({ className = "w-5 h-5" }: { className?: string }) {
 
 // ─── Feature Data ───────────────────────────────────────────────
 const FEATURES = [
-  { icon: <ShieldIcon />, title: 'Post-Quantum-Ready Cryptography', desc: 'ML-KEM-768 and ML-DSA-65 metadata with fail-closed execution until authentic native or validated module support is present.', accent: 'violet' as const },
-  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 classical KEM today, with ML-KEM hybrid mode gated on authentic FIPS 203-capable implementations.', accent: 'teal' as const },
+  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'Authentic @noble/post-quantum ML-KEM, ML-DSA, and SLH-DSA implementations for FIPS 203/204/205 algorithms.', accent: 'violet' as const },
+  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 + ML-KEM-768 hybrid KEM. Classical and post-quantum secrets are combined for defense in depth.', accent: 'teal' as const },
   { icon: <RefreshIcon />, title: 'Crypto Agility', desc: 'NIST 2035 migration paths built in. Algorithm registry, versioning, and automated migration — zero downtime.', accent: 'blue' as const },
   { icon: <LockIcon />, title: '\u03A9Vault Encryption', desc: 'AES-256-GCM + PBKDF2-SHA-512 at 600K iterations. Zero-knowledge client-side encryption with visual KDF progress.', accent: 'amber' as const },
   { icon: <ZapIcon />, title: '\u03A9Signal Reactivity', desc: 'Fine-grained reactive primitives — signal, computed, effect, batch, untrack — with auto dependency tracking. Zero deps.', accent: 'violet' as const },
@@ -134,23 +134,18 @@ const app = createVrilApp({
     label: 'PQC Key Exchange',
     lang: 'typescript',
     code: `import { PQCHandler, HybridKEM, CryptoAgility } from 'vril';
-import { fipsProvider } from './validated-pqc-provider';
 
-const pqc = new PQCHandler(fipsProvider);
+const pqc = new PQCHandler();
 
-// Fail closed unless authentic ML-KEM is present.
-if (!pqc.isSupported('ML-KEM-768')) {
-  throw new Error(
-    'Attach a CAVP/CMVP-validated FIPS 203 module'
-  );
-}
-
-// Hybrid mode only runs with real PQC support.
-const kem = new HybridKEM(
-  'X25519MLKEM768',
-  'vril-hybrid-kem-v2',
-  fipsProvider
+// Authentic ML-KEM-768 from @noble/post-quantum
+const keyPair = await pqc.generateKeyPair('ML-KEM-768');
+const kemResult = await pqc.encapsulate(
+  keyPair.publicKey,
+  'ML-KEM-768'
 );
+
+// Hybrid X25519 + ML-KEM-768
+const kem = new HybridKEM('X25519MLKEM768');
 const hybridKeys = await kem.generateKeyPair();
 const { sharedSecret } = await kem.encapsulate(
   hybridKeys.combinedPublicKey
@@ -958,7 +953,7 @@ export default function VrilShowcase() {
             </div>
           </div>
           <div className="mt-10 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="font-mono text-[10px] text-white/20 tracking-wider">© 2025-2026 VRIL LABS · ALL RIGHTS RESERVED · FIPS 203/204 REFERENCED · NOT VALIDATED</p>
+            <p className="font-mono text-[10px] text-white/20 tracking-wider">© 2025-2026 VRIL LABS · ALL RIGHTS RESERVED · FIPS 203/204/205 ALGORITHMS · VALIDATION EVIDENCE REQUIRED FOR REGULATED DEPLOYMENTS</p>
             <div className="flex items-center gap-4">
               <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/4 border border-white/8 rounded-full font-mono text-[10px] text-white/25">
                 <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" />

@@ -178,12 +178,12 @@ export default function DocsPage() {
             <p className="text-white/60 leading-relaxed mb-4">
               Vril.js is the security-first React framework by VRIL LABS. It provides post-quantum cryptography,
               zero-trust security membranes, and crypto agility built into every layer of the React framework —
-              with zero external dependencies. Native cryptographic primitives use the Web Crypto API
-              available in modern browsers, ensuring maximum performance and minimum attack surface.
+              with a minimal, auditable dependency set. Native browser primitives use the Web Crypto API,
+              while ML-KEM/ML-DSA/SLH-DSA are provided by @noble/post-quantum.
             </p>
             <p className="text-white/60 leading-relaxed mb-4">
-              With 22 framework modules, 200+ exports, and post-quantum-ready interfaces (ML-KEM-768, ML-DSA-65,
-              SLH-DSA metadata that fails closed until authentic native or validated module support is available), Vril.js is designed for applications where security is not optional — it is foundational.
+              With 22 framework modules, 200+ exports, and authentic post-quantum algorithms (ML-KEM-768,
+              ML-DSA-65, SLH-DSA-SHA2) from @noble/post-quantum, Vril.js is designed for applications where security is not optional — it is foundational.
               The framework implements a 5-layer security architecture spanning browser hardening, transport
               security, cryptographic operations, application-level protections, and build-time integrity verification.
             </p>
@@ -269,7 +269,6 @@ export default defineVrilConfig({
           {/* Quick Start */}
           <Section id="quickstart" title="Quick Start">
             <Code>{`import { createVrilApp, VrilVault, PQCHandler, signal, computed, effect } from '@/lib/vril';
-import { fipsProvider } from './validated-pqc-provider';
 
 // 1. Create your secure app
 const app = createVrilApp({
@@ -282,11 +281,10 @@ const vault = new VrilVault(600000);
 const encrypted = await vault.encrypt('passphrase', 'sensitive data');
 const decrypted = await vault.decrypt('passphrase', encrypted);
 
-// 3. Gate PQC on authentic implementation availability
-const pqc = new PQCHandler(fipsProvider);
-if (!pqc.isSupported('ML-KEM-768')) {
-  throw new Error('Attach a validated FIPS 203 module before enabling ML-KEM');
-}
+// 3. Authentic ML-KEM from @noble/post-quantum
+const pqc = new PQCHandler();
+const pqcKey = await pqc.generateKeyPair('ML-KEM-768');
+const kemResult = await pqc.encapsulate(pqcKey.publicKey, 'ML-KEM-768');
 
 // 4. Reactive state with ΩSignal
 const count = signal(0);
@@ -476,34 +474,35 @@ const strength = vault.assessStrength('my-passphrase');
 
           <Section id="pqc" title="vril/security/crypto/pqc">
             <p className="text-white/60 leading-relaxed mb-4">
-              Post-quantum cryptography handler exposing ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87,
-              SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f interfaces. The ML-KEM and ML-DSA metadata references
-              FIPS 203/204, but browser-side PQC operations fail closed unless authentic native support or a
-              validated external cryptographic module is wired in. Vril.js does not simulate PQC.
+              Post-quantum cryptography handler exposing authentic @noble/post-quantum implementations for
+              ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87, SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f.
+              The algorithms correspond to FIPS 203/204/205 parameter sets; Vril.js does not simulate PQC.
             </p>
             <ExportTable rows={[
-              ['PQCHandler', 'class', 'Post-quantum metadata and validated provider integration gate'],
-              ['generateKeyPair()', 'method', 'Generate native key pairs; PQC throws until authentic support exists'],
-              ['encapsulate()', 'method', 'Native KEM encapsulation; PQC throws until authentic support exists'],
-              ['decapsulate()', 'method', 'Native KEM decapsulation; PQC throws until authentic support exists'],
-              ['sign()', 'method', 'Create native digital signatures; ML-DSA throws until authentic support exists'],
+              ['PQCHandler', 'class', 'Post-quantum cryptography via @noble/post-quantum'],
+              ['generateKeyPair()', 'method', 'Generate ML-KEM/ML-DSA/SLH-DSA or native classical key pairs'],
+              ['encapsulate()', 'method', 'ML-KEM or native X25519 KEM encapsulation'],
+              ['decapsulate()', 'method', 'ML-KEM or native X25519 KEM decapsulation'],
+              ['sign()', 'method', 'Create ML-DSA/SLH-DSA or native ECDSA signatures'],
               ['verify()', 'method', 'Verify digital signature'],
               ['benchmark()', 'method', 'Performance benchmark for key gen/encap/decap cycles'],
               ['isSupported()', 'method', 'Check if a PQC algorithm is available'],
             ]} />
             <Code>{`import { PQCHandler } from '@/lib/vril/security/crypto/pqc';
-import { fipsProvider } from './validated-pqc-provider';
 
-const pqc = new PQCHandler(fipsProvider);
+const pqc = new PQCHandler();
 
-// Check operational support. Metadata exists, but operations
-// fail closed until authentic native/validated support exists.
-pqc.isSupported('ML-KEM-768'); // true only with FIPS 203 evidence
-pqc.isSupported('ML-DSA-65');  // true only with FIPS 204 evidence
+// Check operational support
+pqc.isSupported('ML-KEM-768'); // true
+pqc.isSupported('ML-DSA-65');  // true
 
-// Inspect validation evidence before enabling production PQC
+// Generate and use ML-KEM-768
+const keyPair = await pqc.generateKeyPair('ML-KEM-768');
+const kem = await pqc.encapsulate(keyPair.publicKey, 'ML-KEM-768');
+
+// Inspect implementation evidence
 const evidence = pqc.getValidationEvidence('ML-KEM-768');
-// evidence.cavpCertificate / evidence.cmvpCertificate
+// evidence.moduleName = '@noble/post-quantum@0.6.1'
 
 // Get algorithm info
 const info = pqc.getAlgorithmInfo('ML-KEM-768');
@@ -511,9 +510,9 @@ const info = pqc.getAlgorithmInfo('ML-KEM-768');
 // info.nativeSupport = false`}</Code>
             <SecurityNote>
               Truthful FIPS 203/204 compliance or validation claims require a conforming ML-KEM/ML-DSA
-              implementation tested through the appropriate NIST validation programs (CAVP, and CMVP/FIPS 140-3
-              when packaged as a cryptographic module). Vril.js does not claim FIPS validation for browser PQC;
-              production deployments that require FIPS must use a validated cryptographic module.
+              @noble/post-quantum implements FIPS 203/204/205 algorithms in browser-compatible TypeScript.
+              Formal FIPS validation claims for regulated deployments still require CAVP/ACVP certificates and,
+              when packaged as a cryptographic module, CMVP/FIPS 140-3 evidence for the exact module boundary.
             </SecurityNote>
           </Section>
 

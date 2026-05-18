@@ -145,7 +145,7 @@ export class HybridKEM {
     contextInfo: string = 'vril-hybrid-kem-v2',
     provider?: PQCProvider
   ) {
-    this.pqc = new PQCHandler(provider ?? null);
+    this.pqc = new PQCHandler(provider);
     this.contextInfo = contextInfo;
 
     if (mode === 'X25519MLKEM768') {
@@ -300,7 +300,7 @@ export class HybridSigner {
   private pqcAlgorithm: string;
 
   constructor(mode: 'X25519MLKEM768' | 'ECDSAP256MLDSA65' = 'ECDSAP256MLDSA65', provider?: PQCProvider) {
-    this.pqc = new PQCHandler(provider ?? null);
+    this.pqc = new PQCHandler(provider);
 
     if (mode === 'X25519MLKEM768') {
       this.classicalAlgorithm = 'X25519';
