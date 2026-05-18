@@ -22,7 +22,7 @@ npx tsc --noEmit
 
 ## Project Summary
 
-Vril.js is a security-first React framework built on **Next.js 16** with:
+Vril.js is a security-first React framework with a built-in Vril runtime for SSR, routing, API handlers, static builds, and security proxying:
 - Post-quantum cryptography (ML-KEM-768, ML-DSA-65) — zero dependencies, Web Crypto API only
 - Zero-trust security membrane: Trusted Types, API membrane, CSP Level 3, Permissions Policy
 - Hybrid key exchange and crypto agility for NIST 2035 migration
@@ -32,7 +32,7 @@ Vril.js is a security-first React framework built on **Next.js 16** with:
 | File | Purpose |
 |------|---------|
 | `vril.config.ts` | User-facing framework config (security, crypto, router, server, auth) |
-| `src/proxy.ts` | Next.js proxy — applies security headers to every response |
+| `src/proxy.ts` | Vril security proxy — applies security headers to every response |
 | `src/lib/vril/` | Core library — all 22 Vril.js modules live here |
 | `src/app/page.tsx` | Landing/showcase page (served at `/`) |
 | `src/app/docs/page.tsx` | Full documentation page (served at `/docs`) |
@@ -44,14 +44,14 @@ Vril.js is a security-first React framework built on **Next.js 16** with:
 
 ```
 Request → src/proxy.ts (security headers + CSRF block)
-        → Next.js App Router
+        → Built-in Vril router/runtime
         → src/app/layout.tsx (root layout, fonts)
         → src/app/page.tsx  OR  src/app/docs/page.tsx
         → src/components/*  (shared UI)
         → src/lib/vril/*    (Vril.js library)
 ```
 
-The `src/proxy.ts` file exports a `proxy` function (equivalent to Next.js middleware) that runs before every request and injects HSTS, CSP, CORP, COOP, COEP, Permissions-Policy, and Referrer-Policy headers.
+The `src/proxy.ts` file exports a `proxy` function that runs before route handling and injects HSTS, CSP, CORP, COOP, COEP, Permissions-Policy, and Referrer-Policy headers.
 
 ---
 
@@ -94,9 +94,9 @@ export default function MyComponent() { ... }
 ### Add a new API route
 Create `src/app/api/<route-name>/route.ts`:
 ```ts
-import { NextResponse } from 'next/server';
+import { json } from '@/lib/vril/framework';
 export async function GET() {
-  return NextResponse.json({ ... });
+  return json({ ... });
 }
 ```
 

@@ -168,7 +168,7 @@ export class APISchema {
   }
 
   /** Validate an object with a defined shape */
-  static object<T extends Record<string, (v: unknown) => ValidationResult<any>>>(
+  static object<T extends Record<string, (v: unknown) => ValidationResult<unknown>>>(
     shape: T
   ) {
     return (value: unknown): ValidationResult<{ [K in keyof T]: ReturnType<T[K]> extends ValidationResult<infer V> ? V : never }> => {
@@ -191,7 +191,7 @@ export class APISchema {
 
       return errors.length > 0
         ? { success: false, errors }
-        : { success: true, data: result as any };
+        : { success: true, data: result as { [K in keyof T]: ReturnType<T[K]> extends ValidationResult<infer V> ? V : never } };
     };
   }
 

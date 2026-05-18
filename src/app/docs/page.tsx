@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, type ReactNode } from 'react';
-import Link from 'next/link';
 
 // ─── Types ──────────────────────────────────────────────────────
 interface DocSection {
@@ -131,12 +130,12 @@ export default function DocsPage() {
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg border border-white/10 text-white/50 hover:text-white">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
             </button>
-            <Link href="/" className="font-[family-name:var(--font-display)] font-bold text-lg gradient-text">Vril.js</Link>
+            <a href="/" className="font-[family-name:var(--font-display)] font-bold text-lg gradient-text">Vril.js</a>
             <span className="font-mono text-[10px] tracking-[0.14em] uppercase px-2 py-0.5 rounded-full border border-[#00FFC8]/30 text-[#00FFC8] bg-[#00FFC8]/7">Docs</span>
             <span className="font-mono text-xs text-white/20">v2.1.0</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-sm text-white/40 hover:text-[#00FFC8] transition-colors">← Home</Link>
+            <a href="/" className="text-sm text-white/40 hover:text-[#00FFC8] transition-colors">← Home</a>
           </div>
         </div>
       </header>
@@ -178,21 +177,21 @@ export default function DocsPage() {
             <p className="text-white/60 leading-relaxed mb-4">
               Vril.js is the security-first React framework by VRIL LABS. It provides post-quantum cryptography,
               zero-trust security membranes, and crypto agility built into every layer of the React framework —
-              with zero external dependencies. Every cryptographic operation uses the Web Crypto API natively
-              available in modern browsers, ensuring maximum performance and minimum attack surface.
+              with zero bundled runtime dependencies. Native browser primitives use the Web Crypto API,
+              while ML-KEM/ML-DSA/SLH-DSA are exposed through a provider interface for authentic implementations.
             </p>
             <p className="text-white/60 leading-relaxed mb-4">
-              With 26 framework modules, 200+ exports, and full post-quantum support (ML-KEM-768, ML-DSA-65,
-              SLH-DSA), Vril.js is designed for applications where security is not optional — it is foundational.
+              With 22 framework modules, 200+ exports, and provider-gated post-quantum algorithms (ML-KEM-768,
+              ML-DSA-65, SLH-DSA-SHA2), Vril.js is designed for applications where security is not optional — it is foundational.
               The framework implements a 5-layer security architecture spanning browser hardening, transport
               security, cryptographic operations, application-level protections, and build-time integrity verification.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 my-6">
               {[
-                ['26', 'Modules'],
+                ['22', 'Modules'],
                 ['200+', 'Exports'],
-                ['0', 'Dependencies'],
-                ['Full', 'PQC'],
+                ['No', 'Next.js'],
+                ['PQC', 'Ready'],
               ].map(([val, label]) => (
                 <div key={label} className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/6">
                   <div className="text-xl font-bold gradient-text font-[family-name:var(--font-display)]">{val}</div>
@@ -205,7 +204,7 @@ export default function DocsPage() {
           {/* Installation */}
           <Section id="install" title="Installation">
             <p className="text-white/60 leading-relaxed mb-4">
-              Create a new Vril.js project with the official CLI, or add Vril.js to an existing Next.js project.
+              Create a new Vril.js project with the official CLI, or add the Vril runtime to an existing React project.
             </p>
             <Code>{`# Create a new project
 npx create-vril-app@latest my-app
@@ -226,7 +225,7 @@ npx vril doctor`}</Code>
           <Section id="config" title="Configuration (vril.config.ts)">
             <p className="text-white/60 leading-relaxed mb-4">
               Vril.js uses a <code className="text-[#00FFC8] bg-[#00FFC8]/8 px-1.5 py-0.5 rounded text-sm">vril.config.ts</code> file
-              at the project root, similar to Next.js&apos;s <code className="text-white/50 bg-white/5 px-1.5 py-0.5 rounded text-sm">next.config.ts</code>.
+              at the project root as the single source of truth for the built-in framework runtime.
               This file controls all framework behavior including security policies, cryptography settings, routing,
               build security, and authentication.
             </p>
@@ -238,7 +237,7 @@ export default defineVrilConfig({
     apiMembrane: true,
     csp: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
       objectSrc: ["'none'"],
     },
     csrf: {
@@ -268,7 +267,8 @@ export default defineVrilConfig({
 
           {/* Quick Start */}
           <Section id="quickstart" title="Quick Start">
-            <Code>{`import { createVrilApp, VrilVault, PQCHandler, signal } from '@/lib/vril';
+            <Code>{`import { createVrilApp, VrilVault, PQCHandler, signal, computed, effect } from '@/lib/vril';
+import { validatedPQCProvider } from './validated-pqc-provider';
 
 // 1. Create your secure app
 const app = createVrilApp({
@@ -281,9 +281,10 @@ const vault = new VrilVault(600000);
 const encrypted = await vault.encrypt('passphrase', 'sensitive data');
 const decrypted = await vault.decrypt('passphrase', encrypted);
 
-// 3. Post-quantum key exchange
-const pqc = new PQCHandler();
-const hybridKey = await pqc.generateHybridKeyPair();
+// 3. Authentic ML-KEM from a registered provider
+const pqc = new PQCHandler(validatedPQCProvider);
+const pqcKey = await pqc.generateKeyPair('ML-KEM-768');
+const kemResult = await pqc.encapsulate(pqcKey.publicKey, 'ML-KEM-768');
 
 // 4. Reactive state with ΩSignal
 const count = signal(0);
@@ -322,7 +323,7 @@ console.log(env.isServer, env.isClient, env.isEdge);
 
 // Feature flags with gradual rollout
 const flags = new FeatureFlags();
-flags.register('pqc-v2', { enabled: true, rollout: 25 }); // 25% rollout
+flags.register({ name: 'pqc-v2', enabled: true, rolloutPercentage: 25 }); // 25% rollout
 if (flags.isEnabled('pqc-v2')) { /* use new PQC API */ }`}</Code>
           </Section>
 
@@ -447,7 +448,7 @@ const result = validator.validate(userUrl, { allowedProtocols: ['https:'] });`}<
               ['encryptBlob()', 'method', 'Encrypt binary data (ArrayBuffer)'],
               ['wrapKey()', 'method', 'AES-KW key wrapping for secure key storage'],
               ['rotatePassphrase()', 'method', 'Re-encrypt bundle with new passphrase'],
-              ['assessStrength()', 'method', 'Password strength scoring (0-6 scale)'],
+              ['assessStrength()', 'method', 'Password strength scoring (0-8 scale)'],
               ['SecureMemory', 'class', 'Best-effort zeroization of sensitive data in memory'],
             ]} />
             <Code>{`import { VrilVault } from '@/lib/vril/security/crypto/vault';
@@ -464,7 +465,7 @@ const decrypted = await vault.decrypt('my-passphrase', encrypted);
 
 // Check passphrase strength
 const strength = vault.assessStrength('my-passphrase');
-// strength = { score: 4, max: 6, label: 'moderate' }`}</Code>
+// strength = { score: 4, max: 8, label: 'weak' }`}</Code>
             <SecurityNote>
               Never store passphrases in localStorage or cookies. Use the SecureMemory class to zero out
               passphrase variables after use. KDF iterations below 600,000 do not meet OWASP 2023 recommendations.
@@ -473,42 +474,57 @@ const strength = vault.assessStrength('my-passphrase');
 
           <Section id="pqc" title="vril/security/crypto/pqc">
             <p className="text-white/60 leading-relaxed mb-4">
-              Post-quantum cryptography handler supporting ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87,
-              SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f. All algorithms follow FIPS 203/204 standards.
-              Where browser support is not yet available, the module simulates PQC operations with real
-              classical fallbacks (ECDH-P256, ECDSA-P256).
+              Post-quantum cryptography handler exposing bundled native Active Surface PQC and provider-backed implementations for
+              ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87, SLH-DSA-SHA2-128s, and SLH-DSA-SHA2-256f.
+              The algorithms correspond to FIPS 203/204/205 parameter sets and execute as native JavaScript.
             </p>
             <ExportTable rows={[
-              ['PQCHandler', 'class', 'Post-quantum key encapsulation and digital signatures'],
-              ['generateKeyPair()', 'method', 'Generate PQC key pairs for KEM or signatures'],
-              ['encapsulate()', 'method', 'KEM encapsulation (generate shared secret + ciphertext)'],
-              ['decapsulate()', 'method', 'KEM decapsulation (recover shared secret)'],
-              ['sign()', 'method', 'Create digital signature (ECDSA-P256 real, ML-DSA simulated)'],
+              ['PQCHandler', 'class', 'Bundled native and provider-gated post-quantum cryptography'],
+              ['nativePQCProvider', 'provider', 'Bundled zero-dependency ML-KEM/ML-DSA/SLH-DSA provider'],
+              ['generateKeyPair()', 'method', 'Generate native/provider-backed PQC or native classical key pairs'],
+              ['encapsulate()', 'method', 'Native/provider-backed ML-KEM or native X25519 KEM encapsulation'],
+              ['decapsulate()', 'method', 'Native/provider-backed ML-KEM or native X25519 KEM decapsulation'],
+              ['sign()', 'method', 'Create native/provider-backed PQC or native ECDSA signatures'],
               ['verify()', 'method', 'Verify digital signature'],
               ['benchmark()', 'method', 'Performance benchmark for key gen/encap/decap cycles'],
-              ['isSupported()', 'method', 'Check if a PQC algorithm is available'],
+              ['isSupported()', 'method', 'Check if a PQC algorithm has admissible operational evidence'],
+              ['supportsPQC()', 'method', 'Check if Vril.js can execute real bundled/provider PQC'],
+              ['browserSupportsPQC()', 'method', 'Check if the browser can run Vril.js Active Surface PQC'],
+              ['isFipsValidated()', 'method', 'Check for explicit CAVP + CMVP certificate evidence'],
             ]} />
             <Code>{`import { PQCHandler } from '@/lib/vril/security/crypto/pqc';
+import { validatedPQCProvider } from './validated-pqc-provider';
 
-const pqc = new PQCHandler();
+const pqc = new PQCHandler(); // uses nativePQCProvider by default
+// Or provide a CAVP/CMVP-certified replacement:
+const regulatedPqc = new PQCHandler(validatedPQCProvider);
 
-// Check algorithm support
-pqc.isSupported('ML-KEM-768'); // true
-pqc.isSupported('ML-DSA-65');  // true
+// Check operational support
+pqc.isSupported('ML-KEM-768'); // true when admissible standards evidence is present
+pqc.isSupported('ML-DSA-65');  // true when admissible standards evidence is present
+pqc.supportsPQC(); // true with bundled Active Surface PQC
+await pqc.browserSupportsPQC(); // true in browsers when bundled/provider PQC is available
+pqc.isFipsValidated('ML-KEM-768'); // true only with CAVP + CMVP certificate IDs
 
-// Generate hybrid key pair
-const keyPair = await pqc.generateKeyPair('X25519-ML-KEM-768');
+// Generate and use ML-KEM-768
+const keyPair = await pqc.generateKeyPair('ML-KEM-768');
+const kem = await pqc.encapsulate(keyPair.publicKey, 'ML-KEM-768');
 
-// Key encapsulation
-const result = await pqc.hybridKeyExchange(peerPublicKey);
+// Inspect implementation evidence
+const evidence = pqc.getValidationEvidence('ML-KEM-768');
+// evidence.moduleName / evidence.cavpCertificate / evidence.cmvpCertificate
 
 // Get algorithm info
 const info = pqc.getAlgorithmInfo('ML-KEM-768');
-// info = { name: 'ML-KEM-768', standard: 'FIPS 203', securityLevel: 3, ... }`}</Code>
+// info.nistStandard = 'FIPS 203'
+// info.nativeSupport = false`}</Code>
             <SecurityNote>
-              PQC algorithms not yet natively supported in browsers are simulated. The hybrid approach
-              (X25519+ML-KEM-768) ensures classical security is always maintained. When browsers add native
-              PQC support, Vril.js will automatically use the real implementations.
+              Truthful FIPS 203/204/205 compliance claims require a conforming ML-KEM, ML-DSA, or SLH-DSA
+              provider with matching algorithm evidence and correct key/ciphertext/signature sizes.
+              The bundled nativePQCProvider provides standards-conformant native operations, but it is not formally
+              FIPS-validated until CAVP/ACVP and CMVP/FIPS 140-3 certificate identifiers are attached.
+              Formal FIPS validation claims for regulated deployments require CAVP/ACVP and CMVP/FIPS 140-3
+              certificate evidence for the exact implementation and module boundary.
             </SecurityNote>
           </Section>
 
@@ -832,7 +848,7 @@ registry.register({ path: '/api/*', security: { csrf: true, rateLimit: 60 } });
 const handler = RouteMiddleware.compose(
   RouteMiddleware.withAuth,
   RouteMiddleware.withCSRF,
-  RouteMiddleware.withRateLimit({ max: 100 }),
+  RouteMiddleware.withRateLimit(100),
 )(async (req) => Response.json({ ok: true }));`}</Code>
           </Section>
 

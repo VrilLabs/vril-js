@@ -61,7 +61,7 @@ export type Encrypted<T> = T & {
  * Branded type for hashed data.
  * Indicates the value is a one-way hash of the original data.
  */
-export type Hashed<T> = string & {
+export type Hashed<_T> = string & {
   readonly __hashed_brand: unique symbol;
 };
 
@@ -83,7 +83,7 @@ export interface PQCVerified {
   readonly pqcAlgorithm: string;
   /** Timestamp of verification */
   readonly verifiedAt: number;
-  /** Whether the verification was native or simulated */
+  /** Whether the verification used native runtime support rather than a provider */
   readonly nativeVerification: boolean;
   /** NIST security level (1-5) */
   readonly securityLevel: number;
@@ -300,7 +300,7 @@ export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object
     ? T[P] extends Array<infer U>
       ? Array<DeepPartial<U>>
-      : T[P] extends Function
+      : T[P] extends (...args: never[]) => unknown
         ? T[P]
         : DeepPartial<T[P]>
     : T[P];
@@ -312,7 +312,7 @@ export type DeepPartial<T> = {
  */
 export type DeepReadonly<T> = {
   readonly [P in keyof T]: T[P] extends object
-    ? T[P] extends Function
+    ? T[P] extends (...args: never[]) => unknown
       ? T[P]
       : DeepReadonly<T[P]>
     : T[P];

@@ -233,6 +233,22 @@ export class PerformanceMonitor {
 // ─── SecurityDiagnostics ──────────────────────────────────────────
 
 /**
+ * Returns true only when the browser exposes a usable Trusted Types API —
+ * specifically when `window.trustedTypes` is an object with a callable
+ * `createPolicy` method. A merely truthy stub such as `{}` or a null/undefined
+ * value from a partial polyfill is correctly rejected.
+ */
+function windowHasTrustedTypes(): boolean {
+  if (typeof window === 'undefined') return false;
+  const tt = (window as Window & { trustedTypes?: unknown }).trustedTypes;
+  return (
+    typeof tt === 'object' &&
+    tt !== null &&
+    typeof (tt as { createPolicy?: unknown }).createPolicy === 'function'
+  );
+}
+
+/**
  * Real-time security health monitoring.
  * Checks for common security misconfigurations and vulnerabilities.
  */
@@ -327,7 +343,7 @@ export class SecurityDiagnostics {
   }
 
   private checkTrustedTypes(): void {
-    const hasTT = typeof window !== 'undefined' && !!(window as any).trustedTypes;
+    const hasTT = windowHasTrustedTypes();
     this.addCheck({
       check: 'Trusted Types',
       status: hasTT ? 'pass' : 'info',
@@ -541,26 +557,32 @@ export class NetworkMonitor {
   private metrics: NetworkMetric[] = [];
   private _version = '2.1.0';
   private maxMetrics = 500;
-  private originalFetch: typeof fetch | null = null;
+  /** The exact original window.fetch reference for restoring on stopInterception */
+  private nativeFetch: typeof fetch | null = null;
+  /** A window-bound copy used for invocation (prevents illegal-invocation errors) */
+  private boundFetch: typeof fetch | null = null;
   private intercepting = false;
 
   /** Start intercepting fetch requests */
   startInterception(): void {
     if (this.intercepting || typeof window === 'undefined') return;
+    if (typeof window.fetch !== 'function') return;
 
-    this.originalFetch = window.fetch;
-    const self = this;
+    // Keep the unbound original for exact identity restoration.
+    // Use a window-bound copy for all invocations so the receiver is always Window.
+    this.nativeFetch = window.fetch;
+    this.boundFetch  = window.fetch.bind(window);
 
-    window.fetch = async function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
       const method = init?.method ?? 'GET';
       const start = performance.now();
 
       try {
-        const response = await self.originalFetch!.call(this, input, init);
+        const response = await this.boundFetch!(input, init);
         const duration = performance.now() - start;
 
-        self.recordMetric({
+        this.recordMetric({
           url,
           method,
           statusCode: response.status,
@@ -572,7 +594,7 @@ export class NetworkMonitor {
 
         return response;
       } catch (err) {
-        self.recordMetric({
+        this.recordMetric({
           url,
           method,
           statusCode: 0,
@@ -590,9 +612,11 @@ export class NetworkMonitor {
 
   /** Stop intercepting fetch requests */
   stopInterception(): void {
-    if (!this.intercepting || !this.originalFetch) return;
-    window.fetch = this.originalFetch;
-    this.originalFetch = null;
+    if (!this.intercepting || !this.nativeFetch) return;
+    // Restore the original unbound reference so window.fetch identity is preserved
+    window.fetch = this.nativeFetch;
+    this.nativeFetch = null;
+    this.boundFetch  = null;
     this.intercepting = false;
   }
 
@@ -710,7 +734,7 @@ export class MemoryProfiler {
 
   /** Take a memory snapshot */
   snapshot(): MemorySnapshot | null {
-    const perf = performance as any;
+    const perf = performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } };
     if (!perf?.memory) return null;
 
     const snap: MemorySnapshot = {
@@ -812,7 +836,7 @@ export function createDiagnosticReport(): DiagnosticReport {
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
       isSecureContext: typeof window !== 'undefined' ? window.isSecureContext : false,
       hasWebCrypto: typeof globalThis.crypto !== 'undefined' && !!globalThis.crypto.subtle,
-      hasTrustedTypes: typeof window !== 'undefined' && !!(window as any).trustedTypes,
+      hasTrustedTypes: windowHasTrustedTypes(),
       hasServiceWorker: typeof navigator !== 'undefined' && 'serviceWorker' in navigator,
       protocol: typeof location !== 'undefined' ? location.protocol : 'unknown',
     },

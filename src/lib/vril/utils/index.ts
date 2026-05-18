@@ -308,8 +308,22 @@ export function deepClone<T>(obj: T): T {
   }
 
   if (ArrayBuffer.isView(obj)) {
-    const view = obj as unknown as ArrayBufferView;
-    return new (view.constructor as any)(view.buffer.slice(0), view.byteOffset, (view as any).length) as unknown as T;
+    if (obj instanceof DataView) {
+      // DataView has no .slice() — clone the underlying buffer region and wrap
+      return new DataView(
+        obj.buffer.slice(obj.byteOffset, obj.byteOffset + obj.byteLength)
+      ) as unknown as T;
+    }
+    // TypedArrays (Uint8Array, Float32Array, etc.) — copy the underlying byte
+    // range into a fresh ArrayBuffer, then reconstruct with the same constructor.
+    // Calling the instance's `.slice()` is NOT safe here: Node.js Buffer is a
+    // Uint8Array subclass whose `.slice()` / `.subarray()` return a view over the
+    // same shared memory, meaning mutations to the "clone" would mutate the
+    // original. Creating via `new Ctor(freshBuffer)` is always a true copy.
+    const view = obj as ArrayBufferView;
+    const freshBuffer = view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength) as ArrayBuffer;
+    const TypedArrayCtor = (view as unknown as { constructor: new (buf: ArrayBuffer) => T }).constructor;
+    return new TypedArrayCtor(freshBuffer);
   }
 
   if (obj instanceof Date) {
@@ -317,16 +331,16 @@ export function deepClone<T>(obj: T): T {
   }
 
   if (obj instanceof Map) {
-    const clone = new Map() as Map<any, any>;
-    for (const [key, value] of (obj as Map<any, any>)) {
+    const clone = new Map<unknown, unknown>();
+    for (const [key, value] of (obj as Map<unknown, unknown>)) {
       clone.set(deepClone(key), deepClone(value));
     }
     return clone as unknown as T;
   }
 
   if (obj instanceof Set) {
-    const clone = new Set() as Set<any>;
-    for (const value of (obj as Set<any>)) {
+    const clone = new Set<unknown>();
+    for (const value of (obj as Set<unknown>)) {
       clone.add(deepClone(value));
     }
     return clone as unknown as T;
@@ -403,17 +417,19 @@ export function mergeConfigs<T extends Record<string, unknown>>(
 /**
  * Debounce a function — delays invocation until `ms` milliseconds
  * have elapsed since the last call.
+ * Preserves the dynamic `this` of the call site so debounced methods work correctly.
  */
-export function debounce<T extends (...args: any[]) => any>(
-  fn: T,
+export function debounce<TThis, TArgs extends unknown[], TReturn>(
+  fn: (this: TThis, ...args: TArgs) => TReturn,
   ms: number
-): (...args: Parameters<T>) => void {
+): (this: TThis, ...args: TArgs) => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
 
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: TThis, ...args: TArgs) {
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(() => {
-      fn.apply(this, args);
+      // Arrow function lexically captures 'this' from the enclosing function wrapper
+      fn.call(this, ...args);
       timer = undefined;
     }, ms);
   };
@@ -422,28 +438,42 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Throttle a function — limits invocation to at most once per `ms` milliseconds.
  * Calls the function with the latest arguments on the trailing edge.
+ * Preserves the dynamic `this` of the call site so throttled methods work correctly.
  */
-export function throttle<T extends (...args: any[]) => any>(
-  fn: T,
+export function throttle<TThis, TArgs extends unknown[], TReturn>(
+  fn: (this: TThis, ...args: TArgs) => TReturn,
   ms: number
-): (...args: Parameters<T>) => void {
+): (this: TThis, ...args: TArgs) => void {
   let lastCall = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let lastArgs: Parameters<T> | undefined;
+  // Store the latest call context and args together so they always stay in sync
+  let pendingCall: { callContext: TThis; args: TArgs } | undefined;
 
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: TThis, ...args: TArgs) {
     const now = Date.now();
-    lastArgs = args;
 
     if (now - lastCall >= ms) {
-      lastCall = now;
-      fn.apply(this, args);
-    } else if (timer === undefined) {
-      timer = setTimeout(() => {
-        lastCall = Date.now();
+      // Cancel any trailing timer — we're running immediately so the deferred
+      // call is no longer needed and would double-fire otherwise.
+      if (timer !== undefined) {
+        clearTimeout(timer);
         timer = undefined;
-        if (lastArgs) fn.apply(this, lastArgs);
-      }, ms - (now - lastCall));
+      }
+      pendingCall = undefined;
+      lastCall = now;
+      fn.call(this, ...args);
+    } else {
+      pendingCall = { callContext: this, args };
+      if (timer === undefined) {
+        timer = setTimeout(() => {
+          lastCall = Date.now();
+          timer = undefined;
+          if (pendingCall !== undefined) {
+            fn.call(pendingCall.callContext, ...pendingCall.args);
+            pendingCall = undefined;
+          }
+        }, ms - (now - lastCall));
+      }
     }
   };
 }

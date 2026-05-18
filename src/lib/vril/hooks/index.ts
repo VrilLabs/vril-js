@@ -11,9 +11,11 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo, useContext } from 'react';
-import { type SignalReadable, type AsyncSignalState, type ResourceState } from '../signals';
-import { signal as createSignal, effect, computed } from '../signals';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { type SignalReadable } from '../signals';
+import { effect, computed } from '../signals';
+
+const ENCRYPTED_STORAGE_PBKDF2_ITERATIONS = 600000;
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -85,6 +87,7 @@ export function useComputed<T>(fn: () => T, deps: unknown[] = []): T {
   const computedRef = useRef<ReturnType<typeof computed<T>> | null>(null);
   const [, forceRender] = useState({});
 
+  // eslint-disable-next-line react-hooks/refs
   if (!computedRef.current) {
     computedRef.current = computed(fn);
   }
@@ -100,6 +103,7 @@ export function useComputed<T>(fn: () => T, deps: unknown[] = []): T {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
+  // eslint-disable-next-line react-hooks/refs
   return computedRef.current();
 }
 
@@ -146,7 +150,7 @@ export function useAsyncSignal<T>(
           }));
         }
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/use-memo
   }, deps);
 
   const reset = useCallback(() => {
@@ -321,38 +325,154 @@ export function useEncryptedState<T>(
 
 // ─── useSecureStorage ─────────────────────────────────────────────
 
+function getWebCrypto(): Crypto | null {
+  return typeof crypto !== 'undefined' && crypto.subtle ? crypto : null;
+}
+
 /**
  * localStorage with encryption support.
- * Data is encrypted before being written to storage.
+ * When a passphrase is provided, data is AES-256-GCM encrypted before being
+ * written to storage. The stored blob is base64-encoded as [salt(16) | iv(12) | ciphertext].
+ * Without a passphrase, values are stored as plain JSON (backward-compatible).
  */
 export function useSecureStorage<T>(
   key: string,
   defaultValue: T,
   passphrase?: string
 ): [T, (value: T | ((prev: T) => T)) => void, () => void] {
+  // Without a passphrase: read from localStorage synchronously via lazy initializer
+  // (avoids setState-in-effect). With a passphrase: start with defaultValue and
+  // decrypt asynchronously in useEffect below.
   const [value, setValue] = useState<T>(() => {
-    if (typeof window === 'undefined') return defaultValue;
+    if (passphrase || typeof window === 'undefined') return defaultValue;
     try {
       const raw = localStorage.getItem(key);
-      if (raw !== null) {
-        return JSON.parse(raw);
-      }
+      if (raw !== null) return JSON.parse(raw) as T;
     } catch {}
     return defaultValue;
   });
+  const saltRef = useRef<Uint8Array | null>(null);
+  // Monotonically-increasing counter used to sequence async encrypted writes.
+  // Each write captures the current count before any await; if a newer write
+  // increments it first, the older write is considered superseded and must not
+  // commit its (now stale) ciphertext to localStorage.
+  const writeVersionRef = useRef(0);
+
+  /** Derive an AES-GCM key from the passphrase and salt using PBKDF2 */
+  const deriveKey = useCallback(async (salt: Uint8Array): Promise<CryptoKey | null> => {
+    const webCrypto = getWebCrypto();
+    if (!passphrase || !webCrypto) return null;
+    try {
+      const km = await webCrypto.subtle.importKey(
+        'raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']
+      );
+      return await webCrypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: new Uint8Array(salt), iterations: ENCRYPTED_STORAGE_PBKDF2_ITERATIONS, hash: 'SHA-512' },
+        km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+      );
+    } catch { return null; }
+  }, [passphrase]);
+
+  // Flag set by setStoredValue to cancel a still-pending mount-time decrypt.
+  // Prevents the async decrypt from calling setValue with stale persisted data
+  // after the user has already made a newer in-memory write.
+  const mountDecryptStaleRef = useRef(false);
+
+  // Decrypt stored value on mount (only runs when a passphrase is provided)
+  useEffect(() => {
+    if (!passphrase || typeof window === 'undefined') return;
+    const raw = localStorage.getItem(key);
+    if (raw === null) return;
+
+    mountDecryptStaleRef.current = false;
+
+    // Encrypted storage: base64-encoded [salt(16) | iv(12) | ciphertext]
+    (async () => {
+      try {
+        const bytes = Uint8Array.from(atob(raw).split('').map(c => c.charCodeAt(0)));
+        // Minimum valid payload: 16-byte salt + 12-byte IV + 16-byte GCM tag = 44 bytes
+        if (bytes.length < 44) return;
+        const salt = bytes.slice(0, 16);
+        const iv   = bytes.slice(16, 28);
+        const ct   = bytes.slice(28);
+        const cryptoKey = await deriveKey(salt);
+        // Bail if: key derivation failed, component unmounted, or a write arrived first
+        if (!cryptoKey || mountDecryptStaleRef.current) return;
+        const webCrypto = getWebCrypto();
+        if (!webCrypto) return;
+        const plaintext = await webCrypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
+        if (!mountDecryptStaleRef.current) {
+          // Only store the salt after successful decryption; a malformed or
+          // tampered payload must not corrupt saltRef with a short/wrong salt
+          // that would make the next write produce an unrecoverable blob.
+          saltRef.current = salt;
+          setValue(JSON.parse(new TextDecoder().decode(plaintext)) as T);
+        }
+      } catch {
+        // Decryption failed — key changed or data corrupt; leave defaultValue
+      }
+    })();
+
+    // Mark stale on unmount so an in-flight decrypt does not set state on an
+    // unmounted component
+    return () => { mountDecryptStaleRef.current = true; };
+  // Intentionally empty dep array: decryption runs once on mount to restore the
+  // persisted value. Re-decryption on key/passphrase change would require migrating
+  // the stored ciphertext — callers should unmount and remount instead.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const setStoredValue = useCallback((updater: T | ((prev: T) => T)) => {
+    // Any in-flight mount-time decrypt must not overwrite this newer write
+    mountDecryptStaleRef.current = true;
     setValue(prev => {
       const next = typeof updater === 'function' ? (updater as (p: T) => T)(prev) : updater;
-      try {
-        localStorage.setItem(key, JSON.stringify(next));
-      } catch {}
+
+      if (!passphrase) {
+        try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
+        return next;
+      }
+
+      // Encrypt and store asynchronously; React state updates synchronously.
+      // Capture the current write version before any await so we can detect if a
+      // newer write superseded this one by the time encryption finishes.
+      const myVersion = ++writeVersionRef.current;
+      (async () => {
+        try {
+          const webCrypto = getWebCrypto();
+          if (!webCrypto) return;
+          const salt = saltRef.current ?? webCrypto.getRandomValues(new Uint8Array(16));
+          if (!saltRef.current) saltRef.current = salt;
+          const cryptoKey = await deriveKey(salt);
+          if (!cryptoKey || writeVersionRef.current !== myVersion) return;
+          const iv      = webCrypto.getRandomValues(new Uint8Array(12));
+          const encoded = new TextEncoder().encode(JSON.stringify(next));
+          const ct      = await webCrypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, encoded);
+          if (writeVersionRef.current !== myVersion) return;
+          const blob    = new Uint8Array(16 + 12 + new Uint8Array(ct).length);
+          blob.set(salt, 0);
+          blob.set(iv, 16);
+          blob.set(new Uint8Array(ct), 28);
+          // Build the base64 string via Array.from + join — both spread (`...blob`)
+          // and naive string concatenation can fail or become quadratic for large
+          // blobs; a pre-sized array with a single join call is O(n) and safe.
+          const binary = Array.from(blob, (byte: number) => String.fromCharCode(byte)).join('');
+          localStorage.setItem(key, btoa(binary));
+        } catch {}
+      })();
+
       return next;
     });
-  }, [key]);
+  }, [key, passphrase, deriveKey]);
 
   const removeValue = useCallback(() => {
+    // Cancel all pending async work: mount decrypts must not restore the old
+    // value. Write versions are issued monotonically, so advancing once past
+    // the latest issued version invalidates every currently pending write.
+    writeVersionRef.current++;
+    mountDecryptStaleRef.current = true;
     try { localStorage.removeItem(key); } catch {}
+    saltRef.current = null;
     setValue(defaultValue);
   }, [key, defaultValue]);
 
@@ -376,6 +496,7 @@ export function useCSRFToken(cookieName = 'csrf_token'): {
     // Try meta tag first
     const metaTag = document.querySelector('meta[name="csrf-token"]');
     if (metaTag) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setToken(metaTag.getAttribute('content'));
       return;
     }
@@ -451,6 +572,7 @@ export function useSecurityHeaders(): {
       }
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResult({
       headers,
       issues,
@@ -516,6 +638,7 @@ export function useRateLimiter(config: RateLimitConfig): {
 } {
   const callsRef = useRef<number[]>([]);
   const configRef = useRef(config);
+  // eslint-disable-next-line react-hooks/refs
   configRef.current = config;
 
   const cleanup = useCallback(() => {

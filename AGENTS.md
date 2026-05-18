@@ -6,14 +6,14 @@
 
 ## Project Overview
 
-**Vril.js** is a security-first React framework built on top of Next.js. It provides:
+**Vril.js** is a security-first React framework with a built-in Vril runtime. It provides:
 
 - Post-quantum cryptography (ML-KEM-768, ML-DSA-65) via the Web Crypto API
 - Zero-trust security membrane (Trusted Types, API blocking, CSP Level 3)
 - Hybrid key exchange and crypto agility (NIST 2035 migration path)
-- 22 security modules, 200+ exports, zero runtime dependencies
+- 22 security modules, 200+ exports, and in-tree security/PQC primitives
 
-**Stack:** Next.js 16 · React 19 · TypeScript 5 · Tailwind CSS v4 · ESLint 9
+**Stack:** Vril Runtime · React 19 · TypeScript 5 · Tailwind CSS v4 · ESLint 9
 
 ---
 
@@ -22,7 +22,7 @@
 ```
 vril-js/
 ├── src/
-│   ├── app/               # Next.js App Router pages and layouts
+│   ├── app/               # Vril runtime pages, layout metadata, and API handlers
 │   │   ├── api/           # API route handlers
 │   │   ├── docs/          # Documentation page
 │   │   ├── globals.css    # Global styles (Tailwind v4 + design tokens)
@@ -43,7 +43,7 @@ vril-js/
 │   │       ├── server/    # Server utilities
 │   │       ├── state/     # Reactive state management
 │   │       └── types/     # Shared TypeScript types
-│   └── proxy.ts           # Next.js security proxy (runs on all routes)
+│   └── proxy.ts           # Vril security proxy (runs on all routes)
 ├── public/                # Static assets
 ├── vril.config.ts         # User-facing Vril.js configuration
 ├── eslint.config.mjs      # ESLint 9 flat config
@@ -84,10 +84,10 @@ npm run lint
 - Prefer `interface` for object shapes that may be extended, `type` for unions/intersections
 - All public functions and exports must have explicit return types
 
-### React / Next.js
-- Use the **App Router** exclusively (`src/app/`); the Pages Router is not used
+### React / Vril Runtime
+- Use the built-in Vril runtime structure under `src/app/`
 - Mark client components with `'use client'` at the top of the file; server components are the default
-- The `src/proxy.ts` file is the Next.js middleware equivalent — edit with care as it applies security headers globally
+- The `src/proxy.ts` file applies security headers globally — edit with care
 
 ### Security (Critical)
 - **Never weaken security defaults** in `vril.config.ts` without a documented reason
@@ -117,7 +117,7 @@ Declare all new environment variables in `vril-env.d.ts` under the `NodeJS.Proce
 
 ## Testing
 
-Currently there is no test runner configured. When adding tests, use **Vitest** (compatible with Next.js and TypeScript 5) placed alongside source files as `*.test.ts` / `*.test.tsx`.
+Currently there is no test runner configured. When adding tests, use **Vitest** (compatible with the Vril runtime and TypeScript 5) placed alongside source files as `*.test.ts` / `*.test.tsx`.
 
 ---
 

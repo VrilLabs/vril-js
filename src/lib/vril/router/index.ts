@@ -1,7 +1,7 @@
 /**
  * Vril.js v2.0.0 — Secure Router
  * File-system based routing with security annotations per route.
- * Extends Next.js App Router with route-level security policies,
+ * Extends the built-in Vril router with route-level security policies,
  * composable middleware, route groups, route scanning, and navigation guards.
  */
 
@@ -283,7 +283,7 @@ export class RouteSecurityRegistry {
     const directives: string[] = [
       `default-src 'self'`,
       `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-      `style-src 'self' 'unsafe-inline'`,
+      `style-src 'self' 'nonce-${nonce}'`,
       `img-src 'self' data: blob:`,
       `connect-src 'self'`,
       `frame-src 'none'`,
@@ -975,7 +975,7 @@ export class NavigationGuard {
   }
 
   /** Track redirects and enforce maximum count */
-  trackRedirect(sessionId: string, from: string, to: string): { allowed: boolean; redirectCount: number } {
+  trackRedirect(sessionId: string, from: string, _to: string): { allowed: boolean; redirectCount: number } {
     const key = `${sessionId}:${from}`;
     const count = (this.redirectCount.get(key) ?? 0) + 1;
     this.redirectCount.set(key, count);

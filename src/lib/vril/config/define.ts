@@ -2,14 +2,12 @@
  * Vril.js v2.1.0 — defineVrilConfig Utility
  * ─────────────────────────────────────────────
  * Type-safe configuration definition with validation, deep merging,
- * environment-specific overrides, and Next.js integration.
+ * environment-specific overrides, and Vril.js framework integration.
  *
  * Usage:
  *   import { defineVrilConfig } from './src/lib/vril/config/define';
  *   export default defineVrilConfig({ ... });
  */
-
-import type { NextConfig } from 'next';
 
 // ─── Version ──────────────────────────────────────────────────
 export const VRIL_CONFIG_VERSION = '2.1.0';
@@ -143,21 +141,26 @@ export interface VrilAuthConfig {
   lockoutDuration: number;
 }
 
-// ─── Next.js Integration ─────────────────────────────────────
-export interface VrilNextjsConfig {
+// ─── Vril Framework Integration ──────────────────────────────
+export interface VrilFrameworkConfig {
+  /** @deprecated Use reactStrictMode for React runtime strictness. */
+  strictMode?: boolean;
   /** Enable React Strict Mode */
   reactStrictMode?: boolean;
   /** Don't expose X-Powered-By header */
   poweredByHeader?: boolean;
   /** Custom environment variables available at build time */
   env?: Record<string, string>;
-  /** Webpack configuration overrides */
-  webpack?: (config: unknown, options: unknown) => unknown;
+  /** Bundler configuration overrides */
+  bundler?: Record<string, unknown>;
   /** Image optimization configuration */
   images?: Record<string, unknown>;
-  /** Additional Next.js config passthrough */
+  /** Additional Vril framework config passthrough */
   [key: string]: unknown;
 }
+
+/** @deprecated Use VrilFrameworkConfig / framework instead. */
+export type VrilNextjsConfig = VrilFrameworkConfig;
 
 // ─── Full Resolved Configuration ─────────────────────────────
 export interface VrilResolvedConfig {
@@ -181,8 +184,10 @@ export interface VrilResolvedConfig {
   signals: {
     enabled: boolean;
   };
-  /** Next.js integration */
-  nextjs: VrilNextjsConfig;
+  /** Vril framework integration */
+  framework: VrilFrameworkConfig;
+  /** @deprecated Use framework instead. */
+  nextjs?: VrilNextjsConfig;
 }
 
 // ─── User Configuration (Partial) ────────────────────────────
@@ -193,6 +198,8 @@ export interface VrilUserConfig {
   build?: Partial<VrilBuildConfig>;
   server?: Partial<VrilServerConfig>;
   auth?: Partial<VrilAuthConfig>;
+  framework?: VrilFrameworkConfig;
+  /** @deprecated Use framework instead. */
   nextjs?: VrilNextjsConfig;
   /** Environment-specific overrides */
   env?: {
@@ -229,8 +236,8 @@ const DEFAULT_SECURITY: VrilSecurityConfig = {
   blockedAPIs: ['WebTransport', 'RTCPeerConnection'],
   csp: {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'"],
-    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    scriptSrc: ["'self'"],
+    styleSrc: ["'self'", "https://fonts.googleapis.com"],
     fontSrc: ["'self'", "https://fonts.gstatic.com"],
     imgSrc: ["'self'", "data:"],
     connectSrc: ["'self'"],
@@ -310,7 +317,7 @@ const DEFAULT_AUTH: VrilAuthConfig = {
 };
 
 // ─── Deep Merge Utility ──────────────────────────────────────
-function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
+function deepMerge<T extends object>(target: T, source: Partial<T>): T {
   if (!source) return target;
   const result = { ...target };
 
@@ -327,12 +334,12 @@ function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>)
       targetVal !== null &&
       !Array.isArray(targetVal)
     ) {
-      (result as any)[key] = deepMerge(
-        targetVal as Record<string, any>,
-        sourceVal as Partial<Record<string, any>>
+      (result as Record<string, unknown>)[key as string] = deepMerge(
+        targetVal as object,
+        sourceVal as Partial<object>
       );
     } else if (sourceVal !== undefined) {
-      (result as any)[key] = sourceVal;
+      (result as Record<string, unknown>)[key as string] = sourceVal;
     }
   }
 
@@ -500,10 +507,10 @@ function buildPermissionsPolicyString(policy: Record<string, string[]>): string 
 // ─── Define Vril Config ──────────────────────────────────────
 /**
  * Define a Vril.js configuration with full type safety, validation,
- * and Next.js integration.
+ * and Vril framework integration.
  *
  * @param userConfig - Partial configuration object with overrides
- * @returns Resolved configuration with validation, Next.js conversion, and utilities
+ * @returns Resolved configuration with validation, runtime conversion, and utilities
  *
  * @example
  * ```typescript
@@ -518,7 +525,7 @@ function buildPermissionsPolicyString(policy: Record<string, string[]>): string 
  *     kdfIterations: 600000,
  *     pqcEnabled: true,
  *   },
- *   nextjs: {
+ *   framework: {
  *     reactStrictMode: true,
  *   },
  * });
@@ -531,8 +538,11 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
   /** Validate the configuration and return errors/warnings */
   validate: () => ConfigValidationResult;
 
-  /** Convert Vril config to a Next.js compatible config object */
-  toNextConfig: () => NextConfig;
+  /** Convert Vril config to a runtime-compatible framework config object */
+  toVrilRuntimeConfig: () => Record<string, unknown>;
+
+  /** @deprecated Use toVrilRuntimeConfig instead. */
+  toNextConfig: () => Record<string, unknown>;
 
   /** Build the CSP header string from the current configuration */
   buildCSPHeader: () => string;
@@ -551,9 +561,14 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
 } {
   // Detect environment
   const environment = detectEnvironment();
+  if (userConfig.framework?.strictMode !== undefined) {
+    console.warn(
+      '[Vril.js] framework.strictMode is deprecated; use framework.reactStrictMode to configure React Strict Mode.',
+    );
+  }
 
   // Start with defaults
-  let resolved: VrilResolvedConfig = {
+  const resolved: VrilResolvedConfig = {
     version: VRIL_CONFIG_VERSION,
     environment,
     security: { ...DEFAULT_SECURITY },
@@ -563,7 +578,8 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
     server: { ...DEFAULT_SERVER },
     auth: { ...DEFAULT_AUTH },
     signals: { enabled: true },
-    nextjs: userConfig.nextjs ?? {},
+    framework: userConfig.framework ?? userConfig.nextjs ?? {},
+    nextjs: userConfig.nextjs,
   };
 
   // Deep merge user config over defaults
@@ -608,8 +624,9 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
       if (envOverride.auth) {
         resolved.auth = { ...resolved.auth, ...envOverride.auth };
       }
-      if (envOverride.nextjs) {
-        resolved.nextjs = { ...resolved.nextjs, ...envOverride.nextjs };
+      if (envOverride.framework || envOverride.nextjs) {
+        resolved.framework = { ...resolved.framework, ...(envOverride.framework ?? envOverride.nextjs) };
+        resolved.nextjs = envOverride.nextjs ?? resolved.nextjs;
       }
     }
   }
@@ -619,46 +636,49 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
 
     validate: () => validateConfig(resolved),
 
-    toNextConfig: (): NextConfig => {
-      const nextConfig: Record<string, unknown> = {
-        reactStrictMode: resolved.build.strictMode,
-        poweredByHeader: false,
+    toVrilRuntimeConfig: (): Record<string, unknown> => {
+      const runtimeConfig: Record<string, unknown> = {
+        // TODO(v3): remove the deprecated framework.strictMode fallback.
+        reactStrictMode: resolved.framework.reactStrictMode ?? resolved.framework.strictMode ?? resolved.build.strictMode,
+        poweredByHeader: resolved.framework.poweredByHeader ?? false,
+        server: resolved.server,
       };
 
-      // Apply Next.js-specific settings
-      if (resolved.nextjs) {
-        for (const [key, value] of Object.entries(resolved.nextjs)) {
-          if (key !== 'webpack' && key !== 'images' && key !== 'env') {
-            nextConfig[key] = value;
+      if (resolved.framework) {
+        for (const [key, value] of Object.entries(resolved.framework)) {
+          if (key !== 'bundler' && key !== 'images' && key !== 'env') {
+            runtimeConfig[key] = value;
           }
         }
-        if (resolved.nextjs.webpack) {
-          nextConfig.webpack = resolved.nextjs.webpack;
+        if (resolved.framework.bundler) {
+          runtimeConfig.bundler = resolved.framework.bundler;
         }
-        if (resolved.nextjs.images) {
-          nextConfig.images = resolved.nextjs.images;
+        if (resolved.framework.images) {
+          runtimeConfig.images = resolved.framework.images;
         }
-        if (resolved.nextjs.env) {
-          nextConfig.env = resolved.nextjs.env;
+        if (resolved.framework.env) {
+          runtimeConfig.env = resolved.framework.env;
         }
       }
 
-      // Apply security headers via Next.js headers() config
-      const securityHeaders = buildAllSecurityHeaders(resolved);
-      if (Object.keys(securityHeaders).length > 0) {
-        nextConfig.headers = async () => [
-          {
-            source: '/(.*)',
-            headers: Object.entries(securityHeaders).map(([key, value]) => ({
-              key,
-              value,
-            })),
-          },
-        ];
-      }
+      runtimeConfig.headers = buildAllSecurityHeaders(resolved);
 
-      return nextConfig as NextConfig;
+      return runtimeConfig;
     },
+
+    toNextConfig: (): Record<string, unknown> => ({
+      // TODO(v3): remove the deprecated framework.strictMode fallback.
+      reactStrictMode: resolved.framework.reactStrictMode ?? resolved.framework.strictMode ?? resolved.build.strictMode,
+      poweredByHeader: resolved.framework.poweredByHeader ?? false,
+      env: resolved.framework.env,
+      images: resolved.framework.images,
+      headers: async () => [
+        {
+          source: '/(.*)',
+          headers: Object.entries(buildAllSecurityHeaders(resolved)).map(([key, value]) => ({ key, value })),
+        },
+      ],
+    }),
 
     buildCSPHeader: () => buildCSPString(resolved.security.csp),
 
@@ -713,7 +733,7 @@ function buildAllSecurityHeaders(config: VrilResolvedConfig): Record<string, str
 export const SPA_PRESET = {
   security: {
     csp: {
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      scriptSrc: ["'self'"],
     },
   },
   build: {

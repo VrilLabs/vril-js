@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { VrilVault, type EncryptionResult, type StrengthAssessment } from '@/lib/vril/security/crypto/vault';
 
 /* ═══════════════════════════════════════════════════════════════
    Vril.js v2.1 — Showcase Landing Page
@@ -43,9 +44,6 @@ function ServerIcon({ className = "w-5 h-5" }: { className?: string }) {
 function LayersIcon({ className = "w-5 h-5" }: { className?: string }) {
   return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
 }
-function DiamondIcon({ className = "w-5 h-5" }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 12l10 10 10-10L12 2z"/></svg>;
-}
 function TerminalIcon({ className = "w-5 h-5" }: { className?: string }) {
   return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>;
 }
@@ -85,8 +83,8 @@ function UsersIcon({ className = "w-5 h-5" }: { className?: string }) {
 
 // ─── Feature Data ───────────────────────────────────────────────
 const FEATURES = [
-  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'ML-KEM-768 (FIPS 203) and ML-DSA-65 (FIPS 204) with hybrid key exchange. Quantum-resistant by default.', accent: 'violet' as const },
-  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 + ML-KEM-768 hybrid KEM. Classical + post-quantum security in every handshake. Belt and suspenders.', accent: 'teal' as const },
+  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'Bundled native ML-KEM, ML-DSA, and SLH-DSA with FIPS 203/204/205 conformance checks and in-tree SHA-3/SHAKE foundations.', accent: 'violet' as const },
+  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 + bundled ML-KEM hybrid KEM with SHA-256 combiner and provider override support.', accent: 'teal' as const },
   { icon: <RefreshIcon />, title: 'Crypto Agility', desc: 'NIST 2035 migration paths built in. Algorithm registry, versioning, and automated migration — zero downtime.', accent: 'blue' as const },
   { icon: <LockIcon />, title: '\u03A9Vault Encryption', desc: 'AES-256-GCM + PBKDF2-SHA-512 at 600K iterations. Zero-knowledge client-side encryption with visual KDF progress.', accent: 'amber' as const },
   { icon: <ZapIcon />, title: '\u03A9Signal Reactivity', desc: 'Fine-grained reactive primitives — signal, computed, effect, batch, untrack — with auto dependency tracking. Zero deps.', accent: 'violet' as const },
@@ -135,27 +133,35 @@ const app = createVrilApp({
     id: 'pqc',
     label: 'PQC Key Exchange',
     lang: 'typescript',
-    code: `import { PQCHandler, HybridKeyExchange } from 'vril';
+    code: `import { PQCHandler, HybridKEM, CryptoAgility } from 'vril';
 
-const pqc = new PQCHandler();
+const pqc = new PQCHandler(); // nativePQCProvider is bundled by default
 
-// Generate hybrid keypair
-// (X25519 + ML-KEM-768)
-const keyPair = await pqc.generateHybridKeyPair();
+// Authentic bundled ML-KEM-768 admitted by evidence and byte-size checks
+const keyPair = await pqc.generateKeyPair('ML-KEM-768');
+const kemResult = await pqc.encapsulate(
+  keyPair.publicKey,
+  'ML-KEM-768'
+);
 
-// Negotiate shared secret
-// Classical + Post-Quantum combined
-const { combinedSecret } = await new HybridKeyExchange()
-  .negotiate();
+// Hybrid X25519 + ML-KEM-768
+const kem = new HybridKEM(
+  'X25519MLKEM768',
+  'vril-hybrid-kem-v2'
+);
+const hybridKeys = await kem.generateKeyPair();
+const { sharedSecret } = await kem.encapsulate(
+  hybridKeys.combinedPublicKey
+);
 
 // Crypto agility: migrate algorithms
-// without downtime
+// without downtime.
 const agility = new CryptoAgility();
 agility.getRegistry()
   .migrate('x25519', 'ml-kem-768');
 
 agility.getStatus();
-// \u2192 8 total, 7 active, 0 deprecated`,
+// \u2192 { totalAlgorithms, activeAlgorithms, ... }`,
   },
   {
     id: 'vault',
@@ -190,32 +196,39 @@ const newBundle = await vault.rotatePassphrase(
     id: 'route',
     label: 'Secure Route',
     lang: 'typescript',
-    code: `import { createAPIRoute, withCSRF, withRateLimit } from 'vril';
+    code: `import { createAPIRoute, APISchema } from 'vril';
 
-export const POST = createAPIRoute()
-  .method('POST')
-  .use(withCSRF())
-  .use(withRateLimit({
-    maxRequests: 100,
-    windowMs: 60_000,
-  }))
-  .body(schema => schema.object({
-    email: schema.string().email(),
-    password: schema.string().min(12),
-  }))
-  .handler(async (ctx) => {
-    const { email, password } = ctx.body;
+const validateBody = APISchema.object({
+  email: APISchema.string({ email: true }),
+  password: APISchema.string({ min: 12 }),
+});
+
+export const POST = createAPIRoute({
+  method: 'POST',
+  path: '/api/login',
+  csrfProtection: true,
+  rateLimit: { maxRequests: 100, windowMs: 60_000 },
+  validateBody,
+  async handler(req) {
+    const { email, password } = req.body;
 
     // PBKDF2-SHA-512 at 600K iterations
-    const hash = await PasswordHandler
-      .hash(password);
+    const hash = await PasswordHandler.hash(password);
 
     // HMAC-SHA-256 session token
     const session = await SessionManager
       .create({ userId: user.id });
 
-    return { session, user: user.safe };
-  });`,
+    return {
+      status: 200,
+      data: { session, user: user.safe },
+      headers: {},
+      timestamp: Date.now(),
+      requestId: req.requestId,
+      version: '2.1.0',
+    };
+  },
+});`,
   },
 ];
 
@@ -243,12 +256,14 @@ const MODULE_CATEGORIES = [
 ];
 
 // ─── Security Layers Data ──────────────────────────────────────
-const SECURITY_LAYERS = [
-  { num: 'L5', name: 'Build-Time Integrity', items: ['SRI Multi-Hash', 'SBOM (CycloneDX)', 'Sigstore Signing'], color: '#f5a623' },
-  { num: 'L4', name: 'Application Security', items: ['CSRF Protection', 'XSS Shield', 'Route Guards'], color: '#9b5eff' },
-  { num: 'L3', name: 'Cryptographic Layer', items: ['PQC (ML-KEM/ML-DSA)', 'Hybrid KEM', '\u03A9Vault', 'Agility Registry'], color: '#00FFC8' },
-  { num: 'L2', name: 'Transport Security', items: ['HSTS Preload', 'CSP Level 3', 'Permissions-Policy'], color: '#0A84FF' },
-  { num: 'L1', name: 'Browser Hardening', items: ['COOP/COEP/CORP', 'Trusted Types', 'API Membrane'], color: '#ff4d6a' },
+type LayerAccent = 'amber' | 'violet' | 'teal' | 'blue' | 'error';
+
+const SECURITY_LAYERS: Array<{ num: string; name: string; items: string[]; accent: LayerAccent }> = [
+  { num: 'L5', name: 'Build-Time Integrity', items: ['SRI Multi-Hash', 'SBOM (CycloneDX)', 'Sigstore Signing'], accent: 'amber' },
+  { num: 'L4', name: 'Application Security', items: ['CSRF Protection', 'XSS Shield', 'Route Guards'], accent: 'violet' },
+  { num: 'L3', name: 'Cryptographic Layer', items: ['PQC (ML-KEM/ML-DSA)', 'Hybrid KEM', '\u03A9Vault', 'Agility Registry'], accent: 'teal' },
+  { num: 'L2', name: 'Transport Security', items: ['HSTS Preload', 'CSP Level 3', 'Permissions-Policy'], accent: 'blue' },
+  { num: 'L1', name: 'Browser Hardening', items: ['COOP/COEP/CORP', 'Trusted Types', 'API Membrane'], accent: 'error' },
 ];
 
 // ─── Accent Color Map ──────────────────────────────────────────
@@ -258,6 +273,14 @@ const accentMap = {
   violet: { text: 'text-violet', bg: 'bg-violet/12', border: 'border-violet/30', glow: 'glow-violet' },
   blue: { text: 'text-ionic-blue', bg: 'bg-ionic-blue/12', border: 'border-ionic-blue/30', glow: 'glow-blue' },
 };
+
+const layerAccentMap = {
+  amber: { bg: 'layer-accent-amber', text: 'layer-text-amber' },
+  violet: { bg: 'layer-accent-violet', text: 'layer-text-violet' },
+  teal: { bg: 'layer-accent-teal', text: 'layer-text-teal' },
+  blue: { bg: 'layer-accent-blue', text: 'layer-text-blue' },
+  error: { bg: 'layer-accent-error', text: 'layer-text-error' },
+} satisfies Record<LayerAccent, { bg: string; text: string }>;
 
 // ─── Animated Counter ──────────────────────────────────────────
 function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: string }) {
@@ -373,7 +396,7 @@ function highlightLine(line: string): ReactNode {
 function highlightTokens(text: string, startKey: number): ReactNode[] {
   const tokens: ReactNode[] = [];
   const keywords = new Set(['import', 'from', 'const', 'let', 'var', 'async', 'await', 'export', 'function', 'return', 'new', 'if', 'else', 'typeof', 'instanceof']);
-  const types = new Set(['PQCHandler', 'HybridKeyExchange', 'CryptoAgility', 'VrilVault', 'PasswordHandler', 'SessionManager', 'VrilConfig']);
+  const types = new Set(['PQCHandler', 'HybridKEM', 'CryptoAgility', 'VrilVault', 'PasswordHandler', 'SessionManager', 'VrilConfig']);
 
   // Split by word boundaries
   const regex = /(\b\w+\b|\S)/g;
@@ -488,6 +511,61 @@ function TerminalBlock({ lines }: { lines: string[] }) {
   );
 }
 
+// ─── Hero Security Graphic ─────────────────────────────────────
+function HeroGraphic() {
+  const orbiters = [
+    { label: 'PQC', color: 'bg-olo-teal', size: 'w-3 h-3', orbit: 'hero-orbit-pqc', glow: 'hero-orb-pqc' },
+    { label: 'KEM', color: 'bg-ionic-blue', size: 'w-2.5 h-2.5', orbit: 'hero-orbit-kem', glow: 'hero-orb-kem' },
+    { label: 'CSP', color: 'bg-violet', size: 'w-2 h-2', orbit: 'hero-orbit-csp', glow: 'hero-orb-csp' },
+  ];
+
+  return (
+    <div className="absolute top-1/2 right-[6%] -translate-y-1/2 hidden lg:block pointer-events-none" role="img" aria-label="Animated zero-trust security graphic with PQC, KEM, and CSP layers">
+      <div className="hero-graphic relative w-[25rem] h-[25rem]">
+        <div className="absolute inset-0 rounded-full bg-olo-teal/8 blur-3xl animate-vril-float" />
+        <div className="absolute inset-6 rounded-full border border-white/8 hero-ring" />
+        <div className="absolute inset-16 rounded-full border border-olo-teal/20 hero-ring hero-ring-reverse" />
+        <div className="absolute inset-28 rounded-full border border-violet/25 hero-ring hero-ring-fast" />
+
+        {orbiters.map((orbiter) => (
+          <div
+            key={orbiter.label}
+            className={`absolute inset-0 rounded-full animate-orbit ${orbiter.orbit}`}
+          >
+            <div className={`absolute left-1/2 -top-1 -translate-x-1/2 ${orbiter.size} rounded-full ${orbiter.color} ${orbiter.glow}`} />
+            <div className="absolute left-1/2 top-7 -translate-x-1/2 rounded-full border border-white/10 bg-[#0d1017]/80 px-2 py-0.5 font-mono text-[9px] tracking-[0.14em] text-white/45 backdrop-blur-md">
+              {orbiter.label}
+            </div>
+          </div>
+        ))}
+
+        <div className="absolute inset-20 rounded-[2rem] border border-white/10 bg-[#0d1017]/60 shadow-2xl backdrop-blur-xl hero-core">
+          <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_30%_20%,rgba(0,255,200,0.22),transparent_34%),radial-gradient(circle_at_72%_80%,rgba(155,94,255,0.18),transparent_36%)]" />
+          <div className="absolute inset-0 rounded-[2rem] hero-scanline" />
+          <div className="relative h-full flex flex-col items-center justify-center gap-4">
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl border border-olo-teal/30 bg-olo-teal/10 text-olo-teal glow-teal animate-vril-float">
+              <VrilLogoIcon className="w-12 h-12" />
+              <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border border-amber/40 bg-amber/15 text-amber">
+                <LockIcon className="w-3.5 h-3.5" />
+              </span>
+            </div>
+            <div className="text-center">
+              <div className="font-mono text-[10px] tracking-[0.18em] text-olo-teal/80 uppercase">zero-trust membrane</div>
+              <div className="mt-2 flex items-center justify-center gap-2 text-[10px] text-white/30">
+                <span className="h-1.5 w-1.5 rounded-full bg-success animate-vril-pulse" />
+                Quantum-ready
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute left-4 top-24 h-px w-28 bg-gradient-to-r from-transparent via-olo-teal/50 to-transparent hero-data-ray" />
+        <div className="absolute bottom-24 right-2 h-px w-32 bg-gradient-to-r from-transparent via-violet/50 to-transparent hero-data-ray hero-ray-delayed" />
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ═══════════════════════════════════════════════════════════════
@@ -563,34 +641,15 @@ export default function VrilShowcase() {
         {/* ═══ 1. HERO SECTION ═════════════════════════════════ */}
         <section className="relative py-24 md:py-36 overflow-hidden">
           {/* Background effects */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[700px] opacity-25 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, rgba(0,255,200,0.18) 0%, rgba(10,132,255,0.08) 40%, transparent 70%)' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[700px] opacity-25 pointer-events-none hero-aura" />
 
-          {/* Orbital rings (CSS-only) */}
-          <div className="absolute top-1/2 right-[10%] -translate-y-1/2 hidden lg:block" aria-hidden="true">
-            <div className="relative w-72 h-72">
-              {/* Outer ring */}
-              <div className="absolute inset-0 rounded-full border border-white/5 animate-orbit" />
-              {/* Middle ring */}
-              <div className="absolute inset-8 rounded-full border border-olo-teal/15 animate-orbit-reverse" style={{ animationDuration: '22s' }} />
-              {/* Inner ring */}
-              <div className="absolute inset-16 rounded-full border border-violet/20 animate-orbit" style={{ animationDuration: '10s' }} />
-              {/* Center symbol */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-olo-teal/20 to-violet/20 border border-olo-teal/30 flex items-center justify-center animate-vril-float">
-                  <span className="font-display font-extrabold text-3xl gradient-text">Ω</span>
-                </div>
-              </div>
-              {/* Orbiting dots */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-olo-teal animate-orbit" style={{ boxShadow: '0 0 12px rgba(0,255,200,0.6)' }} />
-              <div className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-violet animate-orbit-reverse" style={{ boxShadow: '0 0 8px rgba(155,94,255,0.6)' }} />
-            </div>
-          </div>
+          <HeroGraphic />
 
           <div className="max-w-7xl mx-auto px-5 relative z-10">
             <div className="max-w-3xl">
               {/* Badge */}
               <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-olo-teal/8 border border-olo-teal/20 rounded-full mb-8 animate-vril-badge-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-olo-teal" style={{ boxShadow: '0 0 8px #00FFC8' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-olo-teal glow-dot-teal" />
                 <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">v2.1.0 — Security-First Evolution</span>
               </div>
 
@@ -632,7 +691,7 @@ export default function VrilShowcase() {
                 </span>
                 <span className="w-1 h-1 rounded-full bg-white/10" />
                 <span className="flex items-center gap-2 text-olo-teal/60">
-                  <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" /> Full PQC
+                  <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" /> Provider-gated PQC
                 </span>
               </div>
             </div>
@@ -645,7 +704,7 @@ export default function VrilShowcase() {
             <div className="text-center mb-14">
               <span className="font-mono text-xs tracking-[0.16em] uppercase text-ionic-blue">Developer Experience</span>
               <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-[-0.035em] mt-2 mb-4">Security by Default, Not by Config</h2>
-              <p className="text-white/45 text-lg max-w-2xl mx-auto">Zero-config security. Intuitive APIs. Full TypeScript. Every cryptographic operation uses the Web Crypto API — no polyfills, no dependencies.</p>
+              <p className="text-white/45 text-lg max-w-2xl mx-auto">Zero-config security. Intuitive APIs. Full TypeScript. Native cryptographic primitives use the Web Crypto API — no polyfills, no dependencies.</p>
             </div>
 
             <div className="max-w-4xl mx-auto">
@@ -691,28 +750,31 @@ export default function VrilShowcase() {
 
             <div className="max-w-3xl mx-auto">
               <div className="flex flex-col gap-3">
-                {SECURITY_LAYERS.map((layer, i) => (
-                  <div key={i} className="group relative p-5 bg-card border border-white/6 rounded-2xl hover:border-white/15 transition-all duration-300 hover:scale-[1.02]">
-                    {/* Layer accent bar */}
-                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: layer.color }} />
-                    <div className="flex items-start gap-4 pl-3">
-                      <div className="flex-shrink-0">
-                        <span className="font-mono text-[10px] tracking-[0.16em] uppercase font-bold" style={{ color: layer.color }}>{layer.num}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-display font-bold text-white mb-2">{layer.name}</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {layer.items.map(item => (
-                            <span key={item} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/4 border border-white/8 rounded-lg font-mono text-[11px] text-white/50 group-hover:text-white/70 group-hover:border-white/12 transition-colors">
-                              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: layer.color }} />
-                              {item}
-                            </span>
-                          ))}
+                {SECURITY_LAYERS.map((layer, i) => {
+                  const accent = layerAccentMap[layer.accent];
+                  return (
+                    <div key={i} className="group relative p-5 bg-card border border-white/6 rounded-2xl hover:border-white/15 transition-all duration-300 hover:scale-[1.02]">
+                      {/* Layer accent bar */}
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${accent.bg}`} />
+                      <div className="flex items-start gap-4 pl-3">
+                        <div className="flex-shrink-0">
+                          <span className={`font-mono text-[10px] tracking-[0.16em] uppercase font-bold ${accent.text}`}>{layer.num}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-display font-bold text-white mb-2">{layer.name}</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {layer.items.map(item => (
+                              <span key={item} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/4 border border-white/8 rounded-lg font-mono text-[11px] text-white/50 group-hover:text-white/70 group-hover:border-white/12 transition-colors">
+                                <span className={`w-1 h-1 rounded-full ${accent.bg}`} />
+                                {item}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -724,7 +786,7 @@ export default function VrilShowcase() {
             <div className="text-center mb-14">
               <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">Comparison</span>
               <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-[-0.035em] mt-2 mb-4">Why Vril.js?</h2>
-              <p className="text-white/45 text-lg max-w-xl mx-auto">No other framework ships with post-quantum cryptography, zero-trust security, and crypto agility built in.</p>
+              <p className="text-white/45 text-lg max-w-xl mx-auto">Vril.js ships provider-gated post-quantum interfaces, zero-trust security, and crypto agility built in.</p>
             </div>
 
             <div className="overflow-x-auto max-w-4xl mx-auto">
@@ -768,7 +830,7 @@ export default function VrilShowcase() {
             <div className="text-center mb-14">
               <span className="font-mono text-xs tracking-[0.16em] uppercase text-violet">Module Ecosystem</span>
               <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-[-0.035em] mt-2 mb-4">22 Modules. Zero Dependencies.</h2>
-              <p className="text-white/45 text-lg max-w-xl mx-auto">Every module is hand-crafted with zero external dependencies. All crypto uses the Web Crypto API. All streaming uses Web Streams.</p>
+              <p className="text-white/45 text-lg max-w-xl mx-auto">Every module is hand-crafted with zero bundled crypto dependencies. Native primitives use Web Crypto, and PQC is provider-gated for authentic implementations.</p>
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -906,7 +968,7 @@ export default function VrilShowcase() {
             </div>
           </div>
           <div className="mt-10 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="font-mono text-[10px] text-white/20 tracking-wider">© 2025-2026 VRIL LABS · ALL RIGHTS RESERVED · FIPS 203/204 COMPLIANT</p>
+            <p className="font-mono text-[10px] text-white/20 tracking-wider">© 2025-2026 VRIL LABS · ALL RIGHTS RESERVED · FIPS 203/204/205 ALGORITHMS · VALIDATION EVIDENCE REQUIRED FOR REGULATED DEPLOYMENTS</p>
             <div className="flex items-center gap-4">
               <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/4 border border-white/8 rounded-full font-mono text-[10px] text-white/25">
                 <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" />
@@ -985,38 +1047,14 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
   const [result, setResult] = useState('');
   const [resultLabel, setResultLabel] = useState('');
   const [kdfProgress, setKdfProgress] = useState(0);
-  const [strength, setStrength] = useState({ score: 0, max: 6, label: '' });
+  const [strength, setStrength] = useState<StrengthAssessment>({ score: 0, max: 8, label: 'very-weak', estimatedCrackTimeSeconds: 0, feedback: [] });
+  const [activeBundle, setActiveBundle] = useState('');
+  const [vault] = useState(() => new VrilVault());
 
-  const assessStrength = (p: string) => {
-    let score = 0;
-    if (p.length >= 4) score++;
-    if (p.length >= 8) score++;
-    if (p.length >= 12) score++;
-    if (/[A-Z]/.test(p)) score++;
-    if (/[0-9]/.test(p)) score++;
-    if (/[^A-Za-z0-9]/.test(p)) score++;
-    return { score, max: 6, label: score <= 2 ? 'weak' : score <= 4 ? 'moderate' : 'strong' };
-  };
-
-  const handlePass = (v: string) => { setPassphrase(v); setStrength(assessStrength(v)); };
-
-  const deriveKey = async (pass: string, salt: Uint8Array): Promise<CryptoKey> => {
-    const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
-    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt as BufferSource, iterations: 600000, hash: 'SHA-512' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-  };
-
-  const ab2b64 = (buffer: ArrayBuffer | Uint8Array): string => {
-    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-    return btoa(binary);
-  };
-
-  const b642ab = (b64: string): ArrayBuffer => {
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return bytes.buffer;
+  const handlePass = (v: string) => { setPassphrase(v); setStrength(vault.assessStrength(v)); };
+  const handlePlaintextChange = (value: string) => {
+    setPlaintext(value);
+    setActiveBundle('');
   };
 
   const handleEncrypt = async () => {
@@ -1024,29 +1062,23 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
     setStatus('encrypting'); setKdfProgress(0);
     const iv = setInterval(() => setKdfProgress(p => Math.min(p + Math.random() * 15, 90)), 80);
     try {
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      const ivBytes = crypto.getRandomValues(new Uint8Array(12));
-      const key = await deriveKey(passphrase, salt);
-      const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: ivBytes }, key, new TextEncoder().encode(plaintext));
+      const bundle = await vault.encrypt(passphrase, plaintext);
+      const bundleJson = JSON.stringify(bundle, null, 2);
       clearInterval(iv); setKdfProgress(100);
-      const bundle = { v: 2, salt: ab2b64(salt), iv: ab2b64(ivBytes), ciphertext: ab2b64(ciphertext), algorithm: 'AES-256-GCM', kdf: 'PBKDF2-SHA-512', kdfIterations: 600000 };
-      setResult(JSON.stringify(bundle, null, 2)); setResultLabel('Ciphertext Bundle'); setStatus('done');
+      setActiveBundle(bundleJson); setResult(bundleJson); setResultLabel('Ciphertext Bundle'); setStatus('done');
     } catch (e) { clearInterval(iv); setResult(e instanceof Error ? e.message : 'Failed'); setResultLabel('Error'); setStatus('error'); }
   };
 
   const handleDecrypt = async () => {
-    if (!passphrase || !plaintext) return;
+    const bundleSource = activeBundle || plaintext;
+    if (!passphrase || !bundleSource) return;
     setStatus('decrypting'); setKdfProgress(0);
     const ivInterval = setInterval(() => setKdfProgress(p => Math.min(p + Math.random() * 15, 90)), 80);
     try {
-      const bundle = JSON.parse(plaintext);
-      const salt = new Uint8Array(b642ab(bundle.salt));
-      const ivBytes = new Uint8Array(b642ab(bundle.iv));
-      const ciphertextBuf = b642ab(bundle.ciphertext);
-      const key = await deriveKey(passphrase, salt);
-      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivBytes }, key, ciphertextBuf);
+      const bundle = JSON.parse(bundleSource) as EncryptionResult;
+      const decrypted = await vault.decrypt(passphrase, bundle);
       clearInterval(ivInterval); setKdfProgress(100);
-      setResult(new TextDecoder().decode(decrypted)); setResultLabel('Plaintext'); setStatus('done');
+      setResult(decrypted.plaintext); setResultLabel('Plaintext'); setStatus('done');
     } catch { clearInterval(ivInterval); setResult('Wrong passphrase or corrupted bundle'); setResultLabel('Error'); setStatus('error'); }
   };
 
@@ -1082,19 +1114,23 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
           {(status === 'encrypting' || status === 'decrypting') && (
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] font-mono text-white/40"><span>Deriving key (PBKDF2-SHA-512)...</span><span>{Math.round(kdfProgress)}%</span></div>
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-amber to-ionic-blue rounded-full transition-all" style={{ width: `${kdfProgress}%` }} /></div>
+              <progress className="kdf-progress" value={kdfProgress} max={100} aria-label="Key derivation progress" />
             </div>
           )}
           <div className="space-y-1.5">
             <label className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30">Passphrase</label>
             <input type="password" value={passphrase} onChange={e => handlePass(e.target.value)} className="w-full px-3 py-2 bg-[#161b28] border border-white/10 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-olo-teal transition-colors" placeholder="Enter passphrase" />
-            <div className="flex gap-1">{Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className={`h-1 flex-1 rounded-full ${i < strength.score ? strength.score <= 2 ? 'bg-error' : strength.score <= 4 ? 'bg-amber' : 'bg-success' : 'bg-white/5'}`} />
-            ))}</div>
+            <div className="flex gap-1">{(() => {
+              const filledBars = strength.max > 0 ? Math.round((strength.score / strength.max) * 6) : 0;
+              const barColor = (strength.label === 'very-weak' || strength.label === 'weak') ? 'bg-error' : strength.label === 'moderate' ? 'bg-amber' : 'bg-success';
+              return Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className={`h-1 flex-1 rounded-full ${i < filledBars ? barColor : 'bg-white/5'}`} />
+              ));
+            })()}</div>
           </div>
           <div className="space-y-1.5">
             <label className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30">Input</label>
-            <textarea value={plaintext} onChange={e => setPlaintext(e.target.value)} rows={3} className="w-full px-3 py-2 bg-[#161b28] border border-white/10 rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-olo-teal transition-colors" placeholder="Enter plaintext or paste a ciphertext bundle" />
+            <textarea value={plaintext} onChange={e => handlePlaintextChange(e.target.value)} rows={3} className="w-full px-3 py-2 bg-[#161b28] border border-white/10 rounded-lg text-white font-mono text-sm resize-none focus:outline-none focus:border-olo-teal transition-colors" placeholder="Enter plaintext to Seal, or paste a ciphertext bundle to Unseal" />
           </div>
           {result && (
             <div className="space-y-1.5">
@@ -1103,14 +1139,15 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
                 <CopyButton text={result} />
               </div>
               <pre className="px-3 py-2 bg-[#0a0c10] border border-white/10 rounded-lg text-olo-teal font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-32">{result}</pre>
+              {activeBundle && resultLabel === 'Ciphertext Bundle' && <p className="font-mono text-[10px] text-white/25">Bundle staged for Unseal — keep the same passphrase and click Unseal to verify.</p>}
             </div>
           )}
         </div>
         <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-white/8 bg-[#111520]">
           <span className="font-mono text-[10px] text-white/20">AES-256-GCM · PBKDF2-SHA-512 · 600K iter</span>
           <div className="flex gap-2">
-            <button onClick={handleEncrypt} disabled={!passphrase || !plaintext || status === 'encrypting'} className="px-4 py-2 bg-amber text-[#080a0e] font-semibold text-sm rounded-lg border border-amber hover:bg-amber/80 transition-all disabled:opacity-40">Seal</button>
-            <button onClick={handleDecrypt} disabled={!passphrase || !plaintext || status === 'decrypting'} className="px-4 py-2 bg-transparent text-white/70 font-semibold text-sm rounded-lg border border-white/10 hover:border-olo-teal hover:text-olo-teal transition-all disabled:opacity-40">Unseal</button>
+            <button onClick={handleEncrypt} disabled={!passphrase || !plaintext || status === 'encrypting' || status === 'decrypting'} className="px-4 py-2 bg-amber text-[#080a0e] font-semibold text-sm rounded-lg border border-amber hover:bg-amber/80 transition-all disabled:opacity-40">Seal</button>
+            <button onClick={handleDecrypt} disabled={!passphrase || (!plaintext && !activeBundle) || status === 'encrypting' || status === 'decrypting'} className="px-4 py-2 bg-transparent text-white/70 font-semibold text-sm rounded-lg border border-white/10 hover:border-olo-teal hover:text-olo-teal transition-all disabled:opacity-40">Unseal</button>
           </div>
         </div>
       </div>

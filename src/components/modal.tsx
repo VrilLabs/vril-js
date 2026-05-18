@@ -1,21 +1,61 @@
 'use client';
 
-import { useState, useCallback, type ReactNode } from 'react';
+import { useState, useRef, useCallback, useEffect, useImperativeHandle, forwardRef, type ReactNode } from 'react';
 
 type ModalVariant = 'info' | 'confirm' | 'destructive';
 
-export function VrilModal() {
+/** Imperative handle for programmatic control of VrilModal */
+export interface VrilModalHandle {
+  /** Show an informational dialog */
+  info: (opts: { title: string; subtitle?: string; body: ReactNode }) => void;
+  /** Show a confirmation dialog; resolves true when confirmed, false when cancelled */
+  confirm: (opts: { title: string; subtitle?: string; body: ReactNode }) => Promise<boolean>;
+  /** Show a destructive-action confirmation dialog */
+  destructive: (opts: { title: string; subtitle?: string; body: ReactNode }) => Promise<boolean>;
+}
+
+export const VrilModal = forwardRef<VrilModalHandle>(function VrilModal(_, ref) {
   const [state, setState] = useState<{
     open: boolean; variant: ModalVariant; title: string; subtitle?: string;
     body: ReactNode; resolve?: (v: boolean) => void;
   }>({ open: false, variant: 'info', title: '', body: null });
 
-  const info = useCallback((opts: { title: string; subtitle?: string; body: ReactNode }) => setState({ open: true, variant: 'info', ...opts }), []);
+  // Tracks the pending resolve of any open confirm/destructive dialog so it can
+  // be cancelled before a new dialog replaces it, preventing promise leaks.
+  const pendingResolveRef = useRef<((v: boolean) => void) | undefined>(undefined);
+
+  const info = useCallback((opts: { title: string; subtitle?: string; body: ReactNode }) => {
+    // Cancel any pending dialog before opening a new one
+    pendingResolveRef.current?.(false);
+    pendingResolveRef.current = undefined;
+    setState({ open: true, variant: 'info', ...opts });
+  }, []);
   const confirm = useCallback((opts: { title: string; subtitle?: string; body: ReactNode }): Promise<boolean> =>
-    new Promise(resolve => setState({ open: true, variant: 'confirm', ...opts, resolve })), []);
+    new Promise(resolve => {
+      pendingResolveRef.current?.(false);
+      pendingResolveRef.current = resolve;
+      setState({ open: true, variant: 'confirm', ...opts, resolve });
+    }), []);
   const destructive = useCallback((opts: { title: string; subtitle?: string; body: ReactNode }): Promise<boolean> =>
-    new Promise(resolve => setState({ open: true, variant: 'destructive', ...opts, resolve })), []);
-  const close = useCallback((value: boolean) => { state.resolve?.(value); setState(p => ({ ...p, open: false })); }, [state]);
+    new Promise(resolve => {
+      pendingResolveRef.current?.(false);
+      pendingResolveRef.current = resolve;
+      setState({ open: true, variant: 'destructive', ...opts, resolve });
+    }), []);
+  // Use pendingResolveRef instead of reading state.resolve so close() does not
+  // need state in its dependency array and can safely be called at any time.
+  const close = useCallback((value: boolean) => {
+    pendingResolveRef.current?.(value);
+    pendingResolveRef.current = undefined;
+    setState(p => ({ ...p, open: false }));
+  }, []);
+
+  useEffect(() => () => {
+    pendingResolveRef.current?.(false);
+    pendingResolveRef.current = undefined;
+  }, []);
+
+  useImperativeHandle(ref, () => ({ info, confirm, destructive }), [info, confirm, destructive]);
 
   if (!state.open) return null;
   const colors = { info: 'text-[#00FFC8] bg-[#00FFC8]/12 border-[#00FFC8]/30', confirm: 'text-[#f5a623] bg-[#f5a623]/12 border-[#f5a623]/30', destructive: 'text-[#ff4d6a] bg-[#ff4d6a]/12 border-[#ff4d6a]/30' };
@@ -50,4 +90,4 @@ export function VrilModal() {
       </div>
     </div>
   );
-}
+});

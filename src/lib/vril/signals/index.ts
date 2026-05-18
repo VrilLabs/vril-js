@@ -66,8 +66,15 @@ export interface SignalGraph {
 
 type Subscriber = () => void;
 
-let currentEffect: Function | null = null;
-let pendingEffects: Function[] = [];
+/** Internal shape of a subscriber with devtools metadata attached */
+interface TaggedSubscriber extends Subscriber {
+  _id?: string;
+  _kind?: 'effect' | 'computed';
+  _invalidate?: () => void;
+}
+
+let currentEffect: TaggedSubscriber | null = null;
+let pendingEffects: TaggedSubscriber[] = [];
 let batching = 0;
 
 /** Auto-incrementing ID for signal devtools tracking */
@@ -87,6 +94,13 @@ const signalRegistry = new Map<string, {
   createdAt: number;
   updatedAt: number;
 }>();
+
+/**
+ * Maps every signal ID to its subscriber Set so that computed signals can
+ * remove themselves from dropped dependencies during recompute, preventing
+ * stale edges that cause unnecessary invalidations and effect re-runs.
+ */
+const signalSubscribersById = new Map<string, Set<Subscriber>>();
 
 // ─── Devtools Hooks ───────────────────────────────────────────────
 
@@ -194,9 +208,9 @@ export function signal<T>(initial: T): SignalReadable<T> {
 
   function read(): T {
     if (currentEffect) {
-      subscribers.add(currentEffect as Subscriber);
-      if ((currentEffect as any)._id) {
-        trackDependency(id, (currentEffect as any)._id);
+      subscribers.add(currentEffect);
+      if (currentEffect._id) {
+        trackDependency(id, currentEffect._id);
       }
     }
     return value;
@@ -219,6 +233,9 @@ export function signal<T>(initial: T): SignalReadable<T> {
   };
 
   registerSignal(id, 'signal', () => read.peek());
+  // Register the subscriber Set so computed signals can remove themselves when
+  // a dependency is no longer read after a recompute.
+  signalSubscribersById.set(id, subscribers);
   return read;
 }
 
@@ -230,50 +247,74 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
   let cachedValue: T;
   let dirty = true;
   const subscribers = new Set<Subscriber>();
-  const dependencies = new Set<string>();
   const id = `comp_${nextSignalId++}`;
+
+  // The tracker is defined ONCE and reused across every recompute.
+  // Creating a new tracker on each recompute would leave stale references in
+  // signal subscriber Sets (Sets hold by identity), so old tracker closures
+  // would keep calling _invalidate for dependencies that are no longer read.
+  // A stable reference means each signal's Set accumulates at most one entry
+  // for this computed, which stays correctly wired throughout its lifetime.
+  const tracker: TaggedSubscriber = () => {
+    dirty = false;
+    cachedValue = fn();
+  };
+  tracker._id = id;
+  tracker._kind = 'computed';
+  tracker._invalidate = () => {
+    dirty = true;
+    notify(subscribers);
+  };
 
   /** Track which signals this computed depends on */
   function recompute(): void {
-    const prevDeps = new Set(dependencies);
-    dependencies.clear();
+    const entry = signalRegistry.get(id);
+    // Snapshot the current deps BEFORE running fn() so we know what to clean up
+    const prevDeps = entry ? new Set(entry.dependencies) : new Set<string>();
 
-    // Set up tracking: when we call fn(), any signal reads will register us
+    // Step 1 — registry-level cleanup: unlink this computed from each previous
+    // dependency's `dependents` set and clear its own `dependencies` set so that
+    // trackDependency() calls during fn() rebuild the graph from scratch.
+    if (entry) {
+      for (const dep of prevDeps) {
+        const depEntry = signalRegistry.get(dep);
+        if (depEntry) depEntry.dependents.delete(id);
+      }
+      entry.dependencies.clear();
+    }
+
+    // Run fn() under the stable tracker; signal reads will re-register deps
     const prevEffect = currentEffect;
-    const tracker = () => {
-      dirty = false;
-      cachedValue = fn();
-    };
-    (tracker as any)._id = id;
-    currentEffect = tracker as unknown as Function;
+    currentEffect = tracker;
     try {
       tracker();
     } finally {
       currentEffect = prevEffect;
     }
 
-    // Update dependency tracking in registry
-    const entry = signalRegistry.get(id);
-    if (entry) {
-      // Remove old deps
-      for (const dep of prevDeps) {
-        const depEntry = signalRegistry.get(dep);
-        if (depEntry) depEntry.dependents.delete(id);
-        entry.dependencies.delete(dep);
+    // After running, entry.dependencies now holds the new deps.
+    const newDeps = entry ? entry.dependencies : new Set<string>();
+
+    // Step 2 — subscriber-Set-level cleanup: for signals that are no longer
+    // dependencies, remove the tracker from their local subscriber Sets.
+    // This is distinct from step 1 (which cleans the abstract registry graph);
+    // here we are cleaning the actual notification Sets held inside signal()
+    // closures so that stale signal→computed edges no longer fire _invalidate()
+    // for changes to signals this computed no longer reads.
+    for (const dep of prevDeps) {
+      if (!newDeps.has(dep)) {
+        signalSubscribersById.get(dep)?.delete(tracker);
       }
-      // Add new deps
-      for (const dep of dependencies) {
-        trackDependency(dep, id);
-      }
-      entry.updatedAt = Date.now();
     }
+
+    if (entry) entry.updatedAt = Date.now();
   }
 
   function self(): T {
     if (currentEffect) {
-      subscribers.add(currentEffect as Subscriber);
-      if ((currentEffect as any)._id) {
-        trackDependency(id, (currentEffect as any)._id);
+      subscribers.add(currentEffect);
+      if (currentEffect._id) {
+        trackDependency(id, currentEffect._id);
       }
     }
     if (dirty) recompute();
@@ -293,6 +334,12 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
     if (dirty) recompute();
     return cachedValue;
   });
+  // Register the computed's subscriber Set so that OTHER computed signals that
+  // depend on this one can remove themselves from this Set when they drop this
+  // dependency during their own recompute. Without this, a computed that
+  // conditionally stops reading another computed would leave its tracker in
+  // this Set and receive spurious _invalidate() calls forever.
+  signalSubscribersById.set(id, subscribers);
 
   return self;
 }
@@ -305,7 +352,7 @@ export function effect(fn: () => void | (() => void)): () => void {
   let disposeFn: (() => void) | null = null;
   const id = `eff_${nextSignalId++}`;
 
-  function runner() {
+  const runner: TaggedSubscriber = function () {
     if (disposeFn) { try { disposeFn(); } catch {} disposeFn = null; }
     const prev = currentEffect;
     currentEffect = runner;
@@ -315,10 +362,10 @@ export function effect(fn: () => void | (() => void)): () => void {
     } finally {
       currentEffect = prev;
     }
-  }
+  };
 
-  (runner as any)._id = id;
-  (runner as any)._kind = 'effect';
+  runner._id = id;
+  runner._kind = 'effect';
   runner();
 
   return () => {
@@ -349,7 +396,7 @@ export function untrack<T>(fn: () => T): T {
  * Supports deep reactivity for flat objects.
  */
 export function store<T extends Record<string, unknown>>(obj: T): { [K in keyof T]: T[K] } {
-  const sigs: Record<string, any> = {};
+  const sigs: Record<string, ReturnType<typeof signal>> = {};
   const proxy: Record<string, unknown> = {};
   for (const k of Object.keys(obj)) {
     const s = signal(obj[k]);
@@ -360,7 +407,7 @@ export function store<T extends Record<string, unknown>>(obj: T): { [K in keyof 
       set: (v: unknown) => s.set(v),
     });
   }
-  return proxy as any;
+  return proxy as unknown as { [K in keyof T]: T[K] };
 }
 
 // ─── Advanced Signal Types ────────────────────────────────────────
@@ -767,7 +814,7 @@ export function signalFromPromise<T>(
   read._kind = 'signal';
   read._id = id;
   read.peek = () => inner.peek();
-  read.set = (next) => { inner.set(typeof next === 'function' ? (next as Function)(inner.peek()) : next); };
+  read.set = (next) => { inner.set(typeof next === 'function' ? (next as (prev: AsyncSignalState<T>) => AsyncSignalState<T>)(inner.peek()) : next); };
 
   registerSignal(id, 'signal', () => inner.peek());
   return read;
@@ -777,8 +824,9 @@ export function signalFromPromise<T>(
 
 function notify(subscribers: Set<Subscriber>): void {
   subscribers.forEach(sub => {
-    if ((sub as any)._kind === 'computed') (sub as any)._invalidate();
-    else if (!pendingEffects.includes(sub)) pendingEffects.push(sub);
+    const tagged = sub as TaggedSubscriber;
+    if (tagged._kind === 'computed') tagged._invalidate?.();
+    else if (!pendingEffects.includes(tagged)) pendingEffects.push(tagged);
   });
   if (batching === 0) flush();
 }

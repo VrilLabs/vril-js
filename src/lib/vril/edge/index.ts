@@ -82,7 +82,7 @@ export class EdgeRuntime {
       runtime = 'cloudflare';
     } else if (typeof globalRef.EdgeRuntime !== 'undefined') {
       runtime = 'vercel';
-    } else if (typeof (globalRef as any).Deno !== 'undefined') {
+    } else if (typeof (globalRef as Record<string, unknown>).Deno !== 'undefined') {
       runtime = 'deno';
     } else if (typeof process !== 'undefined' && process.env?.AWS_LAMBDA_FUNCTION_NAME) {
       runtime = 'aws-lambda';
@@ -511,7 +511,7 @@ export function createEdgeHandler(
       response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
 
       return response;
-    } catch (error) {
+    } catch {
       return new Response(
         JSON.stringify({
           error: 'Internal Server Error',

@@ -4,7 +4,8 @@ node_modules/
 .pnp.js
 .yarn/install-state.gz
 
-# ─── Next.js ─────────────────────────────────────────────────────
+# ─── Framework build output ───────────────────────────────────────
+.vril/
 .next/
 out/
 build/

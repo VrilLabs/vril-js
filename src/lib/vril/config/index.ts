@@ -153,8 +153,8 @@ const DEFAULT_SECURITY: SecurityConfig = {
   blockedAPIs: ['WebTransport', 'RTCPeerConnection'],
   csp: {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'"],
-    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    scriptSrc: ["'self'"],
+    styleSrc: ["'self'", "https://fonts.googleapis.com"],
     fontSrc: ["'self'", "https://fonts.gstatic.com"],
     imgSrc: ["'self'", "data:"],
     connectSrc: ["'self'"],
@@ -253,7 +253,7 @@ export const SPA_PRESET: Partial<VrilFullConfig> = {
     ...DEFAULT_SECURITY,
     csp: {
       ...DEFAULT_SECURITY.csp,
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      scriptSrc: ["'self'"],
     },
   },
   build: { ...DEFAULT_BUILD, sriHashes: false, cspNonce: false },
@@ -536,7 +536,7 @@ export class EnvironmentConfig {
         ...DEFAULT_SECURITY,
         csp: {
           ...DEFAULT_SECURITY.csp,
-          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          scriptSrc: ["'self'"],
         },
       },
       server: { ...DEFAULT_SERVER, https: false },

@@ -254,6 +254,11 @@ export class BuildSecurityChecker {
     return Array.from(this.checks.values()).every(v => v);
   }
 
+  /** Get a read-only snapshot of all check results at this point in time */
+  getChecks(): ReadonlyMap<string, boolean> {
+    return new Map(this.checks);
+  }
+
   /** Run automated security checks against a build configuration */
   async runAutomatedChecks(config: {
     headers?: Record<string, string>;
@@ -333,7 +338,7 @@ export function generateAuditReport(checker: BuildSecurityChecker): SecurityAudi
   const status = checker.getStatus();
   const score = Math.round((status.passed / status.total) * 100);
 
-  const checksMap = (checker as any).checks as Map<string, boolean>;
+  const checksMap = checker.getChecks();
   const checks = Array.from(checksMap.entries()).map(([name, passed]) => ({
     name,
     status: passed ? 'pass' as const : 'fail' as const,

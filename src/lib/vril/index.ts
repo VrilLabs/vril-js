@@ -35,6 +35,14 @@ export {
   PerformanceProfiler,
 } from './core';
 
+// ─── Framework Runtime ─────────────────────────────────────────
+export {
+  json,
+  type VrilRouteContext,
+  type VrilRouteHandler,
+  type VrilMetadata,
+} from './framework';
+
 // ─── Security ────────────────────────────────────────────────
 export {
   installTrustedTypes,
@@ -69,6 +77,7 @@ export {
 
 export {
   PQCHandler,
+  nativePQCProvider,
   pqc,
   type PQCKeyPair,
   type KEMResult,
@@ -76,7 +85,21 @@ export {
   type AlgorithmInfo,
   type BenchmarkResult,
   type PQCAlgorithm,
+  type PQCProvider,
+  type PQCValidationEvidence,
 } from './security/crypto/pqc';
+
+export {
+  fillRandomBytes,
+  randomBytes,
+  ShakeXof,
+  sha3_256,
+  sha3_512,
+  shake128,
+  shake256,
+  runSha3SelfTest,
+  type BytesLike,
+} from './security/crypto/primitives';
 
 export {
   HybridKEM,
@@ -88,6 +111,15 @@ export {
   type HybridKeyPair,
   type KeyRotationEvent,
 } from './security/crypto/hybrid';
+
+export {
+  ActiveSurfacePQC,
+  type ActiveSurfaceMode,
+  type ActiveSurfacePolicy,
+  type ActiveSurfaceSelection,
+  type ActiveSurfaceKeyPair,
+  type ActiveSurfaceKEMResult,
+} from './security/crypto/active-surface-pqc';
 
 export {
   CryptoAgility,
@@ -513,4 +545,4 @@ export { VrilProvider, useVril } from '@/components/vril-provider';
 export { CrystalWindow, useCrystalWindow } from '@/components/crystal-window';
 export { VaultDialog } from '@/components/vault-dialog';
 export { CommandPalette, type CommandItem } from '@/components/command-palette';
-export { VrilModal } from '@/components/modal';
+export { VrilModal, type VrilModalHandle } from '@/components/modal';

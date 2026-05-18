@@ -15,12 +15,12 @@
 
 [![Version](https://img.shields.io/badge/version-2.1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
 [![License](https://img.shields.io/badge/license-VRIL_LABS_OSL_v1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js/blob/main/LICENSE)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
+[![Zero-Dependency Security Core](https://img.shields.io/badge/security_core-0_runtime_deps-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
 [![PQC-Ready](https://img.shields.io/badge/PQC-Ready-00d4aa?style=flat-square&labelColor=1a1a2e)](https://csrc.nist.gov/projects/post-quantum-cryptography)
 
 **Post-quantum cryptography · Zero-trust membrane · Crypto agility · ΩSignal reactivity**
 
-Vril.js is a production-grade React framework where security is the architecture, not an afterthought. Built with zero external dependencies and full NIST post-quantum cryptography support, it provides everything you need to build applications that withstand both today's threats and tomorrow's quantum adversaries.
+Vril.js is a production-grade React framework where security is the architecture, not an afterthought. Its app shell, routing, API responses, security proxy, SSR/hydration, and static build pipeline are now provided by the built-in Vril runtime instead of Next.js.
 
 [Documentation](https://vril-js.vercel.app/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/VrilLabs/vril-js)
 
@@ -32,7 +32,7 @@ Vril.js is a production-grade React framework where security is the architecture
 
 The web is facing a cryptographic reckoning. NIST finalized post-quantum standards in 2024 (FIPS 203, 204, 205). The "harvest now, decrypt later" threat is real. Yet most frameworks still treat security as a plugin you install after the fact.
 
-Vril.js inverts this. Every module — from routing to reactivity, from SSR to state management — is built on a foundation of cryptographic integrity and zero-trust principles. And because it uses only the Web Crypto API, there are zero supply chain attack vectors from npm dependencies.
+Vril.js inverts this. Every module — from routing to reactivity, from SSR to state management — is built on a foundation of cryptographic integrity and zero-trust principles. Because it ships its security/PQC primitives directly with the framework and uses Web Crypto where appropriate, those primitives do not add third-party runtime npm dependency attack vectors.
 
 **The result:** Applications that are secure by default, quantum-resistant out of the box, and fast enough to run at the edge.
 
@@ -40,7 +40,7 @@ Vril.js inverts this. Every module — from routing to reactivity, from SSR to s
 
 ## Features
 
-🔐 **Post-Quantum Cryptography** — ML-KEM-768, ML-KEM-1024, ML-DSA-65, ML-DSA-87, SLH-DSA-SHA2-128s, SLH-DSA-SHA2-256f. All NIST FIPS 203/204/205 standard algorithms with correct interfaces and key sizes.
+🔐 **Post-Quantum Cryptography** — Clean-room FIPS 203 ML-KEM-512/768/1024, FIPS 204 ML-DSA-44/65/87, and FIPS 205 SLH-DSA SHA2/SHAKE parameter sets, with correct interfaces and key sizes.
 
 🔗 **Hybrid Key Exchange** — X25519+ML-KEM-768 and ECDSA-P256+ML-DSA-65 with SHA-256 KDF combiner. Secure as long as *at least one* algorithm remains unbroken — defense in depth against quantum adversaries.
 
@@ -736,7 +736,11 @@ Vril.js requires the **Web Crypto API** for all cryptographic operations. This i
 | Safari | 15.4+ |
 | Edge | 96+ |
 
-> **Note:** PQC algorithms (ML-KEM, ML-DSA, SLH-DSA) are not yet natively supported in any browser. Vril.js provides these with correct interfaces and key sizes using deterministic simulation with Web Crypto API primitives. When browsers add native PQC support, Vril.js will automatically use the native implementations. The hybrid mode (`X25519+ML-KEM-768`) uses real X25519 for the classical component today.
+> **Note:** Vril.js ships bundled, native, from-specification foundation primitives for FIPS 203 ML-KEM, FIPS 204 ML-DSA, and FIPS 205 SLH-DSA. PQC operations are performed entirely in native JavaScript with zero runtime npm dependencies; Web Crypto (`window.crypto.subtle`) is used for classical primitives such as AES-256-GCM and X25519 where available. Implementations conform to the FIPS 203/204/205 parameter sets; formal FIPS 140-3 module validation (CMVP) and CAVP/ACVP evidence require a separate evaluation process.
+>
+> `PQCHandler` now uses the bundled `nativePQCProvider` by default. Use `new PQCHandler(null)` only when you intentionally want metadata-only fail-closed behavior, or pass a certified `PQCProvider` to override the bundled implementation.
+>
+> `pqc.browserSupportsPQC()` reports whether the current browser can execute Vril.js Active Surface PQC, not whether Web Crypto itself exposes PQC algorithms.
 
 ---
 

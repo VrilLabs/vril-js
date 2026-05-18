@@ -469,8 +469,12 @@ export class MigrationExecutor {
               );
               // New key generated for migration
               step.status = 'completed';
+            } else if (toAlgo?.quantumResistant) {
+              throw new Error(
+                `Migration to ${plan.toAlgorithm} requires an authentic PQC provider; placeholder PQC key generation is not permitted`
+              );
             } else {
-              // Asymmetric key generation — simulate for PQC
+              // Asymmetric key generation must be handled by an algorithm-specific provider
               step.status = 'completed';
             }
             break;

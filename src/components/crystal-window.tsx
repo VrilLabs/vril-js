@@ -63,10 +63,9 @@ export function CrystalWindow({ panels }: { panels: PanelConfig[] }) {
       <div
         className={`fixed top-16 left-0 right-0 z-[300] max-h-[calc(100dvh-4rem-2rem)] flex flex-col rounded-b-3xl overflow-hidden transition-all duration-500 ${
           isOpen && !isClosing ? 'translate-y-0 opacity-100 pointer-events-auto' : '-translate-y-full opacity-0 pointer-events-none'
-        }`}
-        style={{ background: 'rgba(8,10,18,0.85)', backdropFilter: 'blur(32px) saturate(200%)', border: '1px solid rgba(255,255,255,0.08)', borderTop: 'none', boxShadow: '0 24px 80px rgba(0,0,0,0.7), 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)' }}
+        } crystal-window-panel`}
       >
-        <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent, rgba(0,255,200,0.18) 20%, rgba(0,255,200,0.18) 80%, transparent)' }} />
+        <div className="h-px w-full crystal-window-seam" />
         <div className="flex items-center justify-center py-3 cursor-grab" onClick={close}>
           <div className="w-12 h-1 rounded-full bg-gradient-to-r from-[#00FFC8] to-[#0A84FF] opacity-50" />
         </div>

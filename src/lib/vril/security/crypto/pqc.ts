@@ -1,16 +1,21 @@
 /**
  * Vril.js v2.0.0 — Post-Quantum Cryptography Handler
  *
- * Comprehensive PQC implementation supporting ML-KEM-768, ML-KEM-1024,
- * ML-DSA-65, ML-DSA-87, SLH-DSA-SHA2-128s, SLH-DSA-SHA2-256f.
+ * Post-quantum cryptography metadata and native Web Crypto integration points
+ * for all FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), and FIPS 205 (SLH-DSA)
+ * algorithm families.
  *
- * NOTE: PQC algorithms not yet natively supported in browsers are implemented
- * as SIMULATIONS with correct interfaces. Where Web Crypto API provides
- * real operations (X25519, ECDH, ECDSA-P256), those are used natively.
- * All simulated operations are clearly documented.
+ * NOTE: Vril.js performs authentic PQC operations. ML-KEM/ML-DSA/SLH-DSA
+ * operations fail closed unless the runtime provides authentic native support
+ * or the caller wires a validated external cryptographic module. FIPS
+ * validation claims require CAVP/ACVP evidence for the exact implementation
+ * and deployment boundary.
  *
- * Zero external dependencies — Web Crypto API only.
+ * Zero external dependencies — Web Crypto API and caller-supplied providers.
  */
+
+import { nativePQCProvider } from './native-pqc/provider';
+export { fipsPQCProvider } from './fips-provider';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -22,7 +27,7 @@ export interface PQCKeyPair {
   privateKey: Uint8Array;
   /** Algorithm identifier */
   algorithm: string;
-  /** Whether key generation used native browser crypto or simulation */
+  /** Whether key generation used a built-in/native implementation */
   native: boolean;
   /** Timestamp of generation */
   createdAt: number;
@@ -36,7 +41,7 @@ export interface KEMResult {
   sharedSecret: Uint8Array;
   /** Algorithm used */
   algorithm: string;
-  /** Whether operation was native or simulated */
+  /** Whether operation used a built-in/native implementation */
   native: boolean;
 }
 
@@ -46,7 +51,7 @@ export interface SignatureResult {
   signature: Uint8Array;
   /** Algorithm used */
   algorithm: string;
-  /** Whether operation was native or simulated */
+  /** Whether operation used a built-in/native implementation */
   native: boolean;
   /** Timestamp of signing */
   signedAt: number;
@@ -66,8 +71,10 @@ export interface AlgorithmInfo {
   publicKeySize: number;
   /** Private key size in bytes */
   privateKeySize: number;
-  /** Ciphertext/signature size in bytes */
+  /** Ciphertext size for KEM algorithms; 0 for signature-only algorithms */
   ciphertextSize: number;
+  /** Signature size in bytes, for signature algorithms */
+  signatureSize?: number;
   /** Algorithm type */
   type: 'kem' | 'signature';
   /** Whether natively supported in browsers */
@@ -88,18 +95,71 @@ export interface BenchmarkResult {
   inverseMs: number;
   /** Number of iterations averaged over */
   iterations: number;
-  /** Whether operations were native or simulated */
+  /** Whether operations used native browser crypto */
   native: boolean;
+}
+
+/** Evidence that a provider-backed implementation has FIPS validation */
+export interface PQCValidationEvidence {
+  /** Algorithm identifier covered by the evidence */
+  algorithm: PQCAlgorithm;
+  /** Applicable FIPS standard */
+  standard: 'FIPS 203' | 'FIPS 204' | 'FIPS 205' | 'RFC 7748' | 'FIPS 186-5';
+  /** CAVP/ACVP algorithm certificate identifier, when applicable */
+  cavpCertificate?: string;
+  /** CMVP/FIPS 140-3 module certificate identifier, when packaged as a module */
+  cmvpCertificate?: string;
+  /** Validated module or implementation name */
+  moduleName: string;
+  /** Provider/vendor name */
+  providerName: string;
+  /** Whether this is a standards-conformant implementation */
+  standardsConformant: boolean;
+}
+
+/** External authentic PQC provider contract */
+export interface PQCProvider {
+  /** Provider name for diagnostics and validation evidence */
+  readonly name: string;
+  /** Return validation evidence for an algorithm, or null if unsupported/unvalidated */
+  getValidationEvidence: (algorithm: PQCAlgorithm) => PQCValidationEvidence | null;
+  /** Generate an authentic key pair */
+  generateKeyPair?: (algorithm: PQCAlgorithm) => Promise<PQCKeyPair>;
+  /** Perform authentic KEM encapsulation */
+  encapsulate?: (publicKey: Uint8Array, algorithm: PQCAlgorithm) => Promise<KEMResult>;
+  /** Perform authentic KEM decapsulation */
+  decapsulate?: (ciphertext: Uint8Array, privateKey: Uint8Array, algorithm: PQCAlgorithm) => Promise<KEMResult>;
+  /** Perform authentic signature generation */
+  sign?: (message: Uint8Array, privateKey: Uint8Array, algorithm: PQCAlgorithm) => Promise<SignatureResult>;
+  /** Perform authentic signature verification */
+  verify?: (message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array, algorithm: PQCAlgorithm) => Promise<boolean>;
 }
 
 /** Supported PQC algorithm identifiers */
 export type PQCAlgorithm =
+  // FIPS 203 ML-KEM
+  | 'ML-KEM-512'
   | 'ML-KEM-768'
   | 'ML-KEM-1024'
+  // FIPS 204 ML-DSA
+  | 'ML-DSA-44'
   | 'ML-DSA-65'
   | 'ML-DSA-87'
+  // FIPS 205 SLH-DSA SHA2 variants
   | 'SLH-DSA-SHA2-128s'
+  | 'SLH-DSA-SHA2-128f'
+  | 'SLH-DSA-SHA2-192s'
+  | 'SLH-DSA-SHA2-192f'
+  | 'SLH-DSA-SHA2-256s'
   | 'SLH-DSA-SHA2-256f'
+  // FIPS 205 SLH-DSA SHAKE variants
+  | 'SLH-DSA-SHAKE-128s'
+  | 'SLH-DSA-SHAKE-128f'
+  | 'SLH-DSA-SHAKE-192s'
+  | 'SLH-DSA-SHAKE-192f'
+  | 'SLH-DSA-SHAKE-256s'
+  | 'SLH-DSA-SHAKE-256f'
+  // Classical (non-PQC)
   | 'X25519'
   | 'ECDSA-P256';
 
@@ -137,7 +197,8 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 3,
     publicKeySize: 1952,
     privateKeySize: 4032,
-    ciphertextSize: 3293,
+    ciphertextSize: 0,
+    signatureSize: 3309,
     type: 'signature',
     nativeSupport: false,
     quantumResistant: true,
@@ -149,7 +210,8 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 5,
     publicKeySize: 2592,
     privateKeySize: 4896,
-    ciphertextSize: 4627,
+    ciphertextSize: 0,
+    signatureSize: 4627,
     type: 'signature',
     nativeSupport: false,
     quantumResistant: true,
@@ -161,7 +223,8 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 1,
     publicKeySize: 32,
     privateKeySize: 64,
-    ciphertextSize: 7856,
+    ciphertextSize: 0,
+    signatureSize: 7856,
     type: 'signature',
     nativeSupport: false,
     quantumResistant: true,
@@ -173,7 +236,167 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 5,
     publicKeySize: 64,
     privateKeySize: 128,
-    ciphertextSize: 29792,
+    ciphertextSize: 0,
+    signatureSize: 49856, // FIPS 205 SLH-DSA-SHA2-256f signature byte length
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  // ─── FIPS 203 additional parameter set ────────────────────────────────────
+  'ML-KEM-512': {
+    id: 'ML-KEM-512',
+    name: 'ML-KEM-512 (Kyber-512)',
+    nistStandard: 'FIPS 203',
+    securityLevel: 1,
+    publicKeySize: 800,
+    privateKeySize: 1632,
+    ciphertextSize: 768,
+    type: 'kem',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  // ─── FIPS 204 additional parameter set ────────────────────────────────────
+  'ML-DSA-44': {
+    id: 'ML-DSA-44',
+    name: 'ML-DSA-44 (Dilithium-II)',
+    nistStandard: 'FIPS 204',
+    securityLevel: 2,
+    publicKeySize: 1312,
+    privateKeySize: 2560,
+    ciphertextSize: 0,
+    signatureSize: 2420,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  // ─── FIPS 205 additional SHA2 parameter sets ──────────────────────────────
+  'SLH-DSA-SHA2-128f': {
+    id: 'SLH-DSA-SHA2-128f',
+    name: 'SLH-DSA-SHA2-128f',
+    nistStandard: 'FIPS 205',
+    securityLevel: 1,
+    publicKeySize: 32,
+    privateKeySize: 64,
+    ciphertextSize: 0,
+    signatureSize: 17088,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHA2-192s': {
+    id: 'SLH-DSA-SHA2-192s',
+    name: 'SLH-DSA-SHA2-192s',
+    nistStandard: 'FIPS 205',
+    securityLevel: 3,
+    publicKeySize: 48,
+    privateKeySize: 96,
+    ciphertextSize: 0,
+    signatureSize: 16224,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHA2-192f': {
+    id: 'SLH-DSA-SHA2-192f',
+    name: 'SLH-DSA-SHA2-192f',
+    nistStandard: 'FIPS 205',
+    securityLevel: 3,
+    publicKeySize: 48,
+    privateKeySize: 96,
+    ciphertextSize: 0,
+    signatureSize: 35664,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHA2-256s': {
+    id: 'SLH-DSA-SHA2-256s',
+    name: 'SLH-DSA-SHA2-256s',
+    nistStandard: 'FIPS 205',
+    securityLevel: 5,
+    publicKeySize: 64,
+    privateKeySize: 128,
+    ciphertextSize: 0,
+    signatureSize: 29792,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  // ─── FIPS 205 SHAKE parameter sets ────────────────────────────────────────
+  'SLH-DSA-SHAKE-128s': {
+    id: 'SLH-DSA-SHAKE-128s',
+    name: 'SLH-DSA-SHAKE-128s',
+    nistStandard: 'FIPS 205',
+    securityLevel: 1,
+    publicKeySize: 32,
+    privateKeySize: 64,
+    ciphertextSize: 0,
+    signatureSize: 7856,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHAKE-128f': {
+    id: 'SLH-DSA-SHAKE-128f',
+    name: 'SLH-DSA-SHAKE-128f',
+    nistStandard: 'FIPS 205',
+    securityLevel: 1,
+    publicKeySize: 32,
+    privateKeySize: 64,
+    ciphertextSize: 0,
+    signatureSize: 17088,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHAKE-192s': {
+    id: 'SLH-DSA-SHAKE-192s',
+    name: 'SLH-DSA-SHAKE-192s',
+    nistStandard: 'FIPS 205',
+    securityLevel: 3,
+    publicKeySize: 48,
+    privateKeySize: 96,
+    ciphertextSize: 0,
+    signatureSize: 16224,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHAKE-192f': {
+    id: 'SLH-DSA-SHAKE-192f',
+    name: 'SLH-DSA-SHAKE-192f',
+    nistStandard: 'FIPS 205',
+    securityLevel: 3,
+    publicKeySize: 48,
+    privateKeySize: 96,
+    ciphertextSize: 0,
+    signatureSize: 35664,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHAKE-256s': {
+    id: 'SLH-DSA-SHAKE-256s',
+    name: 'SLH-DSA-SHAKE-256s',
+    nistStandard: 'FIPS 205',
+    securityLevel: 5,
+    publicKeySize: 64,
+    privateKeySize: 128,
+    ciphertextSize: 0,
+    signatureSize: 29792,
+    type: 'signature',
+    nativeSupport: false,
+    quantumResistant: true,
+  },
+  'SLH-DSA-SHAKE-256f': {
+    id: 'SLH-DSA-SHAKE-256f',
+    name: 'SLH-DSA-SHAKE-256f',
+    nistStandard: 'FIPS 205',
+    securityLevel: 5,
+    publicKeySize: 64,
+    privateKeySize: 128,
+    ciphertextSize: 0,
+    signatureSize: 49856,
     type: 'signature',
     nativeSupport: false,
     quantumResistant: true,
@@ -197,7 +420,8 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
     securityLevel: 1,
     publicKeySize: 64,
     privateKeySize: 32,
-    ciphertextSize: 64,
+    ciphertextSize: 0,
+    signatureSize: 64,
     type: 'signature',
     nativeSupport: true,
     quantumResistant: false,
@@ -206,35 +430,97 @@ const ALGORITHM_INFO: Record<string, AlgorithmInfo> = {
 
 // ─── Helper Utilities ─────────────────────────────────────────────────────
 
-function concatArrays(...arrays: Uint8Array[]): Uint8Array {
-  const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const arr of arrays) {
-    result.set(arr, offset);
-    offset += arr.length;
-  }
-  return result;
+function isPQCAlgorithm(algorithm: string): boolean {
+  return algorithm.startsWith('ML-') || algorithm.startsWith('SLH-');
 }
 
-async function sha256(data: Uint8Array): Promise<Uint8Array> {
-  const hash = await crypto.subtle.digest('SHA-256', data as BufferSource);
-  return new Uint8Array(hash);
+const BUNDLED_PQC_ALGORITHMS: PQCAlgorithm[] = [
+  'ML-KEM-512',
+  'ML-KEM-768',
+  'ML-KEM-1024',
+  'ML-DSA-44',
+  'ML-DSA-65',
+  'ML-DSA-87',
+  'SLH-DSA-SHA2-128s',
+  'SLH-DSA-SHA2-128f',
+  'SLH-DSA-SHA2-192s',
+  'SLH-DSA-SHA2-192f',
+  'SLH-DSA-SHA2-256s',
+  'SLH-DSA-SHA2-256f',
+  'SLH-DSA-SHAKE-128s',
+  'SLH-DSA-SHAKE-128f',
+  'SLH-DSA-SHAKE-192s',
+  'SLH-DSA-SHAKE-192f',
+  'SLH-DSA-SHAKE-256s',
+  'SLH-DSA-SHAKE-256f',
+];
+
+function unsupportedPQCError(algorithm: string): Error {
+  return new Error(
+    `[VRIL PQC] ${algorithm} requires an authentic FIPS 203/204/205 implementation. ` +
+    'Browser Web Crypto does not currently expose this algorithm in this runtime, ' +
+    'and placeholder PQC is not permitted.'
+  );
 }
 
-async function deriveDeterministicSeed(
-  seed: Uint8Array,
-  context: string,
-  length: number
-): Promise<Uint8Array> {
-  const ctxBytes = new TextEncoder().encode(context);
-  const combined = concatArrays(seed, ctxBytes);
-  const hash = await sha256(combined);
-  const result = new Uint8Array(length);
-  for (let i = 0; i < length; i++) {
-    result[i] = hash[i % hash.length] ^ (i > 32 ? hash[(i - 32) % hash.length] : 0);
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function hasByteLength(value: unknown, expectedLength: number): value is Uint8Array {
+  return value instanceof Uint8Array && value.byteLength === expectedLength;
+}
+
+function isAdmissibleEvidence(
+  evidence: PQCValidationEvidence | null | undefined,
+  algorithm: PQCAlgorithm,
+  info: AlgorithmInfo
+): evidence is PQCValidationEvidence {
+  return (
+    !!evidence &&
+    evidence.algorithm === algorithm &&
+    evidence.standard === info.nistStandard &&
+    evidence.standardsConformant === true &&
+    isNonEmptyString(evidence.moduleName) &&
+    isNonEmptyString(evidence.providerName)
+  );
+}
+
+function hasSubtleCrypto(): boolean {
+  return typeof crypto !== 'undefined' && typeof crypto.subtle !== 'undefined';
+}
+
+function nativeRuntimeSupportsOperations(algorithm: string, info: AlgorithmInfo): boolean {
+  if (!hasSubtleCrypto()) return false;
+  const subtle = crypto.subtle;
+  if (algorithm === 'X25519') {
+    return (
+      typeof subtle.generateKey === 'function' &&
+      typeof subtle.importKey === 'function' &&
+      typeof subtle.exportKey === 'function' &&
+      typeof subtle.deriveBits === 'function'
+    );
   }
-  return result;
+  if (algorithm === 'ECDSA-P256') {
+    return (
+      typeof subtle.generateKey === 'function' &&
+      typeof subtle.importKey === 'function' &&
+      typeof subtle.exportKey === 'function' &&
+      typeof subtle.sign === 'function' &&
+      typeof subtle.verify === 'function'
+    );
+  }
+  return info.nativeSupport;
+}
+
+function providerResultError(algorithm: PQCAlgorithm, reason: string): Error {
+  return new Error(`[VRIL PQC] Provider returned invalid ${algorithm} material: ${reason}`);
+}
+
+function warnDiagnostic(message: string, ...details: unknown[]): void {
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn(message, ...details);
+  }
 }
 
 // ─── PQCHandler Class ─────────────────────────────────────────────────────
@@ -242,47 +528,103 @@ async function deriveDeterministicSeed(
 /**
  * Post-Quantum Cryptography handler for Vril.js v2.0.
  *
- * Provides unified interface for PQC key generation, KEM operations,
- * and digital signatures. Algorithms not natively supported in browsers
- * are simulated with correct interfaces using deterministic key derivation.
+ * Provides a unified interface for native cryptographic operations and
+ * post-quantum metadata. PQC operations that are not natively available fail
+ * closed instead of falling back to placeholders.
  */
 export class PQCHandler {
   private readonly version = '2.1.0';
+
+  /**
+   * Creates a PQC handler.
+   *
+   * By default, Vril.js uses the bundled native Active Surface PQC provider.
+   * Pass null to restore metadata-only/fail-closed behavior, or pass a
+   * certified provider to replace the bundled implementation.
+   */
+  constructor(private provider: PQCProvider | null = nativePQCProvider) {}
 
   /** Get module version */
   getVersion(): string {
     return this.version;
   }
 
+  /** Register or replace the external authentic PQC provider */
+  registerProvider(provider: PQCProvider): void {
+    this.provider = provider;
+  }
+
+  /** Remove the external PQC provider */
+  clearProvider(): void {
+    this.provider = null;
+  }
+
+  /** Get validation evidence for an algorithm, if an authentic provider supplies it */
+  getValidationEvidence(algorithm: PQCAlgorithm): PQCValidationEvidence | null {
+    const info = this.getAlgorithmInfo(algorithm);
+    if (info.nativeSupport) {
+      return {
+        algorithm,
+        standard: info.nistStandard as PQCValidationEvidence['standard'],
+        moduleName: 'Web Crypto API',
+        providerName: 'runtime',
+        standardsConformant: true,
+      };
+    }
+    const evidence = this.provider?.getValidationEvidence(algorithm) ?? null;
+    return isAdmissibleEvidence(evidence, algorithm, info) ? evidence : null;
+  }
+
   /**
-   * Check if a specific algorithm is supported by this handler.
+   * Check whether an algorithm has both admissible implementation evidence and
+   * explicit CAVP + CMVP certificate identifiers for regulated FIPS claims.
+   */
+  isFipsValidated(algorithm: PQCAlgorithm): boolean {
+    const info = ALGORITHM_INFO[algorithm];
+    if (!info || !info.nistStandard.startsWith('FIPS')) return false;
+    const evidence = this.getValidationEvidence(algorithm);
+    return !!evidence && isNonEmptyString(evidence.cavpCertificate) && isNonEmptyString(evidence.cmvpCertificate);
+  }
+
+  /**
+   * Check if a specific algorithm is operationally supported by this handler.
+   * Bundled Active Surface PQC and admissible providers make PQC algorithms
+   * operational in browsers even before Web Crypto exposes native PQC.
    */
   isSupported(algorithm: string): boolean {
-    return algorithm in ALGORITHM_INFO;
+    const info = ALGORITHM_INFO[algorithm];
+    if (!info) return false;
+    if (info.nativeSupport) return nativeRuntimeSupportsOperations(algorithm, info);
+
+    const pqcAlgorithm = algorithm as PQCAlgorithm;
+    return (
+      this.getValidationEvidence(pqcAlgorithm)?.standard === info.nistStandard &&
+      this.providerSupportsOperations(pqcAlgorithm, info)
+    );
+  }
+
+  /** Check whether this handler can run at least one real PQC algorithm. */
+  supportsPQC(): boolean {
+    return BUNDLED_PQC_ALGORITHMS.some((algorithm) => this.isSupported(algorithm));
   }
 
   /**
-   * Get list of all supported algorithm identifiers.
+   * Get list of operationally supported algorithm identifiers.
    */
   getSupportedAlgorithms(): string[] {
-    return Object.keys(ALGORITHM_INFO);
+    return Object.keys(ALGORITHM_INFO).filter((algorithm) => this.isSupported(algorithm));
   }
 
   /**
-   * Check if the browser natively supports PQC algorithms.
-   * Currently no browser ships native ML-KEM/ML-DSA.
+   * Check whether this browser runtime can execute Vril.js PQC.
+   *
+   * Browsers do not currently expose ML-KEM/ML-DSA/SLH-DSA through Web Crypto,
+   * so Vril.js brings actual browser PQC via the bundled Active Surface PQC
+   * provider or a caller-supplied admissible provider.
    */
   async browserSupportsPQC(): Promise<boolean> {
     if (typeof window === 'undefined') return false;
-    try {
-      // Check if Web Crypto API exists
-      const subtle = crypto.subtle;
-      if (!subtle?.generateKey) return false;
-      // Future: check for ML-KEM support when browsers add it
-      return false;
-    } catch {
-      return false;
-    }
+    return this.supportsPQC();
   }
 
   /**
@@ -308,11 +650,10 @@ export class PQCHandler {
    * Generate a PQC key pair.
    *
    * For X25519 and ECDSA-P256, uses real Web Crypto API.
-   * For ML-KEM and ML-DSA algorithms, uses SIMULATION with
-   * deterministic key derivation from a random seed.
+   * For ML-KEM, ML-DSA, and SLH-DSA algorithms, throws unless authentic
+   * native support is available.
    */
   async generateKeyPair(algorithm: PQCAlgorithm): Promise<PQCKeyPair> {
-    const info = this.getAlgorithmInfo(algorithm);
     const now = Date.now();
 
     // Native algorithms — use real Web Crypto
@@ -323,8 +664,12 @@ export class PQCHandler {
       return this.generateECDSAP256KeyPair(now);
     }
 
-    // PQC algorithms — simulation
-    return this.generateSimulatedKeyPair(algorithm, info, now);
+    if (isPQCAlgorithm(algorithm)) {
+      const provider = this.requireProvider(algorithm, 'generateKeyPair');
+      return this.validateProviderKeyPair(await provider.generateKeyPair!(algorithm), algorithm);
+    }
+
+    throw new Error(`[VRIL PQC] Unsupported key generation algorithm: ${algorithm}`);
   }
 
   /**
@@ -332,32 +677,21 @@ export class PQCHandler {
    * for the recipient's public key.
    *
    * For X25519, uses real ECDH key agreement.
-   * For ML-KEM, uses SIMULATION with deterministic derivation.
+   * For ML-KEM algorithms, throws unless authentic native support is available;
+   * placeholder KEM output is not permitted.
    */
   async encapsulate(publicKey: Uint8Array, algorithm: PQCAlgorithm = 'ML-KEM-768'): Promise<KEMResult> {
-    const info = this.getAlgorithmInfo(algorithm);
-
     if (algorithm === 'X25519') {
       return this.encapsulateX25519(publicKey);
     }
 
-    // ML-KEM simulation
-    const ephemeralSeed = crypto.getRandomValues(new Uint8Array(32));
-    const ciphertext = await deriveDeterministicSeed(
-      ephemeralSeed,
-      `vril-pqc-kem-encap-${algorithm}`,
-      info.ciphertextSize
-    );
+    if (isPQCAlgorithm(algorithm)) {
+      const provider = this.requireProvider(algorithm, 'encapsulate');
+      this.assertByteLength(publicKey, this.getAlgorithmInfo(algorithm).publicKeySize, `${algorithm} public key`);
+      return this.validateProviderKEMResult(await provider.encapsulate!(publicKey, algorithm), algorithm);
+    }
 
-    const secretInput = concatArrays(publicKey, ephemeralSeed);
-    const sharedSecret = await sha256(secretInput);
-
-    return {
-      ciphertext,
-      sharedSecret,
-      algorithm,
-      native: false,
-    };
+    throw new Error(`[VRIL PQC] Unsupported KEM algorithm: ${algorithm}`);
   }
 
   /**
@@ -365,7 +699,8 @@ export class PQCHandler {
    * using the private key.
    *
    * For X25519, uses real ECDH.
-   * For ML-KEM, uses SIMULATION.
+   * For ML-KEM algorithms, throws unless authentic native support is available;
+   * placeholder KEM output is not permitted.
    */
   async decapsulate(
     ciphertext: Uint8Array,
@@ -376,60 +711,48 @@ export class PQCHandler {
       return this.decapsulateX25519(ciphertext, privateKey);
     }
 
-    // ML-KEM simulation: re-derive shared secret from private key + ciphertext
-    const secretInput = concatArrays(privateKey, ciphertext.slice(0, 32));
-    const sharedSecret = await sha256(secretInput);
+    if (isPQCAlgorithm(algorithm)) {
+      const provider = this.requireProvider(algorithm, 'decapsulate');
+      const info = this.getAlgorithmInfo(algorithm);
+      this.assertByteLength(ciphertext, info.ciphertextSize, `${algorithm} ciphertext`);
+      this.assertByteLength(privateKey, info.privateKeySize, `${algorithm} private key`);
+      return this.validateProviderKEMResult(await provider.decapsulate!(ciphertext, privateKey, algorithm), algorithm);
+    }
 
-    return {
-      ciphertext,
-      sharedSecret,
-      algorithm,
-      native: false,
-    };
+    throw new Error(`[VRIL PQC] Unsupported KEM algorithm: ${algorithm}`);
   }
 
   /**
    * Sign a message with a private key.
    *
    * For ECDSA-P256, uses real Web Crypto signatures.
-   * For ML-DSA / SLH-DSA, uses SIMULATION.
+   * For ML-DSA / SLH-DSA, throws unless authentic native support is available;
+   * placeholder signatures are not permitted.
    */
   async sign(
     message: Uint8Array,
     privateKey: Uint8Array,
     algorithm: PQCAlgorithm = 'ML-DSA-65'
   ): Promise<SignatureResult> {
-    const info = this.getAlgorithmInfo(algorithm);
-
     if (algorithm === 'ECDSA-P256') {
       return this.signECDSAP256(message, privateKey);
     }
 
-    // ML-DSA / SLH-DSA simulation
-    const messageHash = await sha256(message);
-    const signInput = concatArrays(privateKey, messageHash);
-    const signatureSeed = await sha256(signInput);
+    if (isPQCAlgorithm(algorithm)) {
+      const provider = this.requireProvider(algorithm, 'sign');
+      this.assertByteLength(privateKey, this.getAlgorithmInfo(algorithm).privateKeySize, `${algorithm} private key`);
+      return this.validateProviderSignatureResult(await provider.sign!(message, privateKey, algorithm), algorithm);
+    }
 
-    // Generate deterministic signature of correct size
-    const signature = await deriveDeterministicSeed(
-      signatureSeed,
-      `vril-pqc-sig-${algorithm}`,
-      info.ciphertextSize
-    );
-
-    return {
-      signature,
-      algorithm,
-      native: false,
-      signedAt: Date.now(),
-    };
+    throw new Error(`[VRIL PQC] Unsupported signature algorithm: ${algorithm}`);
   }
 
   /**
    * Verify a signature against a message and public key.
    *
    * For ECDSA-P256, uses real Web Crypto verification.
-   * For ML-DSA / SLH-DSA, uses SIMULATION.
+   * For ML-DSA / SLH-DSA, throws unless authentic native support is available;
+   * placeholder verification is not permitted.
    */
   async verify(
     message: Uint8Array,
@@ -441,26 +764,22 @@ export class PQCHandler {
       return this.verifyECDSAP256(message, signature, publicKey);
     }
 
-    // ML-DSA / SLH-DSA simulation verification
-    // In simulation mode, we re-derive the expected signature and compare
-    const messageHash = await sha256(message);
+    if (isPQCAlgorithm(algorithm)) {
+      const provider = this.requireProvider(algorithm, 'verify');
+      const info = this.getAlgorithmInfo(algorithm);
+      const signatureSize = this.getSignatureSize(info);
+      if (!hasByteLength(publicKey, info.publicKeySize) || !hasByteLength(signature, signatureSize)) {
+        return false;
+      }
+      try {
+        return await provider.verify!(message, signature, publicKey, algorithm);
+      } catch (error) {
+        this.reportProviderVerificationFailure(algorithm, error);
+        return false;
+      }
+    }
 
-    // Derive the private key's signing seed from public key (simulation artifact)
-    const privateSeedInput = concatArrays(publicKey, new TextEncoder().encode('vril-sim-priv'));
-    const privateSeed = await sha256(privateSeedInput);
-
-    const signInput = concatArrays(privateSeed, messageHash);
-    const signatureSeed = await sha256(signInput);
-
-    const info = this.getAlgorithmInfo(algorithm);
-    const expectedSignature = await deriveDeterministicSeed(
-      signatureSeed,
-      `vril-pqc-sig-${algorithm}`,
-      info.ciphertextSize
-    );
-
-    // Constant-time comparison
-    return this.constantTimeEqual(signature, expectedSignature);
+    throw new Error(`[VRIL PQC] Unsupported signature algorithm: ${algorithm}`);
   }
 
   /**
@@ -469,8 +788,6 @@ export class PQCHandler {
    */
   async benchmark(algorithm: PQCAlgorithm, iterations: number = 10): Promise<BenchmarkResult> {
     const info = this.getAlgorithmInfo(algorithm);
-    const isNative = info.nativeSupport;
-
     // Key generation benchmark
     const kgStart = performance.now();
     for (let i = 0; i < iterations; i++) {
@@ -518,7 +835,7 @@ export class PQCHandler {
       operationMs,
       inverseMs,
       iterations,
-      native: isNative,
+      native: keyPair.native,
     };
   }
 
@@ -562,36 +879,6 @@ export class PQCHandler {
     const publicKey = new Uint8Array(await crypto.subtle.exportKey('raw', keyPair.publicKey));
     const privateKey = new Uint8Array(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey));
     return { publicKey, privateKey, algorithm: 'ECDSA-P256', native: true, createdAt };
-  }
-
-  // ─── Private: Simulated PQC Key Generation ──────────────────────────
-
-  private async generateSimulatedKeyPair(
-    algorithm: string,
-    info: AlgorithmInfo,
-    createdAt: number
-  ): Promise<PQCKeyPair> {
-    const seed = crypto.getRandomValues(new Uint8Array(64));
-
-    const publicKey = await deriveDeterministicSeed(
-      seed,
-      `vril-pqc-pub-${algorithm}`,
-      info.publicKeySize
-    );
-
-    const privateKey = await deriveDeterministicSeed(
-      seed,
-      `vril-pqc-priv-${algorithm}`,
-      info.privateKeySize
-    );
-
-    return {
-      publicKey,
-      privateKey,
-      algorithm,
-      native: false,
-      createdAt,
-    };
   }
 
   // ─── Private: X25519 Encapsulation ──────────────────────────────────
@@ -793,19 +1080,99 @@ export class PQCHandler {
     }
   }
 
-  // ─── Private: Constant-Time Comparison ──────────────────────────────
-
-  private constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
-    if (a.length !== b.length) return false;
-    let result = 0;
-    for (let i = 0; i < a.length; i++) {
-      result |= a[i] ^ b[i];
+  private requireProvider<K extends keyof PQCProvider>(
+    algorithm: PQCAlgorithm,
+    operation: K
+  ): PQCProvider & Required<Pick<PQCProvider, K>> {
+    const evidence = this.getValidationEvidence(algorithm);
+    if (!this.provider || !evidence || typeof this.provider[operation] !== 'function') {
+      throw unsupportedPQCError(algorithm);
     }
-    return result === 0;
+    return this.provider as PQCProvider & Required<Pick<PQCProvider, K>>;
   }
+
+  private providerSupportsOperations(algorithm: PQCAlgorithm, info: AlgorithmInfo): boolean {
+    if (!this.provider) return false;
+    if (!this.getValidationEvidence(algorithm)) return false;
+
+    if (info.type === 'kem') {
+      return (
+        typeof this.provider.generateKeyPair === 'function' &&
+        typeof this.provider.encapsulate === 'function' &&
+        typeof this.provider.decapsulate === 'function'
+      );
+    }
+
+    return (
+      typeof this.provider.generateKeyPair === 'function' &&
+      typeof this.provider.sign === 'function' &&
+      typeof this.provider.verify === 'function'
+    );
+  }
+
+  private reportProviderVerificationFailure(algorithm: PQCAlgorithm, error: unknown): void {
+    warnDiagnostic(`[VRIL PQC] Provider verification failed for ${algorithm}; returning false`, error);
+  }
+
+  private assertByteLength(value: Uint8Array, expectedLength: number, label: string): void {
+    const actualLength = value.byteLength;
+    if (actualLength !== expectedLength) {
+      throw new Error(`[VRIL PQC] Invalid ${label}: expected ${expectedLength} bytes, received ${actualLength}`);
+    }
+  }
+
+  private validateProviderKeyPair(keyPair: PQCKeyPair, algorithm: PQCAlgorithm): PQCKeyPair {
+    const info = this.getAlgorithmInfo(algorithm);
+    if (keyPair.algorithm !== algorithm) {
+      throw providerResultError(algorithm, `key pair algorithm was ${keyPair.algorithm}`);
+    }
+    if (!hasByteLength(keyPair.publicKey, info.publicKeySize)) {
+      throw providerResultError(algorithm, `public key expected ${info.publicKeySize} bytes`);
+    }
+    if (!hasByteLength(keyPair.privateKey, info.privateKeySize)) {
+      throw providerResultError(algorithm, `private key expected ${info.privateKeySize} bytes`);
+    }
+    return keyPair;
+  }
+
+  private validateProviderKEMResult(result: KEMResult, algorithm: PQCAlgorithm): KEMResult {
+    const info = this.getAlgorithmInfo(algorithm);
+    if (result.algorithm !== algorithm) {
+      throw providerResultError(algorithm, `KEM result algorithm was ${result.algorithm}`);
+    }
+    if (!hasByteLength(result.ciphertext, info.ciphertextSize)) {
+      throw providerResultError(algorithm, `ciphertext expected ${info.ciphertextSize} bytes`);
+    }
+    if (!hasByteLength(result.sharedSecret, 32)) {
+      throw providerResultError(algorithm, 'shared secret expected 32 bytes');
+    }
+    return result;
+  }
+
+  private validateProviderSignatureResult(result: SignatureResult, algorithm: PQCAlgorithm): SignatureResult {
+    const info = this.getAlgorithmInfo(algorithm);
+    if (result.algorithm !== algorithm) {
+      throw providerResultError(algorithm, `signature result algorithm was ${result.algorithm}`);
+    }
+    const signatureSize = this.getSignatureSize(info);
+    if (!hasByteLength(result.signature, signatureSize)) {
+      throw providerResultError(algorithm, `signature expected ${signatureSize} bytes`);
+    }
+    return result;
+  }
+
+  private getSignatureSize(info: AlgorithmInfo): number {
+    if (info.type !== 'signature' || typeof info.signatureSize !== 'number') {
+      throw new Error(`[VRIL PQC] ${info.id} does not define a signature size`);
+    }
+    return info.signatureSize;
+  }
+
 }
 
 // ─── Convenience Singleton ────────────────────────────────────────────────
+
+export { nativePQCProvider };
 
 /** Default PQCHandler instance */
 export const pqc = new PQCHandler();

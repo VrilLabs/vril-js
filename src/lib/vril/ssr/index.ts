@@ -158,7 +158,7 @@ export class SSRSecurityGuard {
  * Create an SSR stream from chunked HTML output.
  * Implements chunked transfer encoding using Web Streams API.
  */
-export function createSSRStream(options?: SSROptions): {
+export function createSSRStream(_options?: SSROptions): {
   stream: ReadableStream<SSRChunk>;
   enqueue: (chunk: SSRChunk) => void;
   close: () => void;
@@ -219,7 +219,7 @@ export async function renderToStream(
   } = options;
 
   const { stream, enqueue, close } = createSSRStream(options);
-  const manifest = new SSRManifest();
+  const manifest = new SSRManifest(nonce);
   const guard = securityCheck ? new SSRSecurityGuard(maxHtmlSize) : null;
 
   const renderPromise = (async () => {
@@ -365,6 +365,12 @@ export class SelectiveHydration {
 export class SSRManifest {
   private entries = new Map<string, SSRManifestEntry>();
   private version = '2.1.0';
+  /** CSP nonce to use for bootstrap script tags; set from SSROptions.nonce */
+  readonly nonce: string | undefined;
+
+  constructor(nonce?: string) {
+    this.nonce = nonce;
+  }
 
   /** Record a component that was rendered on the server */
   record(
@@ -401,16 +407,17 @@ export class SSRManifest {
   }
 
   /** Serialize the manifest to JSON */
-  toJSON(): { version: string; entries: SSRManifestEntry[] } {
+  toJSON(): { version: string; nonce?: string; entries: SSRManifestEntry[] } {
     return {
       version: this.version,
+      ...(this.nonce !== undefined ? { nonce: this.nonce } : {}),
       entries: Array.from(this.entries.values()),
     };
   }
 
   /** Deserialize a manifest from JSON */
-  static fromJSON(data: { version: string; entries: SSRManifestEntry[] }): SSRManifest {
-    const manifest = new SSRManifest();
+  static fromJSON(data: { version: string; nonce?: string; entries: SSRManifestEntry[] }): SSRManifest {
+    const manifest = new SSRManifest(data.nonce);
     for (const entry of data.entries) {
       manifest.entries.set(entry.componentId, entry);
     }
