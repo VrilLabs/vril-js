@@ -79,8 +79,8 @@ export class ActiveSurfacePQC {
   /** Select the strongest currently available encryption surface */
   selectSurface(): ActiveSurfaceSelection {
     const kemPreference: PQCAlgorithm[] = this.policy.preferHighSecurity
-      ? ['ML-KEM-1024', 'ML-KEM-768']
-      : ['ML-KEM-768', 'ML-KEM-1024'];
+      ? ['ML-KEM-1024', 'ML-KEM-768', 'ML-KEM-512']
+      : ['ML-KEM-768', 'ML-KEM-1024', 'ML-KEM-512'];
 
     for (const algorithm of kemPreference) {
       const evidence = this.pqc.getValidationEvidence(algorithm);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useImperativeHandle, forwardRef, type ReactNode } from 'react';
+import { useState, useRef, useCallback, useEffect, useImperativeHandle, forwardRef, type ReactNode } from 'react';
 
 type ModalVariant = 'info' | 'confirm' | 'destructive';
 
@@ -48,6 +48,11 @@ export const VrilModal = forwardRef<VrilModalHandle>(function VrilModal(_, ref) 
     pendingResolveRef.current?.(value);
     pendingResolveRef.current = undefined;
     setState(p => ({ ...p, open: false }));
+  }, []);
+
+  useEffect(() => () => {
+    pendingResolveRef.current?.(false);
+    pendingResolveRef.current = undefined;
   }, []);
 
   useImperativeHandle(ref, () => ({ info, confirm, destructive }), [info, confirm, destructive]);

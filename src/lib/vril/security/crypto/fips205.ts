@@ -62,33 +62,33 @@ function setLayerAddress(adrs: ADRS, layer: number): void {
 }
 function setTreeAddress(adrs: ADRS, tree: bigint): void {
   const dv = new DataView(adrs.buffer, adrs.byteOffset);
-  dv.setUint32(4, 0); dv.setUint32(8, 0);
-  dv.setUint32(12, Number(tree >> 32n) >>> 0);
-  dv.setUint32(16, Number(tree & 0xffffffffn) >>> 0);
+  dv.setUint32(4, 0);
+  dv.setUint32(8, Number(tree >> 32n) >>> 0);
+  dv.setUint32(12, Number(tree & 0xffffffffn) >>> 0);
 }
 function setType(adrs: ADRS, type: number): void {
   const dv = new DataView(adrs.buffer, adrs.byteOffset);
-  dv.setUint32(20, type);
-  // Clear the address-specific bytes (20-31 → type field + next 3 uint32s)
-  dv.setUint32(24, 0); dv.setUint32(28, 0);
+  dv.setUint32(16, type);
+  // Clear the address-specific words after the type field.
+  dv.setUint32(20, 0); dv.setUint32(24, 0); dv.setUint32(28, 0);
 }
 function setKeyPairAddress(adrs: ADRS, kp: number): void {
-  new DataView(adrs.buffer, adrs.byteOffset).setUint32(24, kp);
+  new DataView(adrs.buffer, adrs.byteOffset).setUint32(20, kp);
 }
 function setChainAddress(adrs: ADRS, chain: number): void {
-  new DataView(adrs.buffer, adrs.byteOffset).setUint32(28, chain);
+  new DataView(adrs.buffer, adrs.byteOffset).setUint32(24, chain);
 }
 function setHashAddress(adrs: ADRS, hash: number): void {
   new DataView(adrs.buffer, adrs.byteOffset).setUint32(28, hash);
 }
 function setTreeHeight(adrs: ADRS, z: number): void {
-  new DataView(adrs.buffer, adrs.byteOffset).setUint32(28, z);
+  new DataView(adrs.buffer, adrs.byteOffset).setUint32(24, z);
 }
 function setTreeIndex(adrs: ADRS, i: number): void {
-  new DataView(adrs.buffer, adrs.byteOffset).setUint32(24, i);
+  new DataView(adrs.buffer, adrs.byteOffset).setUint32(28, i);
 }
 function getKeyPairAddress(adrs: ADRS): number {
-  return new DataView(adrs.buffer, adrs.byteOffset).getUint32(24);
+  return new DataView(adrs.buffer, adrs.byteOffset).getUint32(20);
 }
 function copyADRS(adrs: ADRS): ADRS { return Uint8Array.from(adrs); }
 
