@@ -138,10 +138,11 @@ class KeccakSponge {
       }
       const laneIndex = Math.floor(this.squeezeOffset / 8);
       const laneOffset = this.squeezeOffset % 8;
+      // Defensive invariant check: rateBytes <= 168, so normal operation never reaches lane 25.
       if (laneIndex >= 25) {
         throw new Error('[VRIL SHA3] Invalid lane index during squeeze');
       }
-      const take = Math.min(8 - laneOffset, this.rateBytes - this.squeezeOffset, length - written);
+      const take = Math.min(8 - laneOffset, length - written);
       const lane = this.state[laneIndex];
       for (let i = 0; i < take; i++) {
         out[written + i] = Number((lane >> BigInt(8 * (laneOffset + i))) & 0xffn);
