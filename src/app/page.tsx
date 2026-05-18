@@ -505,14 +505,14 @@ function HeroGraphic() {
         <div className="absolute inset-16 rounded-full border border-olo-teal/20 hero-ring hero-ring-reverse" />
         <div className="absolute inset-28 rounded-full border border-violet/25 hero-ring" style={{ animationDuration: '16s' }} />
 
-        {orbiters.map((orbiter, index) => (
+        {orbiters.map((orbiter) => (
           <div
             key={orbiter.label}
             className="absolute inset-0 rounded-full animate-orbit"
             style={{ animationDuration: orbiter.speed, animationDelay: orbiter.delay }}
           >
             <div className={`absolute left-1/2 -top-1 -translate-x-1/2 ${orbiter.size} rounded-full ${orbiter.color}`} style={{ boxShadow: orbiter.shadow }} />
-            <div className="absolute left-1/2 top-7 -translate-x-1/2 rounded-full border border-white/10 bg-[#0d1017]/80 px-2 py-0.5 font-mono text-[9px] tracking-[0.14em] text-white/45 backdrop-blur-md" style={{ rotate: `${index * 4}deg` }}>
+            <div className="absolute left-1/2 top-7 -translate-x-1/2 rounded-full border border-white/10 bg-[#0d1017]/80 px-2 py-0.5 font-mono text-[9px] tracking-[0.14em] text-white/45 backdrop-blur-md">
               {orbiter.label}
             </div>
           </div>
@@ -1025,16 +1025,16 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
   const [kdfProgress, setKdfProgress] = useState(0);
   const [strength, setStrength] = useState({ score: 0, max: 6, label: '' });
   const [activeBundle, setActiveBundle] = useState('');
-  const vaultRef = useRef(new VrilVault());
+  const [vault] = useState(() => new VrilVault());
 
-  const handlePass = (v: string) => { setPassphrase(v); setStrength(vaultRef.current.assessStrength(v)); };
+  const handlePass = (v: string) => { setPassphrase(v); setStrength(vault.assessStrength(v)); };
 
   const handleEncrypt = async () => {
     if (!passphrase || !plaintext) return;
     setStatus('encrypting'); setKdfProgress(0);
     const iv = setInterval(() => setKdfProgress(p => Math.min(p + Math.random() * 15, 90)), 80);
     try {
-      const bundle = await vaultRef.current.encrypt(passphrase, plaintext);
+      const bundle = await vault.encrypt(passphrase, plaintext);
       const bundleJson = JSON.stringify(bundle, null, 2);
       clearInterval(iv); setKdfProgress(100);
       setActiveBundle(bundleJson); setResult(bundleJson); setResultLabel('Ciphertext Bundle'); setStatus('done');
@@ -1048,7 +1048,7 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
     const ivInterval = setInterval(() => setKdfProgress(p => Math.min(p + Math.random() * 15, 90)), 80);
     try {
       const bundle = JSON.parse(bundleSource) as EncryptionResult;
-      const decrypted = await vaultRef.current.decrypt(passphrase, bundle);
+      const decrypted = await vault.decrypt(passphrase, bundle);
       clearInterval(ivInterval); setKdfProgress(100);
       setResult(decrypted.plaintext); setResultLabel('Plaintext'); setStatus('done');
     } catch { clearInterval(ivInterval); setResult('Wrong passphrase or corrupted bundle'); setResultLabel('Error'); setStatus('error'); }
