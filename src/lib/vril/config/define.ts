@@ -638,6 +638,7 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
 
     toVrilRuntimeConfig: (): Record<string, unknown> => {
       const runtimeConfig: Record<string, unknown> = {
+        // TODO(v3): remove the deprecated framework.strictMode fallback.
         reactStrictMode: resolved.framework.reactStrictMode ?? resolved.framework.strictMode ?? resolved.build.strictMode,
         poweredByHeader: false,
       };
@@ -665,6 +666,7 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
     },
 
     toNextConfig: (): Record<string, unknown> => ({
+      // TODO(v3): remove the deprecated framework.strictMode fallback.
       reactStrictMode: resolved.framework.reactStrictMode ?? resolved.framework.strictMode ?? resolved.build.strictMode,
       poweredByHeader: resolved.framework.poweredByHeader ?? false,
       env: resolved.framework.env,

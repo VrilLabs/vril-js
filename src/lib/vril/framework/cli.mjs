@@ -108,7 +108,7 @@ async function bundle() {
     bundle: true,
     platform: 'node',
     format: 'esm',
-    // Keep React/Node packages external so Node can load their native CJS/ESM entry points.
+    // Server-side dependencies stay external so Node can load native CJS/ESM entry points.
     packages: 'external',
     jsx: 'automatic',
     plugins: [aliasPlugin, ignoreCssPlugin],
