@@ -749,7 +749,7 @@ export default function VrilShowcase() {
             <div className="max-w-3xl mx-auto">
               <div className="flex flex-col gap-3">
                 {SECURITY_LAYERS.map((layer, i) => {
-                  const accent = layerAccentMap[layer.accent as keyof typeof layerAccentMap];
+                  const accent = layerAccentMap[layer.accent as keyof typeof layerAccentMap] ?? layerAccentMap.teal;
                   return (
                     <div key={i} className="group relative p-5 bg-card border border-white/6 rounded-2xl hover:border-white/15 transition-all duration-300 hover:scale-[1.02]">
                       {/* Layer accent bar */}

@@ -17,6 +17,7 @@ const runtimeConfigBundle = resolve(root, '.vril/runtime-config.mjs');
 const vercelOutputDir = resolve(root, '.vercel/output');
 const vercelStaticDir = join(vercelOutputDir, 'static');
 const vercelFunctionDir = join(vercelOutputDir, 'functions/api.func');
+const defaultCSP = "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content";
 
 const aliasPlugin = {
   name: 'vril-alias',
@@ -75,7 +76,7 @@ const securityHeaders = {
     'xr-spatial-tracking=()', 'compute-pressure=()',
   ].join(', '),
   'X-Vril-Version': '2.1.0',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
+  'Content-Security-Policy': defaultCSP,
 };
 
 const mimeTypes = {
@@ -167,7 +168,7 @@ async function loadRuntimeConfig() {
     ...fallback,
     ...resolved,
     headers: { ...fallback.headers, ...(resolved.headers ?? {}) },
-    server: { ...fallback.server, ...(config?.config?.server ?? {}) },
+    server: { ...fallback.server, ...(resolved.server ?? {}) },
   };
 }
 
