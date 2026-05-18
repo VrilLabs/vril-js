@@ -561,6 +561,11 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
 } {
   // Detect environment
   const environment = detectEnvironment();
+  if (userConfig.framework?.strictMode !== undefined) {
+    console.warn(
+      '[Vril.js] framework.strictMode is deprecated; use framework.reactStrictMode to configure React Strict Mode.',
+    );
+  }
 
   // Start with defaults
   const resolved: VrilResolvedConfig = {

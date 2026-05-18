@@ -47,11 +47,7 @@ function resolveModulePath(basePath) {
 }
 
 function isFile(path) {
-  try {
-    return statSync(path).isFile();
-  } catch {
-    return false;
-  }
+  return statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
 }
 
 const securityHeaders = {
@@ -106,6 +102,7 @@ async function bundle() {
     bundle: true,
     platform: 'node',
     format: 'esm',
+    // Keep React/Node packages external so Node can load their native CJS/ESM entry points.
     packages: 'external',
     jsx: 'automatic',
     plugins: [aliasPlugin, ignoreCssPlugin],

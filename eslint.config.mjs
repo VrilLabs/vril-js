@@ -29,8 +29,11 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // TypeScript performs symbol resolution more accurately for TS/TSX than ESLint no-undef.
       "no-undef": "off",
+      // The existing codebase intentionally uses terse empty catch blocks for best-effort browser APIs.
       "no-empty": "off",
+      // Existing UI text/highlighter regexes use explicit escapes for readability across string contexts.
       "no-useless-escape": "off",
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
