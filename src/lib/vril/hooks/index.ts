@@ -361,11 +361,18 @@ export function useSecureStorage<T>(
     } catch { return null; }
   }, [passphrase]);
 
+  // Flag set by setStoredValue to cancel a still-pending mount-time decrypt.
+  // Prevents the async decrypt from calling setValue with stale persisted data
+  // after the user has already made a newer in-memory write.
+  const mountDecryptStaleRef = useRef(false);
+
   // Decrypt stored value on mount (only runs when a passphrase is provided)
   useEffect(() => {
     if (!passphrase || typeof window === 'undefined') return;
     const raw = localStorage.getItem(key);
     if (raw === null) return;
+
+    mountDecryptStaleRef.current = false;
 
     // Encrypted storage: base64-encoded [salt(16) | iv(12) | ciphertext]
     (async () => {
@@ -376,13 +383,20 @@ export function useSecureStorage<T>(
         const ct   = bytes.slice(28);
         saltRef.current = salt;
         const cryptoKey = await deriveKey(salt);
-        if (!cryptoKey) return;
+        // Bail if: key derivation failed, component unmounted, or a write arrived first
+        if (!cryptoKey || mountDecryptStaleRef.current) return;
         const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
-        setValue(JSON.parse(new TextDecoder().decode(plaintext)) as T);
+        if (!mountDecryptStaleRef.current) {
+          setValue(JSON.parse(new TextDecoder().decode(plaintext)) as T);
+        }
       } catch {
         // Decryption failed — key changed or data corrupt; leave defaultValue
       }
     })();
+
+    // Mark stale on unmount so an in-flight decrypt does not set state on an
+    // unmounted component
+    return () => { mountDecryptStaleRef.current = true; };
   // Intentionally empty dep array: decryption runs once on mount to restore the
   // persisted value. Re-decryption on key/passphrase change would require migrating
   // the stored ciphertext — callers should unmount and remount instead.
@@ -390,6 +404,8 @@ export function useSecureStorage<T>(
   }, []);
 
   const setStoredValue = useCallback((updater: T | ((prev: T) => T)) => {
+    // Any in-flight mount-time decrypt must not overwrite this newer write
+    mountDecryptStaleRef.current = true;
     setValue(prev => {
       const next = typeof updater === 'function' ? (updater as (p: T) => T)(prev) : updater;
 

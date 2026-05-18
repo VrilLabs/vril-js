@@ -240,25 +240,30 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
   const dependencies = new Set<string>();
   const id = `comp_${nextSignalId++}`;
 
+  // The tracker is defined ONCE and reused across every recompute.
+  // Creating a new tracker on each recompute would leave stale references in
+  // signal subscriber Sets (Sets hold by identity), so old tracker closures
+  // would keep calling _invalidate for dependencies that are no longer read.
+  // A stable reference means each signal's Set accumulates at most one entry
+  // for this computed, which stays correctly wired throughout its lifetime.
+  const tracker: TaggedSubscriber = () => {
+    dirty = false;
+    cachedValue = fn();
+  };
+  tracker._id = id;
+  tracker._kind = 'computed';
+  tracker._invalidate = () => {
+    dirty = true;
+    notify(subscribers);
+  };
+
   /** Track which signals this computed depends on */
   function recompute(): void {
     const prevDeps = new Set(dependencies);
     dependencies.clear();
 
-    // Set up tracking: when we call fn(), any signal reads will register us
+    // Run fn() under the stable tracker so signal reads register it
     const prevEffect = currentEffect;
-    const tracker: TaggedSubscriber = () => {
-      dirty = false;
-      cachedValue = fn();
-    };
-    tracker._id = id;
-    // Tag as 'computed' so notify() calls _invalidate() instead of scheduling
-    // this as a plain effect — which would recompute but not tell our own subscribers.
-    tracker._kind = 'computed';
-    tracker._invalidate = () => {
-      dirty = true;
-      notify(subscribers);
-    };
     currentEffect = tracker;
     try {
       tracker();

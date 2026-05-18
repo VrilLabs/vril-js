@@ -197,7 +197,7 @@ export function detectEnvironment(): EnvironmentInfo {
   const isClient = typeof window !== 'undefined';
   const isEdge =
     typeof globalThis !== 'undefined' &&
-    'EdgeRuntime' in globalThis;
+    typeof (globalThis as Record<string, unknown>).EdgeRuntime !== 'undefined';
   const isDev =
     (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') ||
     (typeof import.meta !== 'undefined' && (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true);

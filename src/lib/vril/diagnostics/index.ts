@@ -233,12 +233,19 @@ export class PerformanceMonitor {
 // ─── SecurityDiagnostics ──────────────────────────────────────────
 
 /**
- * Returns true only when the browser exposes a usable Trusted Types API.
- * A mere property presence check (`'trustedTypes' in window`) returns true
- * for null/undefined stubs installed by partial polyfills.
+ * Returns true only when the browser exposes a usable Trusted Types API —
+ * specifically when `window.trustedTypes` is an object with a callable
+ * `createPolicy` method. A merely truthy stub such as `{}` or a null/undefined
+ * value from a partial polyfill is correctly rejected.
  */
 function windowHasTrustedTypes(): boolean {
-  return typeof window !== 'undefined' && !!(window as Window & { trustedTypes?: unknown }).trustedTypes;
+  if (typeof window === 'undefined') return false;
+  const tt = (window as Window & { trustedTypes?: unknown }).trustedTypes;
+  return (
+    typeof tt === 'object' &&
+    tt !== null &&
+    typeof (tt as { createPolicy?: unknown }).createPolicy === 'function'
+  );
 }
 
 /**

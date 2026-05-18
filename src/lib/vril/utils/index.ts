@@ -314,9 +314,16 @@ export function deepClone<T>(obj: T): T {
         obj.buffer.slice(obj.byteOffset, obj.byteOffset + obj.byteLength)
       ) as unknown as T;
     }
-    // TypedArrays (Uint8Array, Float32Array, etc.) have .slice() that returns a
-    // same-type copy backed by a fresh ArrayBuffer
-    return (obj as unknown as { slice(): T }).slice();
+    // TypedArrays (Uint8Array, Float32Array, etc.) — copy the underlying byte
+    // range into a fresh ArrayBuffer, then reconstruct with the same constructor.
+    // Calling the instance's `.slice()` is NOT safe here: Node.js Buffer is a
+    // Uint8Array subclass whose `.slice()` / `.subarray()` return a view over the
+    // same shared memory, meaning mutations to the "clone" would mutate the
+    // original. Creating via `new Ctor(freshBuffer)` is always a true copy.
+    const view = obj as ArrayBufferView;
+    const freshBuffer = view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength) as ArrayBuffer;
+    const TypedArrayCtor = (view as unknown as { constructor: new (buf: ArrayBuffer) => T }).constructor;
+    return new TypedArrayCtor(freshBuffer);
   }
 
   if (obj instanceof Date) {
