@@ -83,7 +83,7 @@ function UsersIcon({ className = "w-5 h-5" }: { className?: string }) {
 
 // ─── Feature Data ───────────────────────────────────────────────
 const FEATURES = [
-  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'Provider-gated ML-KEM, ML-DSA, and SLH-DSA interfaces for authentic FIPS 203/204/205 implementations — never simulated.', accent: 'violet' as const },
+  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'Provider-gated ML-KEM, ML-DSA, and SLH-DSA interfaces requiring admissible FIPS 203/204/205 evidence — never simulated.', accent: 'violet' as const },
   { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 classical KEM today, with ML-KEM hybrid mode enabled only when an authentic provider is registered.', accent: 'teal' as const },
   { icon: <RefreshIcon />, title: 'Crypto Agility', desc: 'NIST 2035 migration paths built in. Algorithm registry, versioning, and automated migration — zero downtime.', accent: 'blue' as const },
   { icon: <LockIcon />, title: '\u03A9Vault Encryption', desc: 'AES-256-GCM + PBKDF2-SHA-512 at 600K iterations. Zero-knowledge client-side encryption with visual KDF progress.', accent: 'amber' as const },
@@ -134,12 +134,12 @@ const app = createVrilApp({
     label: 'PQC Key Exchange',
     lang: 'typescript',
     code: `import { PQCHandler, HybridKEM, CryptoAgility } from 'vril';
-// Import your PQCProvider implementation with FIPS evidence.
+// Import your PQCProvider implementation with standards and certificate evidence.
 import { validatedPQCProvider } from './validated-pqc-provider';
 
 const pqc = new PQCHandler(validatedPQCProvider);
 
-// Authentic ML-KEM-768 from your provider
+// Authentic ML-KEM-768 from a provider admitted by evidence and byte-size checks
 const keyPair = await pqc.generateKeyPair('ML-KEM-768');
 const kemResult = await pqc.encapsulate(
   keyPair.publicKey,

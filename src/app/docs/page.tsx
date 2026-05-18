@@ -487,7 +487,8 @@ const strength = vault.assessStrength('my-passphrase');
               ['sign()', 'method', 'Create provider-backed PQC or native ECDSA signatures'],
               ['verify()', 'method', 'Verify digital signature'],
               ['benchmark()', 'method', 'Performance benchmark for key gen/encap/decap cycles'],
-              ['isSupported()', 'method', 'Check if a PQC algorithm is available'],
+              ['isSupported()', 'method', 'Check if a PQC algorithm has admissible operational evidence'],
+              ['isFipsValidated()', 'method', 'Check for explicit CAVP + CMVP certificate evidence'],
             ]} />
             <Code>{`import { PQCHandler } from '@/lib/vril/security/crypto/pqc';
 import { validatedPQCProvider } from './validated-pqc-provider';
@@ -495,8 +496,9 @@ import { validatedPQCProvider } from './validated-pqc-provider';
 const pqc = new PQCHandler(validatedPQCProvider);
 
 // Check operational support
-pqc.isSupported('ML-KEM-768'); // true when provider evidence is present
-pqc.isSupported('ML-DSA-65');  // true when provider evidence is present
+pqc.isSupported('ML-KEM-768'); // true when admissible standards evidence is present
+pqc.isSupported('ML-DSA-65');  // true when admissible standards evidence is present
+pqc.isFipsValidated('ML-KEM-768'); // true only with CAVP + CMVP certificate IDs
 
 // Generate and use ML-KEM-768
 const keyPair = await pqc.generateKeyPair('ML-KEM-768');
@@ -511,10 +513,10 @@ const info = pqc.getAlgorithmInfo('ML-KEM-768');
 // info.nistStandard = 'FIPS 203'
 // info.nativeSupport = false`}</Code>
             <SecurityNote>
-              Truthful FIPS 203/204 compliance or validation claims require a conforming ML-KEM/ML-DSA
-              External providers can implement FIPS 203/204/205 algorithms in browser-compatible TypeScript or WASM.
-              Formal FIPS validation claims for regulated deployments require CAVP/ACVP certificates and,
-              when packaged as a cryptographic module, CMVP/FIPS 140-3 evidence for the exact module boundary.
+              Truthful FIPS 203/204/205 compliance claims require a conforming ML-KEM, ML-DSA, or SLH-DSA
+              provider with matching algorithm evidence, correct key/ciphertext/signature sizes, and no simulation.
+              Formal FIPS validation claims for regulated deployments require CAVP/ACVP and CMVP/FIPS 140-3
+              certificate evidence for the exact implementation and module boundary.
             </SecurityNote>
           </Section>
 
