@@ -297,6 +297,10 @@ function isAdmissibleEvidence(
   );
 }
 
+function hasSubtleCrypto(): boolean {
+  return typeof crypto !== 'undefined' && typeof crypto.subtle !== 'undefined';
+}
+
 function providerResultError(algorithm: PQCAlgorithm, reason: string): Error {
   return new Error(`[VRIL PQC] Provider returned invalid ${algorithm} material: ${reason}`);
 }
@@ -372,8 +376,13 @@ export class PQCHandler {
   isSupported(algorithm: string): boolean {
     const info = ALGORITHM_INFO[algorithm];
     if (!info) return false;
-    if (info.nativeSupport) return true;
-    return this.getValidationEvidence(algorithm as PQCAlgorithm)?.standard === info.nistStandard;
+    if (info.nativeSupport) return hasSubtleCrypto();
+
+    const pqcAlgorithm = algorithm as PQCAlgorithm;
+    return (
+      this.getValidationEvidence(pqcAlgorithm)?.standard === info.nistStandard &&
+      this.providerSupportsOperations(pqcAlgorithm, info)
+    );
   }
 
   /** Check whether this handler can run at least one real PQC algorithm. */
@@ -544,7 +553,11 @@ export class PQCHandler {
       if (!hasByteLength(publicKey, info.publicKeySize) || !hasByteLength(signature, signatureSize)) {
         return false;
       }
-      return provider.verify!(message, signature, publicKey, algorithm);
+      try {
+        return await provider.verify!(message, signature, publicKey, algorithm);
+      } catch {
+        return false;
+      }
     }
 
     throw new Error(`[VRIL PQC] Unsupported signature algorithm: ${algorithm}`);
@@ -857,6 +870,25 @@ export class PQCHandler {
       throw unsupportedPQCError(algorithm);
     }
     return this.provider as PQCProvider & Required<Pick<PQCProvider, K>>;
+  }
+
+  private providerSupportsOperations(algorithm: PQCAlgorithm, info: AlgorithmInfo): boolean {
+    if (!this.provider) return false;
+    if (!this.getValidationEvidence(algorithm)) return false;
+
+    if (info.type === 'kem') {
+      return (
+        typeof this.provider.generateKeyPair === 'function' &&
+        typeof this.provider.encapsulate === 'function' &&
+        typeof this.provider.decapsulate === 'function'
+      );
+    }
+
+    return (
+      typeof this.provider.generateKeyPair === 'function' &&
+      typeof this.provider.sign === 'function' &&
+      typeof this.provider.verify === 'function'
+    );
   }
 
   private assertByteLength(value: Uint8Array, expectedLength: number, label: string): void {

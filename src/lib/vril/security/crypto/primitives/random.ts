@@ -11,13 +11,20 @@ function getCrypto(): Crypto {
   return crypto;
 }
 
+const GET_RANDOM_VALUES_MAX_BYTES = 65_536;
+
 /**
  * Fill an existing Uint8Array with cryptographically secure random bytes.
  *
- * The input array is mutated in-place and returned for convenience.
+ * The input array is mutated in-place and returned for convenience. Large
+ * arrays are filled in chunks because browsers limit getRandomValues() to
+ * 65,536 bytes per call.
  */
 export function fillRandomBytes(bytes: Uint8Array): Uint8Array {
-  getCrypto().getRandomValues(bytes);
+  const runtimeCrypto = getCrypto();
+  for (let offset = 0; offset < bytes.byteLength; offset += GET_RANDOM_VALUES_MAX_BYTES) {
+    runtimeCrypto.getRandomValues(bytes.subarray(offset, offset + GET_RANDOM_VALUES_MAX_BYTES));
+  }
   return bytes;
 }
 

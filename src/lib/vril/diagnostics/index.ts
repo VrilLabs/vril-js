@@ -566,6 +566,7 @@ export class NetworkMonitor {
   /** Start intercepting fetch requests */
   startInterception(): void {
     if (this.intercepting || typeof window === 'undefined') return;
+    if (typeof window.fetch !== 'function') return;
 
     // Keep the unbound original for exact identity restoration.
     // Use a window-bound copy for all invocations so the receiver is always Window.

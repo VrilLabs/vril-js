@@ -61,8 +61,8 @@ export class ActiveSurfacePQC {
   private readonly pqc: PQCHandler;
   private readonly policy: Required<ActiveSurfacePolicy>;
 
-  constructor(provider: PQCProvider | null = null, policy: ActiveSurfacePolicy = {}) {
-    this.pqc = new PQCHandler(provider);
+  constructor(provider: PQCProvider | null | undefined = undefined, policy: ActiveSurfacePolicy = {}) {
+    this.pqc = provider === undefined ? new PQCHandler() : new PQCHandler(provider);
     this.policy = { ...DEFAULT_POLICY, ...policy };
   }
 
