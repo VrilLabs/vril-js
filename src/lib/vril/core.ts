@@ -149,12 +149,12 @@ export class PluginLifecycleRegistry {
   async emit<T = Record<string, unknown>>(hook: PluginLifecycleHook, ctx: T): Promise<T> {
     const callbacks = this.hooks.get(hook);
     if (!callbacks || callbacks.length === 0) return ctx;
-    let result: any = ctx;
+    let result: unknown = ctx;
     for (const cb of callbacks) {
-      const out = await cb(result);
+      const out = await (cb as HookCallback<unknown>)(result);
       if (out !== undefined) result = out;
     }
-    return result;
+    return result as T;
   }
 
   /** Remove all callbacks for a specific hook */
@@ -197,10 +197,10 @@ export function detectEnvironment(): EnvironmentInfo {
   const isClient = typeof window !== 'undefined';
   const isEdge =
     typeof globalThis !== 'undefined' &&
-    typeof (globalThis as any).EdgeRuntime !== 'undefined';
+    'EdgeRuntime' in globalThis;
   const isDev =
     (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') ||
-    (typeof import.meta !== 'undefined' && (import.meta as any).env?.DEV === true);
+    (typeof import.meta !== 'undefined' && (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true);
   const isProd = !isDev;
   const isSSR = isServer && !isEdge;
 

@@ -82,7 +82,7 @@ export class EdgeRuntime {
       runtime = 'cloudflare';
     } else if (typeof globalRef.EdgeRuntime !== 'undefined') {
       runtime = 'vercel';
-    } else if (typeof (globalRef as any).Deno !== 'undefined') {
+    } else if (typeof globalRef === 'object' && globalRef !== null && 'Deno' in globalRef) {
       runtime = 'deno';
     } else if (typeof process !== 'undefined' && process.env?.AWS_LAMBDA_FUNCTION_NAME) {
       runtime = 'aws-lambda';

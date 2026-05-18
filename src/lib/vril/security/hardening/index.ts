@@ -327,7 +327,7 @@ export class FingerprintResistance {
       const origGetContext = HTMLCanvasElement.prototype.getContext;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (HTMLCanvasElement.prototype as any).getContext = function (this: HTMLCanvasElement, type: string, ...args: unknown[]) {
-        const context = origGetContext.call(this, type, ...args.slice(0, 1) as [options?: any]);
+        const context = origGetContext.call(this, type as '2d', args[0] as CanvasRenderingContext2DSettings | undefined);
         if (context && (type === 'webgl' || type === 'webgl2') && noiseEnabled) {
           const gl = context as WebGLRenderingContext;
           // Slightly modify RENDERER and VENDOR strings

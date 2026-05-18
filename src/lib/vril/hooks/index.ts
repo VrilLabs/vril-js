@@ -388,7 +388,6 @@ export function useCSRFToken(cookieName = 'csrf_token'): {
     for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === cookieName && value) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setToken(decodeURIComponent(value));
         return;
       }

@@ -66,8 +66,15 @@ export interface SignalGraph {
 
 type Subscriber = () => void;
 
-let currentEffect: (() => void) | null = null;
-let pendingEffects: (() => void)[] = [];
+/** Internal shape of a subscriber with devtools metadata attached */
+interface TaggedSubscriber extends Subscriber {
+  _id?: string;
+  _kind?: 'effect' | 'computed';
+  _invalidate?: () => void;
+}
+
+let currentEffect: TaggedSubscriber | null = null;
+let pendingEffects: TaggedSubscriber[] = [];
 let batching = 0;
 
 /** Auto-incrementing ID for signal devtools tracking */
@@ -194,9 +201,9 @@ export function signal<T>(initial: T): SignalReadable<T> {
 
   function read(): T {
     if (currentEffect) {
-      subscribers.add(currentEffect as Subscriber);
-      if ((currentEffect as any)._id) {
-        trackDependency(id, (currentEffect as any)._id);
+      subscribers.add(currentEffect);
+      if (currentEffect._id) {
+        trackDependency(id, currentEffect._id);
       }
     }
     return value;
@@ -240,11 +247,11 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
 
     // Set up tracking: when we call fn(), any signal reads will register us
     const prevEffect = currentEffect;
-    const tracker = () => {
+    const tracker: TaggedSubscriber = () => {
       dirty = false;
       cachedValue = fn();
     };
-    (tracker as any)._id = id;
+    tracker._id = id;
     currentEffect = tracker;
     try {
       tracker();
@@ -271,9 +278,9 @@ export function computed<T>(fn: () => T): ComputedReadable<T> {
 
   function self(): T {
     if (currentEffect) {
-      subscribers.add(currentEffect as Subscriber);
-      if ((currentEffect as any)._id) {
-        trackDependency(id, (currentEffect as any)._id);
+      subscribers.add(currentEffect);
+      if (currentEffect._id) {
+        trackDependency(id, currentEffect._id);
       }
     }
     if (dirty) recompute();
@@ -305,7 +312,7 @@ export function effect(fn: () => void | (() => void)): () => void {
   let disposeFn: (() => void) | null = null;
   const id = `eff_${nextSignalId++}`;
 
-  function runner() {
+  const runner: TaggedSubscriber = function () {
     if (disposeFn) { try { disposeFn(); } catch {} disposeFn = null; }
     const prev = currentEffect;
     currentEffect = runner;
@@ -315,10 +322,10 @@ export function effect(fn: () => void | (() => void)): () => void {
     } finally {
       currentEffect = prev;
     }
-  }
+  };
 
-  (runner as any)._id = id;
-  (runner as any)._kind = 'effect';
+  runner._id = id;
+  runner._kind = 'effect';
   runner();
 
   return () => {
@@ -349,7 +356,7 @@ export function untrack<T>(fn: () => T): T {
  * Supports deep reactivity for flat objects.
  */
 export function store<T extends Record<string, unknown>>(obj: T): { [K in keyof T]: T[K] } {
-  const sigs: Record<string, any> = {};
+  const sigs: Record<string, ReturnType<typeof signal>> = {};
   const proxy: Record<string, unknown> = {};
   for (const k of Object.keys(obj)) {
     const s = signal(obj[k]);
@@ -360,7 +367,7 @@ export function store<T extends Record<string, unknown>>(obj: T): { [K in keyof 
       set: (v: unknown) => s.set(v),
     });
   }
-  return proxy as any;
+  return proxy as unknown as { [K in keyof T]: T[K] };
 }
 
 // ─── Advanced Signal Types ────────────────────────────────────────
@@ -777,8 +784,9 @@ export function signalFromPromise<T>(
 
 function notify(subscribers: Set<Subscriber>): void {
   subscribers.forEach(sub => {
-    if ((sub as any)._kind === 'computed') (sub as any)._invalidate();
-    else if (!pendingEffects.includes(sub)) pendingEffects.push(sub);
+    const tagged = sub as TaggedSubscriber;
+    if (tagged._kind === 'computed') tagged._invalidate?.();
+    else if (!pendingEffects.includes(tagged)) pendingEffects.push(tagged);
   });
   if (batching === 0) flush();
 }

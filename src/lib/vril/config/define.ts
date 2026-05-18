@@ -310,7 +310,7 @@ const DEFAULT_AUTH: VrilAuthConfig = {
 };
 
 // ─── Deep Merge Utility ──────────────────────────────────────
-function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
+function deepMerge<T extends object>(target: T, source: Partial<T>): T {
   if (!source) return target;
   const result = { ...target };
 
@@ -327,12 +327,12 @@ function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>)
       targetVal !== null &&
       !Array.isArray(targetVal)
     ) {
-      (result as any)[key] = deepMerge(
-        targetVal as Record<string, any>,
-        sourceVal as Partial<Record<string, any>>
+      (result as Record<string, unknown>)[key as string] = deepMerge(
+        targetVal as object,
+        sourceVal as Partial<object>
       );
     } else if (sourceVal !== undefined) {
-      (result as any)[key] = sourceVal;
+      (result as Record<string, unknown>)[key as string] = sourceVal;
     }
   }
 

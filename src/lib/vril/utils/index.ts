@@ -308,8 +308,10 @@ export function deepClone<T>(obj: T): T {
   }
 
   if (ArrayBuffer.isView(obj)) {
-    const view = obj as unknown as ArrayBufferView;
-    return new (view.constructor as any)(view.buffer.slice(0), view.byteOffset, (view as any).length) as unknown as T;
+    type TypedArrayConstructor = new (buffer: ArrayBuffer, byteOffset: number, length: number) => ArrayBufferView;
+    const view = obj as unknown as ArrayBufferView & { length: number };
+    const srcBuffer = view.buffer instanceof ArrayBuffer ? view.buffer : view.buffer.slice(0);
+    return new (view.constructor as TypedArrayConstructor)(srcBuffer.slice(0) as ArrayBuffer, view.byteOffset, view.length) as unknown as T;
   }
 
   if (obj instanceof Date) {
@@ -317,16 +319,16 @@ export function deepClone<T>(obj: T): T {
   }
 
   if (obj instanceof Map) {
-    const clone = new Map() as Map<any, any>;
-    for (const [key, value] of (obj as Map<any, any>)) {
+    const clone = new Map<unknown, unknown>();
+    for (const [key, value] of (obj as Map<unknown, unknown>)) {
       clone.set(deepClone(key), deepClone(value));
     }
     return clone as unknown as T;
   }
 
   if (obj instanceof Set) {
-    const clone = new Set() as Set<any>;
-    for (const value of (obj as Set<any>)) {
+    const clone = new Set<unknown>();
+    for (const value of (obj as Set<unknown>)) {
       clone.add(deepClone(value));
     }
     return clone as unknown as T;
@@ -404,16 +406,16 @@ export function mergeConfigs<T extends Record<string, unknown>>(
  * Debounce a function — delays invocation until `ms` milliseconds
  * have elapsed since the last call.
  */
-export function debounce<T extends (...args: any[]) => any>(
-  fn: T,
+export function debounce<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => TReturn,
   ms: number
-): (...args: Parameters<T>) => void {
+): (...args: TArgs) => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
 
-  return function (this: any, ...args: Parameters<T>) {
+  return (...args: TArgs) => {
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(() => {
-      fn.apply(this, args);
+      fn(...args);
       timer = undefined;
     }, ms);
   };
@@ -423,26 +425,26 @@ export function debounce<T extends (...args: any[]) => any>(
  * Throttle a function — limits invocation to at most once per `ms` milliseconds.
  * Calls the function with the latest arguments on the trailing edge.
  */
-export function throttle<T extends (...args: any[]) => any>(
-  fn: T,
+export function throttle<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => TReturn,
   ms: number
-): (...args: Parameters<T>) => void {
+): (...args: TArgs) => void {
   let lastCall = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let lastArgs: Parameters<T> | undefined;
+  let lastArgs: TArgs | undefined;
 
-  return function (this: any, ...args: Parameters<T>) {
+  return (...args: TArgs) => {
     const now = Date.now();
     lastArgs = args;
 
     if (now - lastCall >= ms) {
       lastCall = now;
-      fn.apply(this, args);
+      fn(...args);
     } else if (timer === undefined) {
       timer = setTimeout(() => {
         lastCall = Date.now();
         timer = undefined;
-        if (lastArgs) fn.apply(this, lastArgs);
+        if (lastArgs) fn(...lastArgs);
       }, ms - (now - lastCall));
     }
   };

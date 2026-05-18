@@ -327,7 +327,7 @@ export class SecurityDiagnostics {
   }
 
   private checkTrustedTypes(): void {
-    const hasTT = typeof window !== 'undefined' && !!(window as any).trustedTypes;
+    const hasTT = typeof window !== 'undefined' && 'trustedTypes' in window;
     this.addCheck({
       check: 'Trusted Types',
       status: hasTT ? 'pass' : 'info',
@@ -709,7 +709,7 @@ export class MemoryProfiler {
 
   /** Take a memory snapshot */
   snapshot(): MemorySnapshot | null {
-    const perf = performance as any;
+    const perf = performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } };
     if (!perf?.memory) return null;
 
     const snap: MemorySnapshot = {
@@ -811,7 +811,7 @@ export function createDiagnosticReport(): DiagnosticReport {
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
       isSecureContext: typeof window !== 'undefined' ? window.isSecureContext : false,
       hasWebCrypto: typeof globalThis.crypto !== 'undefined' && !!globalThis.crypto.subtle,
-      hasTrustedTypes: typeof window !== 'undefined' && !!(window as any).trustedTypes,
+      hasTrustedTypes: typeof window !== 'undefined' && 'trustedTypes' in window,
       hasServiceWorker: typeof navigator !== 'undefined' && 'serviceWorker' in navigator,
       protocol: typeof location !== 'undefined' ? location.protocol : 'unknown',
     },

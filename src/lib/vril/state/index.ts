@@ -348,7 +348,7 @@ export function createStore<T extends Record<string, unknown>>(
  * Provides lookup, lifecycle management, and cross-store coordination.
  */
 export class StoreRegistry {
-  private stores = new Map<string, VrilStore<any>>();
+  private stores = new Map<string, VrilStore<Record<string, unknown>>>();
   private _version = '2.1.0';
 
   /** Register a store in the registry */
@@ -356,12 +356,12 @@ export class StoreRegistry {
     if (this.stores.has(store.name)) {
       console.warn(`[StoreRegistry] Store "${store.name}" already registered, replacing.`);
     }
-    this.stores.set(store.name, store);
+    this.stores.set(store.name, store as VrilStore<Record<string, unknown>>);
   }
 
   /** Get a store by name */
   get<T extends Record<string, unknown>>(name: string): VrilStore<T> | undefined {
-    return this.stores.get(name);
+    return this.stores.get(name) as VrilStore<T> | undefined;
   }
 
   /** Check if a store exists */
@@ -380,7 +380,7 @@ export class StoreRegistry {
   }
 
   /** Get all registered stores */
-  getAll(): VrilStore<any>[] {
+  getAll(): VrilStore<Record<string, unknown>>[] {
     return Array.from(this.stores.values());
   }
 
