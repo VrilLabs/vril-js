@@ -73,7 +73,7 @@ export function VaultDialog({ open, onClose }: { open: boolean; onClose: () => v
           {(status === 'encrypting' || status === 'decrypting') && (
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] font-mono text-white/40"><span>Deriving key...</span><span>{Math.round(kdfProgress)}%</span></div>
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-[#f5a623] to-[#0A84FF] rounded-full transition-all" style={{ width: `${kdfProgress}%` }} /></div>
+              <progress className="kdf-progress" value={kdfProgress} max={100} aria-label="Key derivation progress" />
             </div>
           )}
           <div className="space-y-1.5">

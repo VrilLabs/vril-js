@@ -236,8 +236,8 @@ const DEFAULT_SECURITY: VrilSecurityConfig = {
   blockedAPIs: ['WebTransport', 'RTCPeerConnection'],
   csp: {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'"],
-    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    scriptSrc: ["'self'"],
+    styleSrc: ["'self'", "https://fonts.googleapis.com"],
     fontSrc: ["'self'", "https://fonts.gstatic.com"],
     imgSrc: ["'self'", "data:"],
     connectSrc: ["'self'"],
@@ -732,7 +732,7 @@ function buildAllSecurityHeaders(config: VrilResolvedConfig): Record<string, str
 export const SPA_PRESET = {
   security: {
     csp: {
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
     },
   },
   build: {

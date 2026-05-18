@@ -257,11 +257,11 @@ const MODULE_CATEGORIES = [
 
 // ─── Security Layers Data ──────────────────────────────────────
 const SECURITY_LAYERS = [
-  { num: 'L5', name: 'Build-Time Integrity', items: ['SRI Multi-Hash', 'SBOM (CycloneDX)', 'Sigstore Signing'], color: '#f5a623' },
-  { num: 'L4', name: 'Application Security', items: ['CSRF Protection', 'XSS Shield', 'Route Guards'], color: '#9b5eff' },
-  { num: 'L3', name: 'Cryptographic Layer', items: ['PQC (ML-KEM/ML-DSA)', 'Hybrid KEM', '\u03A9Vault', 'Agility Registry'], color: '#00FFC8' },
-  { num: 'L2', name: 'Transport Security', items: ['HSTS Preload', 'CSP Level 3', 'Permissions-Policy'], color: '#0A84FF' },
-  { num: 'L1', name: 'Browser Hardening', items: ['COOP/COEP/CORP', 'Trusted Types', 'API Membrane'], color: '#ff4d6a' },
+  { num: 'L5', name: 'Build-Time Integrity', items: ['SRI Multi-Hash', 'SBOM (CycloneDX)', 'Sigstore Signing'], accent: 'amber' },
+  { num: 'L4', name: 'Application Security', items: ['CSRF Protection', 'XSS Shield', 'Route Guards'], accent: 'violet' },
+  { num: 'L3', name: 'Cryptographic Layer', items: ['PQC (ML-KEM/ML-DSA)', 'Hybrid KEM', '\u03A9Vault', 'Agility Registry'], accent: 'teal' },
+  { num: 'L2', name: 'Transport Security', items: ['HSTS Preload', 'CSP Level 3', 'Permissions-Policy'], accent: 'blue' },
+  { num: 'L1', name: 'Browser Hardening', items: ['COOP/COEP/CORP', 'Trusted Types', 'API Membrane'], accent: 'error' },
 ];
 
 // ─── Accent Color Map ──────────────────────────────────────────
@@ -270,6 +270,14 @@ const accentMap = {
   amber: { text: 'text-amber', bg: 'bg-amber/12', border: 'border-amber/30', glow: 'glow-amber' },
   violet: { text: 'text-violet', bg: 'bg-violet/12', border: 'border-violet/30', glow: 'glow-violet' },
   blue: { text: 'text-ionic-blue', bg: 'bg-ionic-blue/12', border: 'border-ionic-blue/30', glow: 'glow-blue' },
+};
+
+const layerAccentMap = {
+  amber: { bg: 'layer-accent-amber', text: 'layer-text-amber' },
+  violet: { bg: 'layer-accent-violet', text: 'layer-text-violet' },
+  teal: { bg: 'layer-accent-teal', text: 'layer-text-teal' },
+  blue: { bg: 'layer-accent-blue', text: 'layer-text-blue' },
+  error: { bg: 'layer-accent-error', text: 'layer-text-error' },
 };
 
 // ─── Animated Counter ──────────────────────────────────────────
@@ -504,9 +512,9 @@ function TerminalBlock({ lines }: { lines: string[] }) {
 // ─── Hero Security Graphic ─────────────────────────────────────
 function HeroGraphic() {
   const orbiters = [
-    { label: 'PQC', color: 'bg-olo-teal', shadow: '0 0 18px rgba(0,255,200,0.75)', size: 'w-3 h-3', speed: '18s', delay: '0s' },
-    { label: 'KEM', color: 'bg-ionic-blue', shadow: '0 0 16px rgba(10,132,255,0.7)', size: 'w-2.5 h-2.5', speed: '24s', delay: '-6s' },
-    { label: 'CSP', color: 'bg-violet', shadow: '0 0 16px rgba(155,94,255,0.7)', size: 'w-2 h-2', speed: '30s', delay: '-12s' },
+    { label: 'PQC', color: 'bg-olo-teal', size: 'w-3 h-3', orbit: 'hero-orbit-pqc', glow: 'hero-orb-pqc' },
+    { label: 'KEM', color: 'bg-ionic-blue', size: 'w-2.5 h-2.5', orbit: 'hero-orbit-kem', glow: 'hero-orb-kem' },
+    { label: 'CSP', color: 'bg-violet', size: 'w-2 h-2', orbit: 'hero-orbit-csp', glow: 'hero-orb-csp' },
   ];
 
   return (
@@ -515,15 +523,14 @@ function HeroGraphic() {
         <div className="absolute inset-0 rounded-full bg-olo-teal/8 blur-3xl animate-vril-float" />
         <div className="absolute inset-6 rounded-full border border-white/8 hero-ring" />
         <div className="absolute inset-16 rounded-full border border-olo-teal/20 hero-ring hero-ring-reverse" />
-        <div className="absolute inset-28 rounded-full border border-violet/25 hero-ring" style={{ animationDuration: '16s' }} />
+        <div className="absolute inset-28 rounded-full border border-violet/25 hero-ring hero-ring-fast" />
 
         {orbiters.map((orbiter) => (
           <div
             key={orbiter.label}
-            className="absolute inset-0 rounded-full animate-orbit"
-            style={{ animationDuration: orbiter.speed, animationDelay: orbiter.delay }}
+            className={`absolute inset-0 rounded-full animate-orbit ${orbiter.orbit}`}
           >
-            <div className={`absolute left-1/2 -top-1 -translate-x-1/2 ${orbiter.size} rounded-full ${orbiter.color}`} style={{ boxShadow: orbiter.shadow }} />
+            <div className={`absolute left-1/2 -top-1 -translate-x-1/2 ${orbiter.size} rounded-full ${orbiter.color} ${orbiter.glow}`} />
             <div className="absolute left-1/2 top-7 -translate-x-1/2 rounded-full border border-white/10 bg-[#0d1017]/80 px-2 py-0.5 font-mono text-[9px] tracking-[0.14em] text-white/45 backdrop-blur-md">
               {orbiter.label}
             </div>
@@ -551,7 +558,7 @@ function HeroGraphic() {
         </div>
 
         <div className="absolute left-4 top-24 h-px w-28 bg-gradient-to-r from-transparent via-olo-teal/50 to-transparent hero-data-ray" />
-        <div className="absolute bottom-24 right-2 h-px w-32 bg-gradient-to-r from-transparent via-violet/50 to-transparent hero-data-ray" style={{ animationDelay: '-1.4s' }} />
+        <div className="absolute bottom-24 right-2 h-px w-32 bg-gradient-to-r from-transparent via-violet/50 to-transparent hero-data-ray hero-ray-delayed" />
       </div>
     </div>
   );
@@ -632,7 +639,7 @@ export default function VrilShowcase() {
         {/* ═══ 1. HERO SECTION ═════════════════════════════════ */}
         <section className="relative py-24 md:py-36 overflow-hidden">
           {/* Background effects */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[700px] opacity-25 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, rgba(0,255,200,0.18) 0%, rgba(10,132,255,0.08) 40%, transparent 70%)' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[700px] opacity-25 pointer-events-none hero-aura" />
 
           <HeroGraphic />
 
@@ -640,7 +647,7 @@ export default function VrilShowcase() {
             <div className="max-w-3xl">
               {/* Badge */}
               <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-olo-teal/8 border border-olo-teal/20 rounded-full mb-8 animate-vril-badge-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-olo-teal" style={{ boxShadow: '0 0 8px #00FFC8' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-olo-teal glow-dot-teal" />
                 <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">v2.1.0 — Security-First Evolution</span>
               </div>
 
@@ -741,28 +748,31 @@ export default function VrilShowcase() {
 
             <div className="max-w-3xl mx-auto">
               <div className="flex flex-col gap-3">
-                {SECURITY_LAYERS.map((layer, i) => (
-                  <div key={i} className="group relative p-5 bg-card border border-white/6 rounded-2xl hover:border-white/15 transition-all duration-300 hover:scale-[1.02]">
-                    {/* Layer accent bar */}
-                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: layer.color }} />
-                    <div className="flex items-start gap-4 pl-3">
-                      <div className="flex-shrink-0">
-                        <span className="font-mono text-[10px] tracking-[0.16em] uppercase font-bold" style={{ color: layer.color }}>{layer.num}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-display font-bold text-white mb-2">{layer.name}</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {layer.items.map(item => (
-                            <span key={item} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/4 border border-white/8 rounded-lg font-mono text-[11px] text-white/50 group-hover:text-white/70 group-hover:border-white/12 transition-colors">
-                              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: layer.color }} />
-                              {item}
-                            </span>
-                          ))}
+                {SECURITY_LAYERS.map((layer, i) => {
+                  const accent = layerAccentMap[layer.accent as keyof typeof layerAccentMap];
+                  return (
+                    <div key={i} className="group relative p-5 bg-card border border-white/6 rounded-2xl hover:border-white/15 transition-all duration-300 hover:scale-[1.02]">
+                      {/* Layer accent bar */}
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${accent.bg}`} />
+                      <div className="flex items-start gap-4 pl-3">
+                        <div className="flex-shrink-0">
+                          <span className={`font-mono text-[10px] tracking-[0.16em] uppercase font-bold ${accent.text}`}>{layer.num}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-display font-bold text-white mb-2">{layer.name}</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {layer.items.map(item => (
+                              <span key={item} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/4 border border-white/8 rounded-lg font-mono text-[11px] text-white/50 group-hover:text-white/70 group-hover:border-white/12 transition-colors">
+                                <span className={`w-1 h-1 rounded-full ${accent.bg}`} />
+                                {item}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1102,7 +1112,7 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
           {(status === 'encrypting' || status === 'decrypting') && (
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] font-mono text-white/40"><span>Deriving key (PBKDF2-SHA-512)...</span><span>{Math.round(kdfProgress)}%</span></div>
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-amber to-ionic-blue rounded-full transition-all" style={{ width: `${kdfProgress}%` }} /></div>
+              <progress className="kdf-progress" value={kdfProgress} max={100} aria-label="Key derivation progress" />
             </div>
           )}
           <div className="space-y-1.5">

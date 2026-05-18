@@ -6,6 +6,7 @@ export default tseslint.config(
   {
     ignores: [
       ".vril/**",
+      ".vercel/**",
       "node_modules/**",
       "dist/**",
       "build/**",

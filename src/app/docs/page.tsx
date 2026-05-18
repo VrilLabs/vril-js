@@ -237,7 +237,7 @@ export default defineVrilConfig({
     apiMembrane: true,
     csp: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
       objectSrc: ["'none'"],
     },
     csrf: {

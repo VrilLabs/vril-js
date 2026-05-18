@@ -75,7 +75,7 @@ const securityHeaders = {
     'xr-spatial-tracking=()', 'compute-pressure=()',
   ].join(', '),
   'X-Vril-Version': '2.1.0',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
+  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
 };
 
 const mimeTypes = {
@@ -218,7 +218,7 @@ function apiRoutePathFromFile(filePath) {
 }
 
 function normalizeRoutePath(pathname) {
-  const normalized = pathname.replace(/\/+$/, '');
+  const normalized = pathname.replace(/[/]+$/, '');
   return normalized || '/';
 }
 
@@ -283,7 +283,7 @@ export default async function handler(req, res) {
 }
 
 function normalizeRoutePath(pathname) {
-  const normalized = pathname.replace(/\\/+$/, '');
+  const normalized = pathname.replace(/[/]+$/, '');
   return normalized || '/';
 }
 
