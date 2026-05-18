@@ -18,6 +18,7 @@ const vercelOutputDir = resolve(root, '.vercel/output');
 const vercelStaticDir = join(vercelOutputDir, 'static');
 const vercelFunctionDir = join(vercelOutputDir, 'functions/api.func');
 const defaultCSP = "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content";
+const developmentCSP = "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content";
 
 const aliasPlugin = {
   name: 'vril-alias',
@@ -257,7 +258,7 @@ function generateVercelFunction(apiRoutes, runtimeConfig) {
     routePath: route.routePath,
     bundleName: route.bundleName,
   }));
-  const headers = Object.fromEntries(Object.entries(buildRuntimeHeaders(runtimeConfig)));
+  const headers = buildRuntimeHeaders(runtimeConfig);
   return `const routeDefinitions = ${JSON.stringify(manifest, null, 2)};
 const securityHeaders = ${JSON.stringify(headers, null, 2)};
 const routes = await Promise.all(routeDefinitions.map(async route => ({
@@ -366,6 +367,7 @@ async function loadApiRoutes() {
 
 function buildRuntimeHeaders(runtimeConfig) {
   const headers = { ...securityHeaders, ...(runtimeConfig.headers ?? {}) };
+  if (process.env.NODE_ENV === 'development') headers['Content-Security-Policy'] = developmentCSP;
   headers['X-Vril-Version'] = '2.1.0';
   if (runtimeConfig.poweredByHeader) headers['X-Powered-By'] = 'Vril.js';
   return headers;
@@ -397,7 +399,7 @@ function resolveStaticPath(pathname) {
 
   const filePath = resolve(outDir, normalized);
   const pathWithinOutput = relative(outDir, filePath);
-  if (!pathWithinOutput || pathWithinOutput.startsWith('..') || isAbsolute(pathWithinOutput)) {
+  if (pathWithinOutput === '' || pathWithinOutput.startsWith('..') || isAbsolute(pathWithinOutput)) {
     return null;
   }
   return filePath;

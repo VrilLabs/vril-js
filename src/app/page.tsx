@@ -256,7 +256,9 @@ const MODULE_CATEGORIES = [
 ];
 
 // ─── Security Layers Data ──────────────────────────────────────
-const SECURITY_LAYERS = [
+type LayerAccent = 'amber' | 'violet' | 'teal' | 'blue' | 'error';
+
+const SECURITY_LAYERS: Array<{ num: string; name: string; items: string[]; accent: LayerAccent }> = [
   { num: 'L5', name: 'Build-Time Integrity', items: ['SRI Multi-Hash', 'SBOM (CycloneDX)', 'Sigstore Signing'], accent: 'amber' },
   { num: 'L4', name: 'Application Security', items: ['CSRF Protection', 'XSS Shield', 'Route Guards'], accent: 'violet' },
   { num: 'L3', name: 'Cryptographic Layer', items: ['PQC (ML-KEM/ML-DSA)', 'Hybrid KEM', '\u03A9Vault', 'Agility Registry'], accent: 'teal' },
@@ -278,7 +280,7 @@ const layerAccentMap = {
   teal: { bg: 'layer-accent-teal', text: 'layer-text-teal' },
   blue: { bg: 'layer-accent-blue', text: 'layer-text-blue' },
   error: { bg: 'layer-accent-error', text: 'layer-text-error' },
-};
+} satisfies Record<LayerAccent, { bg: string; text: string }>;
 
 // ─── Animated Counter ──────────────────────────────────────────
 function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: string }) {
@@ -749,7 +751,7 @@ export default function VrilShowcase() {
             <div className="max-w-3xl mx-auto">
               <div className="flex flex-col gap-3">
                 {SECURITY_LAYERS.map((layer, i) => {
-                  const accent = layerAccentMap[layer.accent as keyof typeof layerAccentMap] ?? layerAccentMap.teal;
+                  const accent = layerAccentMap[layer.accent];
                   return (
                     <div key={i} className="group relative p-5 bg-card border border-white/6 rounded-2xl hover:border-white/15 transition-all duration-300 hover:scale-[1.02]">
                       {/* Layer accent bar */}
