@@ -83,8 +83,8 @@ function UsersIcon({ className = "w-5 h-5" }: { className?: string }) {
 
 // ─── Feature Data ───────────────────────────────────────────────
 const FEATURES = [
-  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'Authentic @noble/post-quantum ML-KEM, ML-DSA, and SLH-DSA implementations for FIPS 203/204/205 algorithms.', accent: 'violet' as const },
-  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 + ML-KEM-768 hybrid KEM. Classical and post-quantum secrets are combined for defense in depth.', accent: 'teal' as const },
+  { icon: <ShieldIcon />, title: 'Post-Quantum Cryptography', desc: 'Provider-gated ML-KEM, ML-DSA, and SLH-DSA interfaces for authentic FIPS 203/204/205 implementations — never simulated.', accent: 'violet' as const },
+  { icon: <KeyIcon />, title: 'Hybrid Key Exchange', desc: 'X25519 classical KEM today, with ML-KEM hybrid mode enabled only when an authentic provider is registered.', accent: 'teal' as const },
   { icon: <RefreshIcon />, title: 'Crypto Agility', desc: 'NIST 2035 migration paths built in. Algorithm registry, versioning, and automated migration — zero downtime.', accent: 'blue' as const },
   { icon: <LockIcon />, title: '\u03A9Vault Encryption', desc: 'AES-256-GCM + PBKDF2-SHA-512 at 600K iterations. Zero-knowledge client-side encryption with visual KDF progress.', accent: 'amber' as const },
   { icon: <ZapIcon />, title: '\u03A9Signal Reactivity', desc: 'Fine-grained reactive primitives — signal, computed, effect, batch, untrack — with auto dependency tracking. Zero deps.', accent: 'violet' as const },
@@ -134,10 +134,12 @@ const app = createVrilApp({
     label: 'PQC Key Exchange',
     lang: 'typescript',
     code: `import { PQCHandler, HybridKEM, CryptoAgility } from 'vril';
+// Import your PQCProvider implementation with FIPS evidence.
+import { validatedPQCProvider } from './validated-pqc-provider';
 
-const pqc = new PQCHandler();
+const pqc = new PQCHandler(validatedPQCProvider);
 
-// Authentic ML-KEM-768 from @noble/post-quantum
+// Authentic ML-KEM-768 from your provider
 const keyPair = await pqc.generateKeyPair('ML-KEM-768');
 const kemResult = await pqc.encapsulate(
   keyPair.publicKey,
@@ -145,7 +147,11 @@ const kemResult = await pqc.encapsulate(
 );
 
 // Hybrid X25519 + ML-KEM-768
-const kem = new HybridKEM('X25519MLKEM768');
+const kem = new HybridKEM(
+  'X25519MLKEM768',
+  'vril-hybrid-kem-v2',
+  validatedPQCProvider
+);
 const hybridKeys = await kem.generateKeyPair();
 const { sharedSecret } = await kem.encapsulate(
   hybridKeys.combinedPublicKey
@@ -679,7 +685,7 @@ export default function VrilShowcase() {
                 </span>
                 <span className="w-1 h-1 rounded-full bg-white/10" />
                 <span className="flex items-center gap-2 text-olo-teal/60">
-                  <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" /> PQC-ready
+                  <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" /> Provider-gated PQC
                 </span>
               </div>
             </div>
@@ -771,7 +777,7 @@ export default function VrilShowcase() {
             <div className="text-center mb-14">
               <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">Comparison</span>
               <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-[-0.035em] mt-2 mb-4">Why Vril.js?</h2>
-              <p className="text-white/45 text-lg max-w-xl mx-auto">No other framework ships with post-quantum cryptography, zero-trust security, and crypto agility built in.</p>
+              <p className="text-white/45 text-lg max-w-xl mx-auto">Vril.js ships provider-gated post-quantum interfaces, zero-trust security, and crypto agility built in.</p>
             </div>
 
             <div className="overflow-x-auto max-w-4xl mx-auto">
@@ -815,7 +821,7 @@ export default function VrilShowcase() {
             <div className="text-center mb-14">
               <span className="font-mono text-xs tracking-[0.16em] uppercase text-violet">Module Ecosystem</span>
               <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-[-0.035em] mt-2 mb-4">22 Modules. Zero Dependencies.</h2>
-              <p className="text-white/45 text-lg max-w-xl mx-auto">Every module is hand-crafted with zero external dependencies. All crypto uses the Web Crypto API. All streaming uses Web Streams.</p>
+              <p className="text-white/45 text-lg max-w-xl mx-auto">Every module is hand-crafted with zero bundled crypto dependencies. Native primitives use Web Crypto, and PQC is provider-gated for authentic implementations.</p>
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">

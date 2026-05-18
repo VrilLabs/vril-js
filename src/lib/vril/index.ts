@@ -70,7 +70,6 @@ export {
 export {
   PQCHandler,
   pqc,
-  noblePQCProvider,
   type PQCKeyPair,
   type KEMResult,
   type SignatureResult,

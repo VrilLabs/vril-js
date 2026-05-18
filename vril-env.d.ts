@@ -8,7 +8,6 @@
 // ─── Vril.js Environment Variables ─────────────────────────────────────────
 // Extend the NodeJS ProcessEnv interface to provide strict types for all
 // environment variables used by Vril.js. Add new variables here as needed.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 declare namespace NodeJS {
   interface ProcessEnv {
     // ── Runtime ────────────────────────────────────────────────────────────

@@ -83,7 +83,7 @@ export interface PQCVerified {
   readonly pqcAlgorithm: string;
   /** Timestamp of verification */
   readonly verifiedAt: number;
-  /** Whether the verification was native or simulated */
+  /** Whether the verification used native runtime support rather than a provider */
   readonly nativeVerification: boolean;
   /** NIST security level (1-5) */
   readonly securityLevel: number;

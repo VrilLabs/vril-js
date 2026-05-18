@@ -323,6 +323,10 @@ export function useEncryptedState<T>(
 
 // ─── useSecureStorage ─────────────────────────────────────────────
 
+function getWebCrypto(): Crypto | null {
+  return typeof crypto !== 'undefined' && crypto.subtle ? crypto : null;
+}
+
 /**
  * localStorage with encryption support.
  * When a passphrase is provided, data is AES-256-GCM encrypted before being
@@ -354,9 +358,9 @@ export function useSecureStorage<T>(
 
   /** Derive an AES-GCM key from the passphrase and salt using PBKDF2 */
   const deriveKey = useCallback(async (salt: Uint8Array): Promise<CryptoKey | null> => {
-    if (!passphrase || typeof crypto === 'undefined' || !crypto.subtle) return null;
+    const webCrypto = getWebCrypto();
+    if (!passphrase || !webCrypto) return null;
     try {
-      const webCrypto = crypto;
       const km = await webCrypto.subtle.importKey(
         'raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']
       );
@@ -392,7 +396,7 @@ export function useSecureStorage<T>(
         const cryptoKey = await deriveKey(salt);
         // Bail if: key derivation failed, component unmounted, or a write arrived first
         if (!cryptoKey || mountDecryptStaleRef.current) return;
-        const webCrypto = typeof crypto !== 'undefined' && crypto.subtle ? crypto : null;
+        const webCrypto = getWebCrypto();
         if (!webCrypto) return;
         const plaintext = await webCrypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
         if (!mountDecryptStaleRef.current) {
@@ -433,8 +437,8 @@ export function useSecureStorage<T>(
       const myVersion = ++writeVersionRef.current;
       (async () => {
         try {
-          if (typeof crypto === 'undefined' || !crypto.subtle) return;
-          const webCrypto = crypto;
+          const webCrypto = getWebCrypto();
+          if (!webCrypto) return;
           const salt = saltRef.current ?? webCrypto.getRandomValues(new Uint8Array(16));
           if (!saltRef.current) saltRef.current = salt;
           const cryptoKey = await deriveKey(salt);
