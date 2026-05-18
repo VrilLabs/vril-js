@@ -1,6 +1,3 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
 /**
  * Vril.js v2.1.0 Security Proxy
  * Applies all security headers, CSP, Permissions-Policy, and
@@ -8,10 +5,11 @@ import type { NextRequest } from 'next/server';
  * Includes HSTS preload, COEP/COOP for SharedArrayBuffer support,
  * and request integrity validation.
  *
- * Next.js 16 uses "proxy" convention instead of "middleware"
+ * Vril.js uses this proxy before route handling to reject client-injected
+ * internal headers and apply framework security headers.
  */
 
-const SECURITY_HEADERS: Record<string, string> = {
+export const SECURITY_HEADERS: Record<string, string> = {
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
@@ -35,26 +33,18 @@ const BLOCKED_CLIENT_HEADERS = [
   'x-vril-subrequest',
 ];
 
-export function proxy(request: NextRequest) {
+export function proxy(request: Request): Response | null {
   // Block suspicious client-injected headers
   for (const header of BLOCKED_CLIENT_HEADERS) {
     if (request.headers.get(header)) {
-      return new NextResponse('Forbidden', { status: 403 });
+      return new Response('Forbidden', { status: 403 });
     }
   }
 
-  const response = NextResponse.next();
-
-  // Apply security headers
-  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
-    response.headers.set(key, value);
-  }
-
-  return response;
+  return null;
 }
 
-export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|logo\\.svg).*)',
-  ],
-};
+export function applySecurityHeaders(headers: Headers): Headers {
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) headers.set(key, value);
+  return headers;
+}

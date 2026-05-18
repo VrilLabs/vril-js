@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, type ReactNode } from 'react';
-import Link from 'next/link';
 
 // ─── Types ──────────────────────────────────────────────────────
 interface DocSection {
@@ -131,12 +130,12 @@ export default function DocsPage() {
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg border border-white/10 text-white/50 hover:text-white">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
             </button>
-            <Link href="/" className="font-[family-name:var(--font-display)] font-bold text-lg gradient-text">Vril.js</Link>
+            <a href="/" className="font-[family-name:var(--font-display)] font-bold text-lg gradient-text">Vril.js</a>
             <span className="font-mono text-[10px] tracking-[0.14em] uppercase px-2 py-0.5 rounded-full border border-[#00FFC8]/30 text-[#00FFC8] bg-[#00FFC8]/7">Docs</span>
             <span className="font-mono text-xs text-white/20">v2.1.0</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-sm text-white/40 hover:text-[#00FFC8] transition-colors">← Home</Link>
+            <a href="/" className="text-sm text-white/40 hover:text-[#00FFC8] transition-colors">← Home</a>
           </div>
         </div>
       </header>
