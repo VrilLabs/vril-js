@@ -177,6 +177,16 @@ export class MemoryCache<T = unknown> {
     this.accessOrder = [];
   }
 
+  /** Get all non-expired keys */
+  keys(): string[] {
+    const now = Date.now();
+    const result: string[] = [];
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.expiresAt > now) result.push(key);
+    }
+    return result;
+  }
+
   /** Evict the least recently used entry */
   private evictLRU(): void {
     if (this.accessOrder.length === 0) return;
@@ -472,6 +482,20 @@ export class CacheRegistry {
     return total;
   }
 
+  /** Invalidate entries across all caches whose key matches a regex */
+  invalidateByKeyPattern(regex: RegExp): number {
+    let total = 0;
+    for (const [, { cache }] of this.caches) {
+      for (const key of cache.keys()) {
+        if (regex.test(key)) {
+          cache.delete(key);
+          total++;
+        }
+      }
+    }
+    return total;
+  }
+
   /** Get statistics for all caches */
   getAllStats(): Record<string, CacheStats> {
     const stats: Record<string, CacheStats> = {};
@@ -511,21 +535,10 @@ export class CacheInvalidator {
     return this.registry.invalidateByTag(tag);
   }
 
-  /** Invalidate entries matching a key pattern (glob-style) */
+  /** Invalidate all entries whose key matches a glob-style pattern */
   invalidatePattern(pattern: string): number {
     const regex = globToRegex(pattern);
-    let total = 0;
-    // We need access to the underlying maps — in production this would be more sophisticated
-    for (const name of Object.keys(this.registry.getAllStats())) {
-      if (!regex.test(name)) continue;
-      const cache = this.registry.get(name);
-      if (cache) {
-        // MemoryCache doesn't expose key iteration directly, so we use getStats
-        // and rely on tag-based invalidation for the actual purge
-        total += cache.getStats().size; // placeholder
-      }
-    }
-    return total;
+    return this.registry.invalidateByKeyPattern(regex);
   }
 
   /** Invalidate all caches (nuclear option) */

@@ -308,7 +308,14 @@ export function deepClone<T>(obj: T): T {
   }
 
   if (ArrayBuffer.isView(obj)) {
-    // All TypedArrays have .slice() which returns a copy backed by a new ArrayBuffer
+    if (obj instanceof DataView) {
+      // DataView has no .slice() — clone the underlying buffer region and wrap
+      return new DataView(
+        obj.buffer.slice(obj.byteOffset, obj.byteOffset + obj.byteLength)
+      ) as unknown as T;
+    }
+    // TypedArrays (Uint8Array, Float32Array, etc.) have .slice() that returns a
+    // same-type copy backed by a fresh ArrayBuffer
     return (obj as unknown as { slice(): T }).slice();
   }
 
@@ -403,17 +410,19 @@ export function mergeConfigs<T extends Record<string, unknown>>(
 /**
  * Debounce a function — delays invocation until `ms` milliseconds
  * have elapsed since the last call.
+ * Preserves the dynamic `this` of the call site so debounced methods work correctly.
  */
-export function debounce<TArgs extends unknown[], TReturn>(
-  fn: (...args: TArgs) => TReturn,
+export function debounce<TThis, TArgs extends unknown[], TReturn>(
+  fn: (this: TThis, ...args: TArgs) => TReturn,
   ms: number
-): (...args: TArgs) => void {
+): (this: TThis, ...args: TArgs) => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
 
-  return (...args: TArgs) => {
+  return function (this: TThis, ...args: TArgs) {
+    const ctx = this;
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(() => {
-      fn(...args);
+      fn.call(ctx, ...args);
       timer = undefined;
     }, ms);
   };
@@ -422,27 +431,29 @@ export function debounce<TArgs extends unknown[], TReturn>(
 /**
  * Throttle a function — limits invocation to at most once per `ms` milliseconds.
  * Calls the function with the latest arguments on the trailing edge.
+ * Preserves the dynamic `this` of the call site so throttled methods work correctly.
  */
-export function throttle<TArgs extends unknown[], TReturn>(
-  fn: (...args: TArgs) => TReturn,
+export function throttle<TThis, TArgs extends unknown[], TReturn>(
+  fn: (this: TThis, ...args: TArgs) => TReturn,
   ms: number
-): (...args: TArgs) => void {
+): (this: TThis, ...args: TArgs) => void {
   let lastCall = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let lastArgs: TArgs | undefined;
+  // Store the latest call context and args together so they always stay in sync
+  let pending: { ctx: TThis; args: TArgs } | undefined;
 
-  return (...args: TArgs) => {
+  return function (this: TThis, ...args: TArgs) {
     const now = Date.now();
-    lastArgs = args;
+    pending = { ctx: this, args };
 
     if (now - lastCall >= ms) {
       lastCall = now;
-      fn(...args);
+      fn.call(this, ...args);
     } else if (timer === undefined) {
       timer = setTimeout(() => {
         lastCall = Date.now();
         timer = undefined;
-        if (lastArgs) fn(...lastArgs);
+        if (pending !== undefined) fn.call(pending.ctx, ...pending.args);
       }, ms - (now - lastCall));
     }
   };

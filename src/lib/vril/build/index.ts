@@ -254,9 +254,9 @@ export class BuildSecurityChecker {
     return Array.from(this.checks.values()).every(v => v);
   }
 
-  /** Get a read-only snapshot of all check results */
+  /** Get a read-only snapshot of all check results at this point in time */
   getChecks(): ReadonlyMap<string, boolean> {
-    return this.checks;
+    return new Map(this.checks);
   }
 
   /** Run automated security checks against a build configuration */

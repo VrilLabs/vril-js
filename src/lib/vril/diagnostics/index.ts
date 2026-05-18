@@ -548,7 +548,9 @@ export class NetworkMonitor {
   startInterception(): void {
     if (this.intercepting || typeof window === 'undefined') return;
 
-    this.originalFetch = window.fetch;
+    // Bind to window so native fetch always runs with the expected receiver,
+    // preventing "illegal invocation" in browsers that check the this value.
+    this.originalFetch = window.fetch.bind(window);
 
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
