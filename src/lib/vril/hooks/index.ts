@@ -15,6 +15,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { type SignalReadable } from '../signals';
 import { effect, computed } from '../signals';
 
+const ENCRYPTED_STORAGE_PBKDF2_ITERATIONS = 600000;
+
 // ─── Types ────────────────────────────────────────────────────────
 
 /** Async state returned by useAsyncSignal and useResource */
@@ -365,7 +367,7 @@ export function useSecureStorage<T>(
         'raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']
       );
       return await webCrypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: new Uint8Array(salt), iterations: 100000, hash: 'SHA-512' },
+        { name: 'PBKDF2', salt: new Uint8Array(salt), iterations: ENCRYPTED_STORAGE_PBKDF2_ITERATIONS, hash: 'SHA-512' },
         km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
       );
     } catch { return null; }

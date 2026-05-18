@@ -467,14 +467,14 @@ function forsPKFromSig(sig: Uint8Array, md: Uint8Array, pkSeed: Uint8Array, adrs
       const a3 = copyADRS(adrs);
       setType(a3, ADDR_TYPE_FORSTREE);
       setTreeHeight(a3, j + 1);
+      const parentTreeIdx = Math.floor(treeIdx / 2);
+      setTreeIndex(a3, i * (treeSz >> (j + 1)) + parentTreeIdx);
       if (treeIdx % 2 === 0) {
-        setTreeIndex(a3, i * (treeSz >> j) + Math.floor(treeIdx / 2));
         node = hf.H(pkSeed, a3, concat(node, authPath[j]));
       } else {
-        setTreeIndex(a3, i * (treeSz >> j) + Math.floor(treeIdx / 2));
         node = hf.H(pkSeed, a3, concat(authPath[j], node));
       }
-      treeIdx = Math.floor(treeIdx / 2);
+      treeIdx = parentTreeIdx;
     }
     roots.push(node);
   }

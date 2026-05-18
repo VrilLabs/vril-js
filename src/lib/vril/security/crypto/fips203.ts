@@ -207,8 +207,8 @@ function sampleNTT(rho: Uint8Array, i: number, j: number): Poly {
   const xof = new ShakeXof(128);
   const seed = new Uint8Array(34);
   seed.set(rho);
-  seed[32] = i;
-  seed[33] = j;
+  seed[32] = j;
+  seed[33] = i;
   xof.update(seed);
   const f = newPoly();
   let count = 0;
