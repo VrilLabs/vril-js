@@ -419,10 +419,10 @@ export function debounce<TThis, TArgs extends unknown[], TReturn>(
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   return function (this: TThis, ...args: TArgs) {
-    const ctx = this;
+    const callContext = this;
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(() => {
-      fn.call(ctx, ...args);
+      fn.call(callContext, ...args);
       timer = undefined;
     }, ms);
   };
@@ -440,11 +440,11 @@ export function throttle<TThis, TArgs extends unknown[], TReturn>(
   let lastCall = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   // Store the latest call context and args together so they always stay in sync
-  let pending: { ctx: TThis; args: TArgs } | undefined;
+  let pendingCall: { callContext: TThis; args: TArgs } | undefined;
 
   return function (this: TThis, ...args: TArgs) {
     const now = Date.now();
-    pending = { ctx: this, args };
+    pendingCall = { callContext: this, args };
 
     if (now - lastCall >= ms) {
       lastCall = now;
@@ -453,7 +453,7 @@ export function throttle<TThis, TArgs extends unknown[], TReturn>(
       timer = setTimeout(() => {
         lastCall = Date.now();
         timer = undefined;
-        if (pending !== undefined) fn.call(pending.ctx, ...pending.args);
+        if (pendingCall !== undefined) fn.call(pendingCall.callContext, ...pendingCall.args);
       }, ms - (now - lastCall));
     }
   };

@@ -485,10 +485,10 @@ export class CacheRegistry {
   /** Invalidate entries across all caches whose key matches a regex */
   invalidateByKeyPattern(regex: RegExp): number {
     let total = 0;
-    for (const [, { cache }] of this.caches) {
-      for (const key of cache.keys()) {
+    for (const [, { cache: cacheInstance }] of this.caches) {
+      for (const key of cacheInstance.keys()) {
         if (regex.test(key)) {
-          cache.delete(key);
+          cacheInstance.delete(key);
           total++;
         }
       }
