@@ -1,9 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { VrilVault, type EncryptionResult } from '@/lib/vril/security/crypto/vault';
 
 const vault = new VrilVault();
+
+function CopyIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
+}
+function CheckIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
+}
+
+function VaultCopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [text]);
+
+  return (
+    <button onClick={handleCopy} className="absolute top-2 right-2 p-1.5 rounded-md bg-white/5 border border-white/8 text-white/30 hover:text-white hover:border-white/20 transition-all" aria-label="Copy output">
+      {copied ? <CheckIcon className="w-3.5 h-3.5 text-[#00FFC8]" /> : <CopyIcon className="w-3.5 h-3.5" />}
+    </button>
+  );
+}
 
 export function VaultDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [passphrase, setPassphrase] = useState('');
@@ -90,7 +113,10 @@ export function VaultDialog({ open, onClose }: { open: boolean; onClose: () => v
           {result && (
             <div className="space-y-1.5">
               <label className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30">{resultLabel}</label>
-              <pre className="px-3 py-2 bg-[#0a0c10] border border-white/10 rounded-lg text-[#00FFC8] font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-32">{result}</pre>
+              <div className="relative">
+                <pre className="px-3 py-2 pr-10 bg-[#0a0c10] border border-white/10 rounded-lg text-[#00FFC8] font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-32">{result}</pre>
+                <VaultCopyButton text={result} />
+              </div>
             </div>
           )}
         </div>

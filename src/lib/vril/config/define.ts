@@ -244,8 +244,8 @@ const DEFAULT_SECURITY: VrilSecurityConfig = {
   csp: {
     defaultSrc: ["'self'"],
     scriptSrc: ["'self'"],
-    styleSrc: ["'self'", "https://fonts.googleapis.com"],
-    fontSrc: ["'self'", "https://fonts.gstatic.com"],
+    styleSrc: ["'self'"],
+    fontSrc: ["'self'"],
     imgSrc: ["'self'", "data:"],
     connectSrc: ["'self'"],
     frameSrc: ["'none'"],

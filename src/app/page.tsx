@@ -421,7 +421,7 @@ function highlightTokens(text: string, startKey: number): ReactNode[] {
 }
 
 // ─── Copy Button ───────────────────────────────────────────────
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, className = '' }: { text: string; className?: string }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(text).then(() => {
@@ -431,7 +431,7 @@ function CopyButton({ text }: { text: string }) {
   }, [text]);
 
   return (
-    <button onClick={handleCopy} className="absolute top-2.5 right-2.5 p-1.5 rounded-md bg-white/5 border border-white/8 text-white/30 hover:text-white hover:border-white/20 transition-all" aria-label="Copy code">
+    <button onClick={handleCopy} className={`p-1.5 rounded-md bg-white/5 border border-white/8 text-white/30 hover:text-white hover:border-white/20 transition-all ${className}`} aria-label="Copy code">
       {copied ? <CheckIcon className="w-3.5 h-3.5 text-olo-teal" /> : <CopyIcon className="w-3.5 h-3.5" />}
     </button>
   );
@@ -455,9 +455,6 @@ function CodeShowcase() {
             </button>
           ))}
         </div>
-        <div className="ml-auto pr-2">
-          <CopyButton text={activeCode.code} />
-        </div>
       </div>
       {/* Code content */}
       <div className="relative">
@@ -471,6 +468,7 @@ function CodeShowcase() {
             ))}
           </code>
         </pre>
+        <CopyButton text={activeCode.code} className="absolute top-3 right-3" />
       </div>
       {/* Output hint */}
       <div className="flex items-center gap-2 px-5 py-2.5 border-t border-white/8 bg-[#0d1017]">
@@ -1134,11 +1132,11 @@ function VaultInlineDialog({ onClose }: { onClose: () => void }) {
           </div>
           {result && (
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30">{resultLabel}</label>
-                <CopyButton text={result} />
+              <label className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30">{resultLabel}</label>
+              <div className="relative">
+                <pre className="px-3 py-2 pr-10 bg-[#0a0c10] border border-white/10 rounded-lg text-olo-teal font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-32">{result}</pre>
+                <CopyButton text={result} className="absolute top-2 right-2" />
               </div>
-              <pre className="px-3 py-2 bg-[#0a0c10] border border-white/10 rounded-lg text-olo-teal font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-32">{result}</pre>
               {activeBundle && resultLabel === 'Ciphertext Bundle' && <p className="font-mono text-[10px] text-white/25">Bundle staged for Unseal — keep the same passphrase and click Unseal to verify.</p>}
             </div>
           )}
