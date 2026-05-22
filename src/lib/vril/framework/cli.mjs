@@ -17,8 +17,8 @@ const runtimeConfigBundle = resolve(root, '.vril/runtime-config.mjs');
 const vercelOutputDir = resolve(root, '.vercel/output');
 const vercelStaticDir = join(vercelOutputDir, 'static');
 const vercelFunctionDir = join(vercelOutputDir, 'functions/api.func');
-const defaultCSP = "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content";
-const developmentCSP = "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content";
+const defaultCSP = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content";
+const developmentCSP = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content";
 
 const aliasPlugin = {
   name: 'vril-alias',
@@ -90,6 +90,9 @@ const mimeTypes = {
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
   '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.ttf': 'font/ttf',
 };
 
 async function bundle() {
@@ -134,6 +137,12 @@ async function bundle() {
   );
   if (tailwind.status !== 0) {
     throw new Error('Vril CSS build failed');
+  }
+
+  // Copy public directory into build output
+  const publicDir = resolve(root, 'public');
+  if (await stat(publicDir).then(s => s.isDirectory()).catch(() => false)) {
+    await cp(publicDir, outDir, { recursive: true });
   }
 
   const { renderRoute } = await import(`${pathToFileURL(serverBundle).href}?t=${Date.now()}`);
