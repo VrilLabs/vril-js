@@ -65,6 +65,13 @@ export interface VrilSecurityConfig {
   };
 }
 
+// ─── User Security Configuration (deeply partial, for defineVrilConfig) ──────
+/** Partial security override accepted by {@link defineVrilConfig}. All fields
+ *  — including individual CSP directives — are optional; defaults fill the rest. */
+export type VrilUserSecurityConfig = Omit<Partial<VrilSecurityConfig>, 'csp'> & {
+  csp?: Partial<VrilSecurityConfig['csp']>;
+};
+
 // ─── Cryptography Configuration ──────────────────────────────
 export interface VrilCryptoConfig {
   /** Default encryption algorithm */
@@ -192,7 +199,7 @@ export interface VrilResolvedConfig {
 
 // ─── User Configuration (Partial) ────────────────────────────
 export interface VrilUserConfig {
-  security?: Partial<VrilSecurityConfig>;
+  security?: VrilUserSecurityConfig;
   crypto?: Partial<VrilCryptoConfig>;
   router?: Partial<VrilRouterConfig>;
   build?: Partial<VrilBuildConfig>;
@@ -584,7 +591,7 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
 
   // Deep merge user config over defaults
   if (userConfig.security) {
-    resolved.security = deepMerge(DEFAULT_SECURITY, userConfig.security);
+    resolved.security = deepMerge(DEFAULT_SECURITY, userConfig.security as Partial<VrilSecurityConfig>);
   }
   if (userConfig.crypto) {
     resolved.crypto = { ...DEFAULT_CRYPTO, ...userConfig.crypto };
@@ -607,7 +614,7 @@ export function defineVrilConfig(userConfig: VrilUserConfig = {}): {
     const envOverride = userConfig.env[environment];
     if (envOverride) {
       if (envOverride.security) {
-        resolved.security = deepMerge(resolved.security, envOverride.security);
+        resolved.security = deepMerge(resolved.security, envOverride.security as Partial<VrilSecurityConfig>);
       }
       if (envOverride.crypto) {
         resolved.crypto = { ...resolved.crypto, ...envOverride.crypto };

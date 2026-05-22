@@ -426,6 +426,7 @@ export {
   defineVrilConfig,
   VRIL_CONFIG_VERSION,
   type VrilUserConfig,
+  type VrilUserSecurityConfig,
   type VrilResolvedConfig,
   type VrilSecurityConfig,
   type VrilCryptoConfig,
