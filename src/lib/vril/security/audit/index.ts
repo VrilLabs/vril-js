@@ -149,7 +149,7 @@ export interface SecurityReport {
  */
 export class SecurityAuditor {
   private results: AuditResult[] = [];
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   /** Get version */
   getVersion(): string {
@@ -570,7 +570,7 @@ export class CSPViolationReporter {
   private violations: CSPViolationReport[] = [];
   private listeners: Array<(report: CSPViolationReport) => void> = [];
   private maxReports: number;
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   constructor(maxReports: number = 1000) {
     this.maxReports = maxReports;
@@ -698,7 +698,7 @@ export class CSPViolationReporter {
  * Calculates a security score (0-100) based on multiple factors.
  */
 export class SecurityScoreCalculator {
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   /** Get version */
   getVersion(): string {
@@ -818,7 +818,7 @@ export class VulnerabilityDatabase {
     owaspCategory?: string;
     remediation: string;
   }>;
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   constructor() {
     this.patterns = [
@@ -980,7 +980,7 @@ export class VulnerabilityDatabase {
  * Check compliance with OWASP, NIST, PCI-DSS requirements.
  */
 export class ComplianceChecker {
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   /** Get version */
   getVersion(): string {
@@ -1211,7 +1211,7 @@ export async function generateSecurityReport(): Promise<SecurityReport> {
 
   return {
     id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    version: '2.1.0',
+    version: '2.2.0',
     generatedAt: Date.now(),
     score,
     results,

@@ -192,7 +192,7 @@ export interface QuantumMilestone {
  */
 export class AlgorithmRegistry {
   private algorithms = new Map<string, AlgorithmDescriptor>();
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   constructor() {
     // Symmetric
@@ -369,7 +369,7 @@ export class MigrationExecutor {
   private registry: AlgorithmRegistry;
   private activeMigrations = new Map<string, MigrationPlan>();
   private rollbackSnapshots = new Map<string, { data: Uint8Array; algorithm: string }>();
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   constructor(registry?: AlgorithmRegistry) {
     this.registry = registry ?? new AlgorithmRegistry();
@@ -606,7 +606,7 @@ export class MigrationExecutor {
  */
 export class AlgorithmHealthMonitor {
   private healthData = new Map<string, AlgorithmHealth>();
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   constructor() {
     this.initializeHealthData();
@@ -832,12 +832,12 @@ export class AlgorithmHealthMonitor {
  */
 export class CryptoPolicy {
   private config: CryptoPolicyConfig;
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   constructor(config?: Partial<CryptoPolicyConfig>) {
     this.config = {
       name: 'vril-default-policy',
-      version: '2.1.0',
+      version: '2.2.0',
       minimumKeySizes: {
         symmetric: 256,
         asymmetric: 253,
@@ -992,7 +992,7 @@ export class AuditLogger {
   private logs: AuditLogEntry[] = [];
   private maxLogSize: number;
   private listeners: Array<(entry: AuditLogEntry) => void> = [];
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   constructor(maxLogSize: number = 10000) {
     this.maxLogSize = maxLogSize;
@@ -1137,7 +1137,7 @@ export class CryptoAgility {
   private healthMonitor: AlgorithmHealthMonitor;
   private policy: CryptoPolicy;
   private auditLogger: AuditLogger;
-  private readonly version = '2.1.0';
+  private readonly version = '2.2.0';
 
   constructor(policyConfig?: Partial<CryptoPolicyConfig>) {
     this.registry = new AlgorithmRegistry();

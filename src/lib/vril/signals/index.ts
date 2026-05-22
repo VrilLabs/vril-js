@@ -138,10 +138,10 @@ export function createSignalGraph(): SignalGraph {
   }
   return {
     nodes,
-    version: '2.1.0',
+    version: '2.2.0',
     timestamp: Date.now(),
     toJSON() {
-      const obj: Record<string, unknown> = { version: '2.1.0', timestamp: this.timestamp, signals: {} };
+      const obj: Record<string, unknown> = { version: '2.2.0', timestamp: this.timestamp, signals: {} };
       for (const [k, v] of this.nodes) {
         (obj.signals as Record<string, unknown>)[k] = {
           kind: v.kind, dependencies: v.dependencies, dependents: v.dependents,
@@ -861,5 +861,5 @@ export const ΩSignal = Object.freeze({
   onSignalUpdate,
   onEffectRun,
   createSignalGraph,
-  version: '2.1.0',
+  version: '2.2.0',
 });

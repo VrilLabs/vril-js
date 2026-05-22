@@ -1,5 +1,5 @@
 /**
- * Vril.js v2.1.0 — Configuration File
+ * Vril.js v2.2.0 — Configuration File
  * ────────────────────────────────────
  * This is the user-facing configuration file for Vril.js.
  * This file controls every aspect of the Vril.js framework behavior.

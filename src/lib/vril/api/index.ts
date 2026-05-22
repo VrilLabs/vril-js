@@ -82,7 +82,7 @@ export interface RateLimitConfig {
  * Provides a fluent API for building validation schemas.
  */
 export class APISchema {
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   /** Validate a string value */
   static string(options?: { min?: number; max?: number; pattern?: RegExp; email?: boolean }) {
@@ -240,7 +240,7 @@ export class APISchema {
  */
 export class APIErrorHandler {
   private isDev: boolean;
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor(isDev?: boolean) {
     this.isDev = isDev ?? (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development');
@@ -377,7 +377,7 @@ interface TokenBucket {
 export class APIRateLimiter {
   private buckets = new Map<string, TokenBucket>();
   private config: RateLimitConfig;
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor(config: RateLimitConfig) {
     this.config = config;
@@ -442,7 +442,7 @@ interface VersionedRoute {
  */
 export class APIVersioning {
   private routes = new Map<string, VersionedRoute[]>();
-  private currentVersion = '2.1.0';
+  private currentVersion = '2.2.0';
 
   /** Register a versioned route */
   register(path: string, version: VersionedRoute): void {
@@ -545,7 +545,7 @@ export function createAPIRoute<TBody = unknown, TQuery = unknown, TParams = unkn
           headers: { Allow: config.method },
           timestamp,
           requestId,
-          version: '2.1.0',
+          version: '2.2.0',
         };
       }
 

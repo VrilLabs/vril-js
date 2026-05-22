@@ -5,7 +5,7 @@
  * composable middleware, route groups, route scanning, and navigation guards.
  */
 
-export const ROUTER_MODULE_VERSION = '2.1.0';
+export const ROUTER_MODULE_VERSION = '2.2.0';
 
 // ─── Route Security Policy ───────────────────────────────────
 export interface RouteSecurityPolicy {

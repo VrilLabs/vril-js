@@ -109,7 +109,7 @@ export function createVrilApp(config: Partial<VrilConfig> = {}): { config: VrilC
     crypto: { ...DEFAULT_VRIL_CONFIG.crypto, ...config.crypto },
     signals: { ...DEFAULT_VRIL_CONFIG.signals, ...config.signals },
   };
-  return { config: merged, version: '2.1.0' };
+  return { config: merged, version: '2.2.0' };
 }
 
 // ─── Plugin Lifecycle Hooks ───────────────────────────────────
@@ -130,7 +130,7 @@ export type HookCallback<T = Record<string, unknown>> = (ctx: T) => void | T | P
 /** Registry for lifecycle hooks with ordered execution */
 export class PluginLifecycleRegistry {
   private hooks = new Map<PluginLifecycleHook, HookCallback[]>();
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   /** Register a callback for a given lifecycle hook */
   on<T = Record<string, unknown>>(hook: PluginLifecycleHook, callback: HookCallback<T>): () => void {
@@ -245,7 +245,7 @@ export interface FeatureFlagConfig {
 /** Type-safe feature flag system with rollout and environment gating */
 export class FeatureFlags {
   private flags = new Map<string, FeatureFlagConfig>();
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   /** Register a feature flag */
   register(flag: FeatureFlagConfig): void {
@@ -329,7 +329,7 @@ export class AppContext {
   private constructor(config: Partial<VrilConfig> = {}) {
     const app = createVrilApp(config);
     this.ctx = {
-      version: '2.1.0',
+      version: '2.2.0',
       env,
       config: app.config,
       flags: new FeatureFlags(),
@@ -403,7 +403,7 @@ export interface MigrationDescriptor {
 /** Version tracker with migration support */
 export class VersionTracker {
   private migrations: MigrationDescriptor[] = [];
-  private currentVersion = '2.1.0';
+  private currentVersion = '2.2.0';
   private storageKey = '__vril_version__';
 
   /** Register a migration between versions */
@@ -498,7 +498,7 @@ export interface PerformanceReport {
 export class PerformanceProfiler {
   private marks = new Map<string, { start: number; metadata?: Record<string, unknown> }>();
   private completed: PerformanceMark[] = [];
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   /** Start a performance mark */
   startMark(name: string, metadata?: Record<string, unknown>): void {

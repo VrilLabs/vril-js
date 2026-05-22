@@ -58,7 +58,7 @@ export class MemoryCache<T = unknown> {
   private defaultTTL: number;
   private stats = { hits: 0, misses: 0, evictions: 0 };
   private memoryLimit: number;
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor(options: { maxEntries?: number; ttl?: number; memoryLimitBytes?: number } = {}) {
     this.maxEntries = options.maxEntries ?? 1000;
@@ -228,7 +228,7 @@ export class StaleWhileRevalidate<T = unknown> {
   private revalidationWindow: number;
   private revalidating = new Set<string>();
   private refreshers = new Map<string, () => Promise<T>>();
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor(options: {
     ttl?: number;
@@ -313,7 +313,7 @@ export class EncryptedCache {
   private keyMaterial: string;
   private maxEntries: number;
   private defaultTTL: number;
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor(options: { encryptionKey: string; maxEntries?: number; ttl?: number } = { encryptionKey: 'default-key-change-me' }) {
     this.keyMaterial = options.encryptionKey;
@@ -448,7 +448,7 @@ export class EncryptedCache {
 export class CacheRegistry {
   private caches = new Map<string, { cache: MemoryCache; policy: CachePolicy }>();
   private encryptedCaches = new Map<string, EncryptedCache>();
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   /** Register a named cache with a policy */
   register(name: string, policy: CachePolicy): MemoryCache {
@@ -548,7 +548,7 @@ export class CacheRegistry {
  */
 export class CacheInvalidator {
   private registry: CacheRegistry;
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor(registry: CacheRegistry) {
     this.registry = registry;
@@ -582,7 +582,7 @@ export async function distributedCacheKey(
   identifier: string,
   version?: string
 ): Promise<string> {
-  const raw = `${namespace}:${identifier}:${version ?? '2.1.0'}`;
+  const raw = `${namespace}:${identifier}:${version ?? '2.2.0'}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(raw);
 

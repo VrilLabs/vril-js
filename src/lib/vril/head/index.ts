@@ -98,7 +98,7 @@ export interface StructuredDataConfig {
 export class HeadManager {
   private tags: HeadTag[] = [];
   private nonceCache = new Map<string, string>();
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   /** Set the page title */
   setTitle(title: string): this {
@@ -349,7 +349,7 @@ function sanitizeJsonObject(obj: unknown): unknown {
  * Generates a complete set of SEO-optimized head tags.
  */
 export class SEOOptimizer {
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   /** Generate all SEO-related head tags from a config */
   generateTags(config: SEOConfig): HeadTag[] {
@@ -460,7 +460,7 @@ export class SEOOptimizer {
  */
 export class CSPNonceInjector {
   private nonce: string;
-  private version = '2.1.0';
+  private version = '2.2.0';
 
   constructor() {
     this.nonce = '';

@@ -76,7 +76,7 @@ const securityHeaders = {
     'usb=()', 'serial=()', 'bluetooth=()', 'hid=()',
     'xr-spatial-tracking=()', 'compute-pressure=()',
   ].join(', '),
-  'X-Vril-Version': '2.1.0',
+  'X-Vril-Version': '2.2.0',
   'Content-Security-Policy': defaultCSP,
 };
 
@@ -368,7 +368,7 @@ async function loadApiRoutes() {
 function buildRuntimeHeaders(runtimeConfig) {
   const headers = { ...securityHeaders, ...(runtimeConfig.headers ?? {}) };
   if (process.env.NODE_ENV === 'development') headers['Content-Security-Policy'] = developmentCSP;
-  headers['X-Vril-Version'] = '2.1.0';
+  headers['X-Vril-Version'] = '2.2.0';
   if (runtimeConfig.poweredByHeader) headers['X-Powered-By'] = 'Vril.js';
   return headers;
 }
