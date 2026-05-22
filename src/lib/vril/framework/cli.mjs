@@ -139,10 +139,12 @@ async function bundle() {
     throw new Error('Vril CSS build failed');
   }
 
-  // Copy public directory into build output
+  // Copy contents of public directory into build output
   const publicDir = resolve(root, 'public');
   if (await stat(publicDir).then(s => s.isDirectory()).catch(() => false)) {
-    await cp(publicDir, outDir, { recursive: true });
+    for (const entry of await readdir(publicDir)) {
+      await cp(join(publicDir, entry), join(outDir, entry), { recursive: true });
+    }
   }
 
   const { renderRoute } = await import(`${pathToFileURL(serverBundle).href}?t=${Date.now()}`);
