@@ -1,5 +1,5 @@
 {
-  "name": "vril-js",
+  "name": "@vrillabs/vril-js",
   "version": "2.2.0",
   "files": [
     "src/lib/",
