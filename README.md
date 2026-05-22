@@ -14,6 +14,7 @@
 ### The Security-First React Framework
 
 [![Version](https://img.shields.io/badge/version-2.2.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
+[![npm](https://img.shields.io/badge/npm-%40vrillabs%2Fvril--js-00d4aa?style=flat-square&labelColor=1a1a2e&logo=npm)](https://www.npmjs.com/package/@vrillabs/vril-js)
 [![License](https://img.shields.io/badge/license-VRIL_LABS_OSL_v1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js/blob/main/LICENSE)
 [![Zero-Dependency Security Core](https://img.shields.io/badge/security_core-0_runtime_deps-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
 [![PQC-Ready](https://img.shields.io/badge/PQC-Ready-00d4aa?style=flat-square&labelColor=1a1a2e)](https://csrc.nist.gov/projects/post-quantum-cryptography)
@@ -22,7 +23,7 @@
 
 Vril.js is a production-grade React framework where security is the architecture, not an afterthought. Its app shell, routing, API responses, security proxy, SSR/hydration, and static build pipeline are now provided by the built-in Vril runtime instead of Next.js.
 
-[Documentation](https://vril-js.vercel.app/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/VrilLabs/vril-js)
+[Documentation](https://vril-js.vercel.app/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/VrilLabs/vril-js) · [npm](https://www.npmjs.com/package/@vrillabs/vril-js)
 
 </div>
 
