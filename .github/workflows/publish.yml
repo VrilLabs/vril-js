@@ -45,6 +45,11 @@ jobs:
           name: Vril.js ${{ inputs.tag || github.ref_name }}
           generate_release_notes: true
 
+      - name: Verify npm auth
+        run: npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_TOKEN }}
+
       - name: Publish to npm
         run: npm publish --access public
         env:
