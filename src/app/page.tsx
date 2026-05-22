@@ -431,7 +431,7 @@ function CopyButton({ text }: { text: string }) {
   }, [text]);
 
   return (
-    <button onClick={handleCopy} className="absolute top-2.5 right-2.5 p-1.5 rounded-md bg-white/5 border border-white/8 text-white/30 hover:text-white hover:border-white/20 transition-all" aria-label="Copy code">
+    <button onClick={handleCopy} className="p-1.5 rounded-md bg-white/5 border border-white/8 text-white/30 hover:text-white hover:border-white/20 transition-all" aria-label="Copy code">
       {copied ? <CheckIcon className="w-3.5 h-3.5 text-olo-teal" /> : <CopyIcon className="w-3.5 h-3.5" />}
     </button>
   );
