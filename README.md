@@ -74,12 +74,12 @@ Vril.js inverts this. Every module — from routing to reactivity, from SSR to s
 npx create-vril-app@latest
 
 # Or add to an existing project
-npm install vril-js
+npm install @vrillabs/vril-js
 
 # Or with your preferred package manager
-yarn add vril-js
-pnpm add vril-js
-bun add vril-js
+yarn add @vrillabs/vril-js
+pnpm add @vrillabs/vril-js
+bun add @vrillabs/vril-js
 ```
 
 ---
@@ -90,7 +90,7 @@ bun add vril-js
 
 ```typescript
 // vril.config.ts
-import { defineVrilConfig } from 'vril-js';
+import { defineVrilConfig } from '@vrillabs/vril-js';
 
 export default defineVrilConfig({
   security: {
@@ -134,7 +134,7 @@ export default defineVrilConfig({
 ### 2. Post-Quantum Key Exchange
 
 ```typescript
-import { HybridKEM } from 'vril-js';
+import { HybridKEM } from '@vrillabs/vril-js';
 
 // Create a hybrid KEM instance (X25519 + ML-KEM-768)
 const kem = new HybridKEM('X25519MLKEM768', 'my-app-key-exchange');
@@ -157,7 +157,7 @@ const recoveredSecret = await kem.decapsulate(keyPair, kemResult);
 ### 3. Vault Encryption
 
 ```typescript
-import { VrilVault } from 'vril-js';
+import { VrilVault } from '@vrillabs/vril-js';
 
 const vault = new VrilVault({
   kdfIterations: 600000,  // PBKDF2-SHA-512 iterations
@@ -195,7 +195,7 @@ console.log(strength.score);    // 8/10
 ### 4. Secure Route with CSRF
 
 ```typescript
-import { createSecureHandler, CSRFGuard, RouteMiddleware } from 'vril-js';
+import { createSecureHandler, CSRFGuard, RouteMiddleware } from '@vrillabs/vril-js';
 
 // Create a secure API route handler
 const handler = createSecureHandler(
@@ -239,7 +239,7 @@ const { cookie, headerValue } = CSRFGuard.generateDoubleSubmit();
 Vril.js provides a type-safe, environment-aware configuration system with validation, deep merging, and secrets management.
 
 ```typescript
-import { createConfig, EnvironmentConfig, ConfigSecrets } from 'vril-js';
+import { createConfig, EnvironmentConfig, ConfigSecrets } from '@vrillabs/vril-js';
 
 const secrets = new ConfigSecrets();
 await secrets.initialize('master-encryption-key');
@@ -471,7 +471,7 @@ The first line of defense runs in the browser, preventing malicious code from ev
 - **Clickjacking Protection** — `X-Frame-Options: DENY` and `frame-ancestors: 'none'` by default, with per-route override capability.
 
 ```typescript
-import { installTrustedTypes, installAPIMembrane } from 'vril-js';
+import { installTrustedTypes, installAPIMembrane } from '@vrillabs/vril-js';
 
 // Install Trusted Types policy
 installTrustedTypes({ policyName: 'vril-policy' });
@@ -493,7 +493,7 @@ Protects data in transit and prevents man-in-the-middle attacks.
 - **CSRF Protection** — Double-submit cookie pattern with SameSite=Strict enforcement and automatic token rotation. Constant-time comparison prevents timing attacks.
 
 ```typescript
-import { buildCSPHeader, buildSecurityHeaders } from 'vril-js';
+import { buildCSPHeader, buildSecurityHeaders } from '@vrillabs/vril-js';
 
 const csp = buildCSPHeader({
   defaultSrc: ["'self'"],
@@ -521,7 +521,7 @@ The mathematical foundation of Vril.js security. All operations use the Web Cryp
 - **Crypto Agility** — Algorithm registry with health monitoring, vulnerability tracking, and automated migration planning. Swap algorithms without rewriting application code.
 
 ```typescript
-import { PQCHandler, HybridSigner } from 'vril-js';
+import { PQCHandler, HybridSigner } from '@vrillabs/vril-js';
 
 const pqc = new PQCHandler();
 
@@ -548,7 +548,7 @@ Framework-level security controls that protect your application logic.
 - **Timing Attack Mitigation** — Server operations are wrapped with minimum delay and jitter to normalize response times. Constant-time comparisons used throughout.
 
 ```typescript
-import { SecurityMiddlewareChain, RBAC } from 'vril-js';
+import { SecurityMiddlewareChain, RBAC } from '@vrillabs/vril-js';
 
 // Composable security chain
 const chain = SecurityMiddlewareChain.createDefaultChain({
@@ -578,7 +578,7 @@ Security that is enforced before your application ever reaches production.
 - **Supply Chain Integrity** — Dependency integrity verification with SBOM v2.3 format support and Sigstore integration stubs for future artifact signing.
 
 ```typescript
-import { BuildSecurityChecker, SBOMGenerator, SRIHasher } from 'vril-js';
+import { BuildSecurityChecker, SBOMGenerator, SRIHasher } from '@vrillabs/vril-js';
 
 const checker = new BuildSecurityChecker();
 const audit = await checker.audit({
@@ -605,7 +605,7 @@ const sbom = await sbomGen.generate('./package.json');
 
 ```typescript
 // Create application with merged config
-import { createVrilApp } from 'vril-js';
+import { createVrilApp } from '@vrillabs/vril-js';
 const app = createVrilApp({ /* partial config */ });
 app.config;   // Fully merged VrilConfig
 app.version;   // '2.2.0'
@@ -614,7 +614,7 @@ app.version;   // '2.2.0'
 ### Cryptographic APIs
 
 ```typescript
-import { VrilVault, PQCHandler, HybridKEM } from 'vril-js';
+import { VrilVault, PQCHandler, HybridKEM } from '@vrillabs/vril-js';
 
 // ΩVault — Client-side encryption
 const vault = new VrilVault({ kdfIterations: 600000 });
@@ -650,7 +650,7 @@ const valid = await signer.verify(message, hybridSig, sigKeyPair.combinedPublicK
 ### Signal APIs
 
 ```typescript
-import { ΩSignal, signal, computed, effect, batch, store } from 'vril-js';
+import { ΩSignal, signal, computed, effect, batch, store } from '@vrillabs/vril-js';
 
 // Core reactive primitives
 const count = signal(0);
@@ -677,7 +677,7 @@ const graph = ΩSignal.createSignalGraph();
 ### Server APIs
 
 ```typescript
-import { createSecureHandler, CSRFGuard, RequestSigner } from 'vril-js';
+import { createSecureHandler, CSRFGuard, RequestSigner } from '@vrillabs/vril-js';
 
 // Secure handler with automatic enforcement
 const handler = createSecureHandler(async (req, { path, policy }) => {
@@ -698,7 +698,7 @@ const verification = await signer.verifyRequest(request);
 ### State Management APIs
 
 ```typescript
-import { VrilStore, createStore, encryptionMiddleware } from 'vril-js';
+import { VrilStore, createStore, encryptionMiddleware } from '@vrillabs/vril-js';
 
 const store = createStore({
   initialState: { user: null, theme: 'dark' },
@@ -714,7 +714,7 @@ store.select((state) => state.theme); // 'light'
 ### Edge APIs
 
 ```typescript
-import { createEdgeHandler, EdgeKV, EdgeGeo, EdgeSecurity } from 'vril-js';
+import { createEdgeHandler, EdgeKV, EdgeGeo, EdgeSecurity } from '@vrillabs/vril-js';
 
 // Edge handler with built-in security
 export default createEdgeHandler(async (request, { geo, ip, kv }) => {

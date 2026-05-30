@@ -235,10 +235,7 @@ cd my-app
 npm run dev
 
 # Or add to existing project
-npm install vril-js
-
-# Verify installation
-npx vril doctor`}</Code>
+npm install @vrillabs/vril-js`}</Code>
             <p className="text-white/40 text-sm mt-3">
               Requires Node.js 18.17+, React 19+, and a browser with Web Crypto API support (Chrome 96+, Firefox 94+, Safari 15.4+).
             </p>

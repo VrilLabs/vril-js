@@ -884,7 +884,7 @@ export default function VrilShowcase() {
               <div className="relative p-5 bg-card border border-white/6 rounded-2xl">
                 <span className="absolute -top-3 -left-2 w-7 h-7 rounded-full bg-violet text-white flex items-center justify-center font-mono text-xs font-bold">3</span>
                 <h3 className="font-display font-bold text-white mb-2 mt-1">Build</h3>
-                <div className="font-mono text-xs text-olo-teal bg-white/3 p-2 rounded-lg">$ vril build --secure</div>
+                <div className="font-mono text-xs text-olo-teal bg-white/3 p-2 rounded-lg">$ vril build</div>
               </div>
             </div>
 
@@ -902,8 +902,7 @@ export default function VrilShowcase() {
                 '$ cd my-secure-app && vril dev',
                 '',
                 '\u25B8 Ready on http://localhost:3000',
-                '\u25B8 Security audit: 20/20 checks passed',
-                '\u25B8 SBOM generated: sbom.cyclonedx.json',
+                '\u25B8 Security headers active',
               ]} />
             </div>
 
