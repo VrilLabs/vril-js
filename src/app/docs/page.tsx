@@ -235,7 +235,7 @@ cd my-app
 npm run dev
 
 # Or add to existing project
-npm install vril-js
+npm install @vrillabs/vril-js
 
 # Verify installation
 npx vril doctor`}</Code>
