@@ -603,7 +603,7 @@ async function doctor() {
     type: 'library',
     name,
     version: String(version).replace(/^[\^~>=<]*/g, ''),
-    purl: `pkg:npm/${name.startsWith('@') ? name.replace('/', '%2F') : name}@${String(version).replace(/^[\^~>=<]*/g, '')}`,
+    purl: `pkg:npm/${name.startsWith('@') ? name.replaceAll('/', '%2F') : name}@${String(version).replace(/^[\^~>=<]*/g, '')}`,
     scope: pkg.dependencies?.[name] ? 'required' : 'optional',
   }));
 
