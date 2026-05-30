@@ -385,52 +385,52 @@ Vril.js ships with environment-optimized presets:
 
 | Module | Import Path | Description | Key Exports |
 |--------|-------------|-------------|-------------|
-| **Core** | `vril-js/core` | Framework foundation, config, lifecycle hooks, environment detection, feature flags, version tracking | `createVrilApp`, `PluginLifecycleRegistry`, `FeatureFlags`, `AppContext`, `PerformanceProfiler` |
-| **Config** | `vril-js/config` | Type-safe config builder with validation, deep merging, environment presets, secrets management, and config watching | `createConfig`, `ConfigValidator`, `ConfigMerger`, `EnvironmentConfig`, `ConfigSecrets`, `SPA_PRESET`, `SSR_PRESET` |
-| **Plugin** | `vril-js/plugin` | Plugin lifecycle hooks, sandboxing, integrity verification, and context isolation | `PluginRegistry`, `PluginLoader`, `createPlugin` |
+| **Core** | `@vrillabs/vril-js/core` | Framework foundation, config, lifecycle hooks, environment detection, feature flags, version tracking | `createVrilApp`, `PluginLifecycleRegistry`, `FeatureFlags`, `AppContext`, `PerformanceProfiler` |
+| **Config** | `@vrillabs/vril-js/config` | Type-safe config builder with validation, deep merging, environment presets, secrets management, and config watching | `createConfig`, `ConfigValidator`, `ConfigMerger`, `EnvironmentConfig`, `ConfigSecrets`, `SPA_PRESET`, `SSR_PRESET` |
+| **Plugin** | `@vrillabs/vril-js/plugin` | Plugin lifecycle hooks, sandboxing, integrity verification, and context isolation | `PluginRegistry`, `PluginLoader`, `createPlugin` |
 
 ### Security & Crypto
 
 | Module | Import Path | Description | Key Exports |
 |--------|-------------|-------------|-------------|
-| **PQC** | `vril-js/security/crypto/pqc` | Post-quantum cryptography handler — ML-KEM, ML-DSA, SLH-DSA, X25519, ECDSA-P256 | `PQCHandler`, `pqc` |
-| **Hybrid** | `vril-js/security/crypto/hybrid` | Hybrid key exchange and signatures combining classical + PQC with KDF combiner | `HybridKEM`, `HybridSigner`, `HybridKeyRotation` |
-| **Vault** | `vril-js/security/crypto/vault` | AES-256-GCM encryption with PBKDF2-SHA-512, key wrapping, passphrase rotation | `VrilVault`, `SecureMemory` |
-| **Agility** | `vril-js/security/crypto/agility` | Algorithm registry, migration planning, health monitoring, and NIST 2035 migration paths | `CryptoAgility`, `AlgorithmRegistry`, `MigrationExecutor`, `CryptoPolicy` |
-| **Security** | `vril-js/security` | Trusted Types, API membrane, CSP builder, permissions policy, URL validation | `installTrustedTypes`, `buildCSPHeader`, `installAPIMembrane`, `IntegrityChecker` |
-| **Hardening** | `vril-js/security/hardening` | Cross-origin isolation, fingerprint resistance, timing attack mitigation, clickjacking protection | `XSSShield`, `CookieFortress`, `TimingAttackMitigation`, `ClickjackingProtection` |
-| **Audit** | `vril-js/security/audit` | Security scoring, vulnerability database, compliance checking, CSP violation reporting | `SecurityAuditor`, `SecurityScoreCalculator`, `ComplianceChecker`, `generateSecurityReport` |
+| **PQC** | `@vrillabs/vril-js/security/crypto/pqc` | Post-quantum cryptography handler — ML-KEM, ML-DSA, SLH-DSA, X25519, ECDSA-P256 | `PQCHandler`, `pqc` |
+| **Hybrid** | `@vrillabs/vril-js/security/crypto/hybrid` | Hybrid key exchange and signatures combining classical + PQC with KDF combiner | `HybridKEM`, `HybridSigner`, `HybridKeyRotation` |
+| **Vault** | `@vrillabs/vril-js/security/crypto/vault` | AES-256-GCM encryption with PBKDF2-SHA-512, key wrapping, passphrase rotation | `VrilVault`, `SecureMemory` |
+| **Agility** | `@vrillabs/vril-js/security/crypto/agility` | Algorithm registry, migration planning, health monitoring, and NIST 2035 migration paths | `CryptoAgility`, `AlgorithmRegistry`, `MigrationExecutor`, `CryptoPolicy` |
+| **Security** | `@vrillabs/vril-js/security` | Trusted Types, API membrane, CSP builder, permissions policy, URL validation | `installTrustedTypes`, `buildCSPHeader`, `installAPIMembrane`, `IntegrityChecker` |
+| **Hardening** | `@vrillabs/vril-js/security/hardening` | Cross-origin isolation, fingerprint resistance, timing attack mitigation, clickjacking protection | `XSSShield`, `CookieFortress`, `TimingAttackMitigation`, `ClickjackingProtection` |
+| **Audit** | `@vrillabs/vril-js/security/audit` | Security scoring, vulnerability database, compliance checking, CSP violation reporting | `SecurityAuditor`, `SecurityScoreCalculator`, `ComplianceChecker`, `generateSecurityReport` |
 
 ### Server & Build
 
 | Module | Import Path | Description | Key Exports |
 |--------|-------------|-------------|-------------|
-| **Server** | `vril-js/server` | RSC deserialization hardening, CSRF guard, request signing, encrypted env vars, supply chain integrity | `CSRFGuard`, `RequestSigner`, `EnvEncryption`, `SupplyChainIntegrity`, `RSCSecurityBoundary` |
-| **Build** | `vril-js/build` | CSP nonce generation, SRI hashing, SBOM/CycloneDX, build integrity verification | `BuildSecurityChecker`, `CSPNonceGenerator`, `SRIHasher`, `SBOMGenerator` |
-| **Router** | `vril-js/router` | Secure routing with route-level security policies, composable middleware, route groups, navigation guards | `createSecureHandler`, `RouteSecurityRegistry`, `RouteMiddleware`, `NavigationGuard`, `RouteScanner` |
-| **Auth** | `vril-js/auth` | Session management, token handling, password hashing, RBAC with inheritance, login attempt tracking | `SessionManager`, `TokenHandler`, `PasswordHandler`, `RBAC`, `LoginAttemptTracker` |
+| **Server** | `@vrillabs/vril-js/server` | RSC deserialization hardening, CSRF guard, request signing, encrypted env vars, supply chain integrity | `CSRFGuard`, `RequestSigner`, `EnvEncryption`, `SupplyChainIntegrity`, `RSCSecurityBoundary` |
+| **Build** | `@vrillabs/vril-js/build` | CSP nonce generation, SRI hashing, SBOM/CycloneDX, build integrity verification | `BuildSecurityChecker`, `CSPNonceGenerator`, `SRIHasher`, `SBOMGenerator` |
+| **Router** | `@vrillabs/vril-js/router` | Secure routing with route-level security policies, composable middleware, route groups, navigation guards | `createSecureHandler`, `RouteSecurityRegistry`, `RouteMiddleware`, `NavigationGuard`, `RouteScanner` |
+| **Auth** | `@vrillabs/vril-js/auth` | Session management, token handling, password hashing, RBAC with inheritance, login attempt tracking | `SessionManager`, `TokenHandler`, `PasswordHandler`, `RBAC`, `LoginAttemptTracker` |
 
 ### Reactivity & State
 
 | Module | Import Path | Description | Key Exports |
 |--------|-------------|-------------|-------------|
-| **Signals** | `vril-js/signals` | Fine-grained reactive primitives with 14 signal types and dependency graph | `signal`, `computed`, `effect`, `batch`, `store`, `encryptedSignal`, `ΩSignal` |
-| **State** | `vril-js/state` | Store with middleware (logging, persistence, encryption, devtools), state validation | `VrilStore`, `createStore`, `encryptionMiddleware`, `devtoolsMiddleware` |
-| **Hooks** | `vril-js/hooks` | React hooks for signals, encrypted state, CSRF tokens, rate limiting, and security headers | `useSignal`, `useComputed`, `useEncryptedState`, `useCSRFToken`, `useRateLimiter` |
+| **Signals** | `@vrillabs/vril-js/signals` | Fine-grained reactive primitives with 14 signal types and dependency graph | `signal`, `computed`, `effect`, `batch`, `store`, `encryptedSignal`, `ΩSignal` |
+| **State** | `@vrillabs/vril-js/state` | Store with middleware (logging, persistence, encryption, devtools), state validation | `VrilStore`, `createStore`, `encryptionMiddleware`, `devtoolsMiddleware` |
+| **Hooks** | `@vrillabs/vril-js/hooks` | React hooks for signals, encrypted state, CSRF tokens, rate limiting, and security headers | `useSignal`, `useComputed`, `useEncryptedState`, `useCSRFToken`, `useRateLimiter` |
 
 ### Infrastructure
 
 | Module | Import Path | Description | Key Exports |
 |--------|-------------|-------------|-------------|
-| **SSR** | `vril-js/ssr` | Streaming SSR with HMAC integrity, selective hydration, and SSR manifest | `createSSRStream`, `renderToStream`, `SSRSecurityGuard`, `SelectiveHydration` |
-| **Streaming** | `vril-js/streaming` | Secure streaming boundaries with integrity validation, rate limiting, and caching | `createStreamingBoundary`, `StreamIntegrityValidator`, `RateLimitedStream` |
-| **Cache** | `vril-js/cache` | Memory cache, stale-while-revalidate, encrypted cache, distributed cache keys | `MemoryCache`, `StaleWhileRevalidate`, `EncryptedCache`, `CacheInvalidator` |
-| **API** | `vril-js/api` | Type-safe API routes with schema validation, error handling, rate limiting, and versioning | `createAPIRoute`, `APISchema`, `APIRateLimiter`, `APIVersioning` |
-| **Edge** | `vril-js/edge` | Edge runtime detection, KV store, geolocation, bot detection, and edge security | `EdgeRuntime`, `EdgeKV`, `EdgeGeo`, `EdgeSecurity`, `createEdgeHandler` |
-| **Head** | `vril-js/head` | Head tag management, OG tags, structured data, SEO optimization, CSP nonce injection | `HeadManager`, `generateOGTags`, `generateStructuredData`, `SEOOptimizer` |
-| **Diagnostics** | `vril-js/diagnostics` | Performance monitoring, security diagnostics, crypto profiling, bundle analysis, memory profiling | `PerformanceMonitor`, `SecurityDiagnostics`, `CryptoProfiler`, `createDiagnosticReport` |
-| **Utils** | `vril-js/utils` | Constant-time comparison, secure random, hashing, base64, HTML sanitization, URL validation | `constantTimeEqual`, `secureRandom`, `hashData`, `sanitizeHTML`, `validateURL` |
-| **Types** | `vril-js/types` | Comprehensive type definitions — branded types, security levels, algorithm identifiers | `SecurityLevel`, `Encrypted`, `Hashed`, `Signed`, `PQCVerified`, `Branded` |
+| **SSR** | `@vrillabs/vril-js/ssr` | Streaming SSR with HMAC integrity, selective hydration, and SSR manifest | `createSSRStream`, `renderToStream`, `SSRSecurityGuard`, `SelectiveHydration` |
+| **Streaming** | `@vrillabs/vril-js/streaming` | Secure streaming boundaries with integrity validation, rate limiting, and caching | `createStreamingBoundary`, `StreamIntegrityValidator`, `RateLimitedStream` |
+| **Cache** | `@vrillabs/vril-js/cache` | Memory cache, stale-while-revalidate, encrypted cache, distributed cache keys | `MemoryCache`, `StaleWhileRevalidate`, `EncryptedCache`, `CacheInvalidator` |
+| **API** | `@vrillabs/vril-js/api` | Type-safe API routes with schema validation, error handling, rate limiting, and versioning | `createAPIRoute`, `APISchema`, `APIRateLimiter`, `APIVersioning` |
+| **Edge** | `@vrillabs/vril-js/edge` | Edge runtime detection, KV store, geolocation, bot detection, and edge security | `EdgeRuntime`, `EdgeKV`, `EdgeGeo`, `EdgeSecurity`, `createEdgeHandler` |
+| **Head** | `@vrillabs/vril-js/head` | Head tag management, OG tags, structured data, SEO optimization, CSP nonce injection | `HeadManager`, `generateOGTags`, `generateStructuredData`, `SEOOptimizer` |
+| **Diagnostics** | `@vrillabs/vril-js/diagnostics` | Performance monitoring, security diagnostics, crypto profiling, bundle analysis, memory profiling | `PerformanceMonitor`, `SecurityDiagnostics`, `CryptoProfiler`, `createDiagnosticReport` |
+| **Utils** | `@vrillabs/vril-js/utils` | Constant-time comparison, secure random, hashing, base64, HTML sanitization, URL validation | `constantTimeEqual`, `secureRandom`, `hashData`, `sanitizeHTML`, `validateURL` |
+| **Types** | `@vrillabs/vril-js/types` | Comprehensive type definitions — branded types, security levels, algorithm identifiers | `SecurityLevel`, `Encrypted`, `Hashed`, `Signed`, `PQCVerified`, `Branded` |
 
 ---
 
@@ -762,7 +762,7 @@ We welcome contributions from the security and React communities. Here's how to 
 1. **Fork** the repository and create your feature branch: `git checkout -b feature/my-feature`
 2. **Security-first development** — All new modules must use the Web Crypto API exclusively. No npm dependencies for crypto operations.
 3. **Type safety** — Every public API must have full TypeScript types. Use branded types for security-critical values (`Encrypted<T>`, `Hashed<T>`, `Signed<T>`).
-4. **Constant-time operations** — Any comparison involving secrets must use constant-time algorithms. Use `constantTimeEqual` from `vril-js/utils`.
+4. **Constant-time operations** — Any comparison involving secrets must use constant-time algorithms. Use `constantTimeEqual` from `@vrillabs/vril-js/utils`.
 5. **Tests** — Add comprehensive tests for new features. Security-sensitive code requires edge case coverage.
 6. **Documentation** — Update this README and inline JSDoc comments for all new public APIs.
 7. **Submit** a pull request with a clear description of the change and security implications.

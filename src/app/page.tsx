@@ -266,6 +266,52 @@ const SECURITY_LAYERS: Array<{ num: string; name: string; items: string[]; accen
   { num: 'L1', name: 'Browser Hardening', items: ['COOP/COEP/CORP', 'Trusted Types', 'API Membrane'], accent: 'error' },
 ];
 
+type FooterLink = {
+  label: string;
+  href: string;
+  external?: boolean;
+};
+
+const FOOTER_LINK_GROUPS: Array<{ title: string; links: FooterLink[] }> = [
+  {
+    title: 'Framework',
+    links: [
+      { label: 'Security', href: '#architecture' },
+      { label: 'Crypto', href: '/docs#pqc' },
+      { label: 'Signals', href: '/docs#signals' },
+      { label: 'Modules', href: '#modules' },
+    ],
+  },
+  {
+    title: 'Resources',
+    links: [
+      { label: 'Documentation', href: '/docs' },
+      { label: 'API Reference', href: '/docs#api' },
+      { label: 'Examples', href: '/docs#quickstart' },
+      { label: 'Changelog', href: 'https://github.com/VrilLabs/vril-js/releases', external: true },
+    ],
+  },
+  {
+    title: 'Security',
+    links: [
+      { label: 'Security Policy', href: '/docs#security' },
+      { label: 'Audit Reports', href: '/docs#audit' },
+      { label: 'SBOM', href: '/docs#build' },
+      { label: 'Advisories', href: 'https://github.com/VrilLabs/vril-js/security/advisories', external: true },
+    ],
+  },
+  {
+    title: 'Community',
+    links: [
+      { label: 'GitHub', href: 'https://github.com/VrilLabs/vril-js', external: true },
+      { label: 'npm', href: 'https://www.npmjs.com/package/@vrillabs/vril-js', external: true },
+      { label: 'Discord', href: 'https://discord.gg/CMVWR2yRRc', external: true },
+      { label: 'Twitter/X', href: 'https://x.com/v.labs', external: true },
+      { label: 'Blog', href: 'https://vril.li/news', external: true },
+    ],
+  },
+];
+
 // ─── Accent Color Map ──────────────────────────────────────────
 const accentMap = {
   teal: { text: 'text-olo-teal', bg: 'bg-olo-teal/12', border: 'border-olo-teal/30', glow: 'glow-teal' },
@@ -607,7 +653,7 @@ export default function VrilShowcase() {
       {/* ═══ NAV ═══════════════════════════════════════════════ */}
       <nav className={`fixed top-0 left-0 right-0 z-[200] h-16 transition-all duration-300 ${scrolled ? 'glass shadow-lg' : 'bg-transparent'}`} style={scrolled ? { borderBottom: '1px solid rgba(255,255,255,0.08)' } : {}}>
         <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-5 gap-6">
-          <a href="#" className="flex items-center gap-2.5 text-white no-underline">
+          <a href="/" className="flex items-center gap-2.5 text-white no-underline">
             <VrilLogoIcon className="w-7 h-7 text-olo-teal" />
             <span className="font-display font-extrabold text-lg tracking-tight">Vril<span className="text-white/40 font-medium">.js</span></span>
             <span className="hidden sm:inline-flex items-center px-2 py-0.5 bg-olo-teal/10 border border-olo-teal/20 rounded-full font-mono text-[9px] text-olo-teal tracking-wider">v2.2</span>
@@ -907,7 +953,7 @@ export default function VrilShowcase() {
             </div>
 
             <div className="flex flex-wrap justify-center gap-4 mt-10">
-              <a href="#" className="inline-flex items-center gap-2 px-6 py-3 bg-olo-teal text-[#080a0e] font-semibold rounded-lg border border-olo-teal hover:-translate-y-0.5 glow-teal transition-all no-underline">
+              <a href="/docs#quickstart" className="inline-flex items-center gap-2 px-6 py-3 bg-olo-teal text-[#080a0e] font-semibold rounded-lg border border-olo-teal hover:-translate-y-0.5 glow-teal transition-all no-underline">
                 <TerminalIcon className="w-4 h-4" /> Quick Start Guide
               </a>
               <a href="https://github.com/VrilLabs/vril-js" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-transparent text-white/50 font-semibold rounded-lg border border-white/10 hover:border-violet/40 hover:text-violet transition-all no-underline">
@@ -930,38 +976,24 @@ export default function VrilShowcase() {
               <p className="text-white/30 text-sm max-w-xs">The security-first React framework by VRIL LABS. Post-quantum cryptography built into every layer.</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 text-sm">
-              <div>
-                <h4 className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/25 mb-3">Framework</h4>
-                <div className="space-y-2">
-                  {['Security', 'Crypto', 'Signals', 'Modules'].map(l => (
-                    <a key={l} href={`#${l.toLowerCase()}`} className="block text-white/40 hover:text-white transition-colors no-underline">{l}</a>
-                  ))}
+              {FOOTER_LINK_GROUPS.map(group => (
+                <div key={group.title}>
+                  <h4 className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/25 mb-3">{group.title}</h4>
+                  <div className="space-y-2">
+                    {group.links.map(link => (
+                      <a
+                        key={link.label}
+                        href={link.href}
+                        target={link.external ? '_blank' : undefined}
+                        rel={link.external ? 'noopener noreferrer' : undefined}
+                        className="block text-white/40 hover:text-white transition-colors no-underline"
+                      >
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <h4 className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/25 mb-3">Resources</h4>
-                <div className="space-y-2">
-                  {['Documentation', 'API Reference', 'Examples', 'Changelog'].map(l => (
-                    <a key={l} href="#" className="block text-white/40 hover:text-white transition-colors no-underline">{l}</a>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/25 mb-3">Security</h4>
-                <div className="space-y-2">
-                  {['Security Policy', 'Audit Reports', 'SBOM', 'Advisories'].map(l => (
-                    <a key={l} href="#" className="block text-white/40 hover:text-white transition-colors no-underline">{l}</a>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/25 mb-3">Community</h4>
-                <div className="space-y-2">
-                  {['GitHub', 'Discord', 'Twitter', 'Blog'].map(l => (
-                    <a key={l} href="#" className="block text-white/40 hover:text-white transition-colors no-underline">{l}</a>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
           <div className="mt-10 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -971,7 +1003,7 @@ export default function VrilShowcase() {
                 <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" />
                 Built with Vril.js v2.2.0
               </span>
-              <span className="font-mono text-[10px] text-white/15">MIT License</span>
+              <a href="https://github.com/VrilLabs/vril-js/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="font-mono text-[10px] text-white/15 hover:text-white/40 transition-colors no-underline">VRIL LABS OSL v1.0</a>
             </div>
           </div>
         </div>
