@@ -304,6 +304,7 @@ const FOOTER_LINK_GROUPS: Array<{ title: string; links: FooterLink[] }> = [
     title: 'Community',
     links: [
       { label: 'GitHub', href: 'https://github.com/VrilLabs/vril-js', external: true },
+      { label: 'npm', href: 'https://www.npmjs.com/package/@vrillabs/vril-js', external: true },
       { label: 'Discord', href: 'https://discord.gg/CMVWR2yRRc', external: true },
       { label: 'Twitter/X', href: 'https://x.com/v.labs', external: true },
       { label: 'Blog', href: 'https://vril.li/news', external: true },
