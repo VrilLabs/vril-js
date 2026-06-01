@@ -459,7 +459,7 @@ async function doctor() {
   // 2. X-Content-Type-Options
   checks.push({
     name: 'X-Content-Type-Options: nosniff',
-    pass: !!(vrilConfig?.security?.headers?.xContentTypeOptions || securityHeaders['X-Content-Type-Options']),
+    pass: (vrilConfig?.security?.headers?.xContentTypeOptions ?? securityHeaders['X-Content-Type-Options']) === 'nosniff',
   });
 
   // 3. X-Frame-Options
@@ -562,7 +562,13 @@ async function doctor() {
   const tsconfigPath = resolve(root, 'tsconfig.json');
   let tsStrict = false;
   try {
-    const tsconfig = JSON.parse(await readFile(tsconfigPath, 'utf8'));
+    const raw = await readFile(tsconfigPath, 'utf8');
+    // tsconfig.json is JSONC – strip comments and trailing commas before parsing
+    const stripped = raw
+      .replace(/\/\/[^\n]*/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/,(\s*[}\]])/g, '$1');
+    const tsconfig = JSON.parse(stripped);
     tsStrict = tsconfig?.compilerOptions?.strict === true;
   } catch { /* no tsconfig or invalid */ }
   checks.push({
@@ -599,13 +605,18 @@ async function doctor() {
     ...(pkg.dependencies ?? {}),
     ...(pkg.devDependencies ?? {}),
   };
-  const components = Object.entries(allDeps).map(([name, version]) => ({
-    type: 'library',
-    name,
-    version: String(version).replace(/^[\^~>=<]*/g, ''),
-    purl: `pkg:npm/${name.startsWith('@') ? name.replaceAll('/', '%2F') : name}@${String(version).replace(/^[\^~>=<]*/g, '')}`,
-    scope: pkg.dependencies?.[name] ? 'required' : 'optional',
-  }));
+  const components = Object.entries(allDeps).map(([name, version]) => {
+    const ver = String(version).replace(/^[\^~>=<]*/g, '');
+    const purl = `pkg:npm/${name.startsWith('@') ? '%40' + name.slice(1) : name}@${ver}`;
+    return {
+      'bom-ref': purl,
+      type: 'library',
+      name,
+      version: ver,
+      purl,
+      scope: pkg.dependencies?.[name] ? 'required' : 'optional',
+    };
+  });
 
   const sbom = {
     bomFormat: 'CycloneDX',
