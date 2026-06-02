@@ -98,7 +98,7 @@ interface RegisteredPlugin {
 export class PluginRegistry {
   private plugins = new Map<string, RegisteredPlugin>();
   private executionOrder: string[] = [];
-  private version = '2.2.0';
+  private version = '2.2.1';
 
   /** Register a plugin with the framework */
   register(plugin: VrilPlugin, config?: Record<string, unknown>): void {
@@ -305,7 +305,7 @@ export class PluginRegistry {
 export class PluginLoader {
   private registry: PluginRegistry;
   private integrityKeys = new Map<string, string>();
-  private version = '2.2.0';
+  private version = '2.2.1';
 
   constructor(registry: PluginRegistry) {
     this.registry = registry;

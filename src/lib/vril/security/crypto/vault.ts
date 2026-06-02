@@ -129,7 +129,7 @@ const DEFAULT_CONFIG: VaultConfig = {
  */
 export class VrilVault {
   private config: VaultConfig;
-  private readonly version = '2.2.0';
+  private readonly version = '2.2.1';
 
   constructor(config: Partial<VaultConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -622,7 +622,7 @@ export class VrilVault {
  * reclaims the original string memory promptly.
  */
 export class SecureMemory {
-  private static readonly version = '2.2.0';
+  private static readonly version = '2.2.1';
 
   /** Get module version */
   static getVersion(): string {

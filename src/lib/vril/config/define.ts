@@ -1,5 +1,5 @@
 /**
- * Vril.js v2.2.0 — defineVrilConfig Utility
+ * Vril.js v2.2.1 — defineVrilConfig Utility
  * ─────────────────────────────────────────────
  * Type-safe configuration definition with validation, deep merging,
  * environment-specific overrides, and Vril.js framework integration.
@@ -10,7 +10,7 @@
  */
 
 // ─── Version ──────────────────────────────────────────────────
-export const VRIL_CONFIG_VERSION = '2.2.0';
+export const VRIL_CONFIG_VERSION = '2.2.1';
 
 // ─── Environment Type ────────────────────────────────────────
 export type Environment = 'development' | 'staging' | 'production' | 'test';

@@ -5,7 +5,7 @@
  * server timing security, request validation, and composable security middleware.
  */
 
-export const SERVER_MODULE_VERSION = '2.2.0';
+export const SERVER_MODULE_VERSION = '2.2.1';
 
 // ─── RSC Deserialization Hardening ───────────────────────────
 export interface DeserializationConfig {
@@ -520,15 +520,15 @@ export class SupplyChainIntegrity {
   private dependencyGraph = new Map<string, Set<string>>();
 
   constructor() {
-    this.manifest = { version: '2.2.0', generated: Date.now(), entries: {} };
+    this.manifest = { version: '2.2.1', generated: Date.now(), entries: {} };
     this.sbom = {
       specVersion: '2.3',
       serialNumber: `urn:uuid:${this.generateUUID()}`,
       version: 1,
       metadata: {
         timestamp: new Date().toISOString(),
-        tool: { name: 'vril-supply-chain', version: '2.2.0' },
-        component: { name: 'vril-app', version: '2.2.0', type: 'application' },
+        tool: { name: 'vril-supply-chain', version: '2.2.1' },
+        component: { name: 'vril-app', version: '2.2.1', type: 'application' },
       },
       components: [],
       dependencies: {},

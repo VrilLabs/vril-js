@@ -13,7 +13,7 @@
 
 ### The Security-First React Framework
 
-[![Version](https://img.shields.io/badge/version-2.2.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
+[![Version](https://img.shields.io/badge/version-2.2.1-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
 [![npm](https://img.shields.io/badge/npm-%40vrillabs%2Fvril--js-00d4aa?style=flat-square&labelColor=1a1a2e&logo=npm)](https://www.npmjs.com/package/@vrillabs/vril-js)
 [![License](https://img.shields.io/badge/license-VRIL_LABS_OSL_v1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js/blob/main/LICENSE)
 [![Zero-Dependency Security Core](https://img.shields.io/badge/security_core-0_runtime_deps-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
@@ -608,7 +608,7 @@ const sbom = await sbomGen.generate('./package.json');
 import { createVrilApp } from '@vrillabs/vril-js';
 const app = createVrilApp({ /* partial config */ });
 app.config;   // Fully merged VrilConfig
-app.version;   // '2.2.0'
+app.version;   // '2.2.1'
 ```
 
 ### Cryptographic APIs

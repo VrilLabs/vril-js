@@ -5,7 +5,7 @@
  * CycloneDX SBOM, build integrity verification, and security headers.
  */
 
-export const BUILD_MODULE_VERSION = '2.2.0';
+export const BUILD_MODULE_VERSION = '2.2.1';
 
 // ─── CSP Nonce Generator ─────────────────────────────────────
 /**
@@ -300,7 +300,7 @@ export class BuildSecurityChecker {
   /** Generate a build manifest */
   generateManifest(buildId: string): VrilBuildManifest {
     return {
-      version: '2.2.0',
+      version: '2.2.1',
       buildId,
       timestamp: Date.now(),
       security: {
@@ -359,7 +359,7 @@ export function generateAuditReport(checker: BuildSecurityChecker): SecurityAudi
 
   return {
     timestamp: Date.now(),
-    version: '2.2.0',
+    version: '2.2.1',
     score,
     checks,
     recommendations,
@@ -605,7 +605,7 @@ export class SBOMGenerator {
   }
 
   /** Generate the CycloneDX document */
-  async generate(appName: string = 'vril-app', appVersion: string = '2.2.0'): Promise<CycloneDXDocument> {
+  async generate(appName: string = 'vril-app', appVersion: string = '2.2.1'): Promise<CycloneDXDocument> {
     // Compute hashes for components if not provided
     for (const component of this.components) {
       if (!component.hashes && typeof crypto !== 'undefined' && crypto.subtle) {
@@ -629,7 +629,7 @@ export class SBOMGenerator {
       version: 1,
       metadata: {
         timestamp: new Date().toISOString(),
-        tools: [{ name: 'vril-sbom-generator', version: '2.2.0' }],
+        tools: [{ name: 'vril-sbom-generator', version: '2.2.1' }],
         component: { type: 'application', name: appName, version: appVersion },
       },
       components: [...this.components],
@@ -698,13 +698,13 @@ export class BuildIntegrityVerifier {
   private algorithm: string = 'SHA-256';
 
   constructor() {
-    this.manifest = { version: '2.2.0', buildId: '', timestamp: Date.now(), files: {} };
+    this.manifest = { version: '2.2.1', buildId: '', timestamp: Date.now(), files: {} };
   }
 
   /** Create a manifest from build output files */
   async createManifest(buildId: string, files: Array<{ path: string; content: string }>): Promise<BuildIntegrityManifest> {
     this.manifest = {
-      version: '2.2.0',
+      version: '2.2.1',
       buildId,
       timestamp: Date.now(),
       files: {},
@@ -835,7 +835,7 @@ export class SecurityHeadersPlugin {
       'X-Download-Options': this.config.xDownloadOptions,
       'X-Permitted-Cross-Domain-Policies': this.config.xPermittedCrossDomainPolicies,
     };
-    mapping['X-Vril-Version'] = '2.2.0';
+    mapping['X-Vril-Version'] = '2.2.1';
     mapping['Server'] = 'Vril.js';
     return mapping;
   }

@@ -121,7 +121,7 @@ export class TrustedTypesEnforcer {
   private policy: TrustedTypesPolicy | null = null;
   private violationCount: number = 0;
   private violationListeners: Array<(violation: { sink: string; data: string; timestamp: number }) => void> = [];
-  private readonly version = '2.2.0';
+  private readonly version = '2.2.1';
 
   /** Get version */
   getVersion(): string {
@@ -245,7 +245,7 @@ export class TrustedTypesEnforcer {
  * preserving safe HTML structure.
  */
 export class DOMPSanitizer {
-  private static readonly version = '2.2.0';
+  private static readonly version = '2.2.1';
 
   /** Dangerous tags that must be completely removed */
   private static readonly DANGEROUS_TAGS = new Set([
@@ -475,7 +475,7 @@ export class DOMPSanitizer {
  * and other URL-based attacks.
  */
 export class URLValidator {
-  private static readonly version = '2.2.0';
+  private static readonly version = '2.2.1';
 
   /** Safe URL schemes */
   private static readonly SAFE_SCHEMES = new Set([
@@ -660,7 +660,7 @@ export class ContentSecurityPolicy {
   private reportUri?: string;
   private reportTo?: string;
   private nonce?: string;
-  private readonly version = '2.2.0';
+  private readonly version = '2.2.1';
 
   /** Get version */
   getVersion(): string {
@@ -854,7 +854,7 @@ export class ContentSecurityPolicy {
  */
 export class PermissionsPolicyBuilder {
   private policies: Map<string, string[]> = new Map();
-  private readonly version = '2.2.0';
+  private readonly version = '2.2.1';
 
   /** Get version */
   getVersion(): string {
@@ -968,7 +968,7 @@ export class PermissionsPolicyBuilder {
 export class SecurityContext {
   private state: SecurityContextState;
   private eventListeners: Map<string, Array<(data: unknown) => void>> = new Map();
-  private readonly version = '2.2.0';
+  private readonly version = '2.2.1';
 
   constructor() {
     this.state = {
@@ -977,7 +977,7 @@ export class SecurityContext {
       isSecureContext: false,
       isCrossOriginIsolated: false,
       activePolicies: [],
-      version: '2.2.0',
+      version: '2.2.1',
       initializedAt: Date.now(),
       violationCount: 0,
     };
@@ -1134,7 +1134,7 @@ export class SecurityContext {
 export class IntegrityChecker {
   private static instance: IntegrityChecker;
   private checksums = new Map<string, Map<string, string>>(); // id -> algorithm -> hash
-  private readonly version = '2.2.0';
+  private readonly version = '2.2.1';
 
   /** Supported hash algorithms */
   static readonly ALGORITHMS = ['SHA-256', 'SHA-384', 'SHA-512'] as const;
@@ -1374,7 +1374,7 @@ export function buildSecurityHeaders(config: Record<string, string | undefined>)
     }
   }
 
-  builder.custom('X-Vril-Version', '2.2.0');
+  builder.custom('X-Vril-Version', '2.2.1');
   builder.custom('Server', 'Vril.js');
 
   const headers = builder.build();
@@ -1412,7 +1412,7 @@ export function installAPIMembrane(blockedAPIs: string[] = ['WebTransport', 'RTC
     } catch { /* non-configurable globals */ }
   }
   (window as Window & VrilWindowExtension).__VRIL_SECURITY__ = Object.freeze({
-    version: '2.2.0',
+    version: '2.2.1',
     bannedConstructors: blocked.slice(),
     trustedTypes: !!(window as Window & VrilWindowExtension).__VRIL_TT_V2__,
     installed: Date.now(),

@@ -142,7 +142,7 @@ export interface DiagnosticReport {
 export class PerformanceMonitor {
   private metrics: PerformanceMetric[] = [];
   private activeMarks = new Map<string, { start: number; category: PerformanceMetric['category']; metadata?: Record<string, unknown> }>();
-  private _version = '2.2.0';
+  private _version = '2.2.1';
   private maxMetrics = 1000;
 
   /** Start a performance mark */
@@ -254,7 +254,7 @@ function windowHasTrustedTypes(): boolean {
  */
 export class SecurityDiagnostics {
   private checks: SecurityDiagnostic[] = [];
-  private _version = '2.2.0';
+  private _version = '2.2.1';
 
   /** Run all security diagnostics and return results */
   runAll(): SecurityDiagnostic[] {
@@ -475,7 +475,7 @@ export class SecurityDiagnostics {
  */
 export class CryptoProfiler {
   private profiles = new Map<string, CryptoProfile>();
-  private _version = '2.2.0';
+  private _version = '2.2.1';
 
   /** Profile a synchronous crypto function */
   profileSync<T>(
@@ -555,7 +555,7 @@ export class CryptoProfiler {
  */
 export class NetworkMonitor {
   private metrics: NetworkMetric[] = [];
-  private _version = '2.2.0';
+  private _version = '2.2.1';
   private maxMetrics = 500;
   /** The exact original window.fetch reference for restoring on stopInterception */
   private nativeFetch: typeof fetch | null = null;
@@ -666,7 +666,7 @@ export class NetworkMonitor {
  * Analyzes the currently loaded resources on the page.
  */
 export class BundleAnalyzer {
-  private _version = '2.2.0';
+  private _version = '2.2.1';
 
   /** Analyze the current page's loaded resources */
   analyze(): BundleInfo {
@@ -728,7 +728,7 @@ export class BundleAnalyzer {
  */
 export class MemoryProfiler {
   private snapshots: MemorySnapshot[] = [];
-  private _version = '2.2.0';
+  private _version = '2.2.1';
   private maxSnapshots = 100;
   private intervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -824,7 +824,7 @@ export function createDiagnosticReport(): DiagnosticReport {
   const memorySnap = memory.snapshot();
 
   return {
-    version: '2.2.0',
+    version: '2.2.1',
     timestamp: Date.now(),
     performance: perf.getMetrics(),
     security: securityResults,

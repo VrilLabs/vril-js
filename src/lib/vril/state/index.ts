@@ -87,7 +87,7 @@ export class VrilStore<T extends Record<string, unknown>> {
   private _middleware: StoreMiddleware<T>[];
   private _validator?: StateValidatorFn<T>;
   private _name: string;
-  private _version = '2.2.0';
+  private _version = '2.2.1';
 
   // Time travel
   private _history: StateTransition<T>[] = [];
@@ -349,7 +349,7 @@ export function createStore<T extends Record<string, unknown>>(
  */
 export class StoreRegistry {
   private stores = new Map<string, VrilStore<Record<string, unknown>>>();
-  private _version = '2.2.0';
+  private _version = '2.2.1';
 
   /** Register a store in the registry */
   register<T extends Record<string, unknown>>(store: VrilStore<T>): void {
@@ -409,7 +409,7 @@ export const storeRegistry = new StoreRegistry();
  * Integrates with VrilStore for transparent field-level encryption.
  */
 export class StateEncryption {
-  private _version = '2.2.0';
+  private _version = '2.2.1';
   private _passphrase: string;
   private _keyCache = new Map<string, CryptoKey>();
 
@@ -504,7 +504,7 @@ export class StateEncryption {
  * Supports localStorage and sessionStorage.
  */
 export class StatePersistence {
-  private _version = '2.2.0';
+  private _version = '2.2.1';
   private _storage: Storage;
   private _encryption?: StateEncryption;
 
@@ -575,7 +575,7 @@ export class StatePersistence {
  */
 export class StateValidator<T> {
   private _rules = new Map<string, (value: unknown) => boolean>();
-  private _version = '2.2.0';
+  private _version = '2.2.1';
 
   /** Add a validation rule for a specific field */
   addRule(field: string, validator: (value: unknown) => boolean): void {
