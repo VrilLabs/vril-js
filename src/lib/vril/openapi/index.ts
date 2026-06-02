@@ -125,7 +125,7 @@ export function generateOpenAPISpec(
           '200': { description: 'Successful response', content: { 'application/json': { schema: { type: 'object' } } } },
         },
         'x-docs-anchor': route.docsAnchor,
-        'x-has-submenu': route.hasSubmenu || undefined,
+        'x-has-submenu': route.hasSubmenu ? true : undefined,
       };
 
       const key = method.toLowerCase() as keyof OpenAPIPathItem;

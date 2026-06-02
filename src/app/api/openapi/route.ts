@@ -63,14 +63,14 @@ const DOCS_SURFACE: RouteManifestEntry[] = [
   { routePath: 'AuditLogger', methods: ['POST'], description: 'Structured audit logging with tamper detection', tags: ['Security › Audit'], docsAnchor: 'audit' },
 
   // ─── Signals ────────────────────────────────────────────────────
-  { routePath: 'signal()', methods: ['GET'], description: 'Create a reactive signal with get/set/peek', tags: ['Data'], docsAnchor: 'signals' },
-  { routePath: 'computed()', methods: ['GET'], description: 'Create a derived signal that auto-updates', tags: ['Data'], docsAnchor: 'signals' },
+  { routePath: 'signal()', methods: ['POST'], description: 'Create a reactive signal with get/set/peek', tags: ['Data'], docsAnchor: 'signals' },
+  { routePath: 'computed()', methods: ['POST'], description: 'Create a derived signal that auto-updates', tags: ['Data'], docsAnchor: 'signals' },
   { routePath: 'effect()', methods: ['POST'], description: 'Run side effects when dependencies change', tags: ['Data'], docsAnchor: 'signals' },
   { routePath: 'batch()', methods: ['POST'], description: 'Batch multiple updates into one notification', tags: ['Data'], docsAnchor: 'signals' },
   { routePath: 'encryptedSignal()', methods: ['POST'], description: 'Signal that encrypts values in memory with AES-256-GCM', tags: ['Data'], docsAnchor: 'signals' },
 
   // ─── State ──────────────────────────────────────────────────────
-  { routePath: 'createStore()', methods: ['GET'], description: 'Create a store with initial state and middleware', tags: ['Data'], docsAnchor: 'state' },
+  { routePath: 'createStore()', methods: ['POST'], description: 'Create a store with initial state and middleware', tags: ['Data'], docsAnchor: 'state' },
   { routePath: 'VrilStore', methods: ['GET'], description: 'Full state management: get/set/select/dispatch/subscribe', tags: ['Data'], docsAnchor: 'state' },
   { routePath: 'StateEncryption', methods: ['POST'], description: 'Field-level AES-256-GCM encryption for sensitive state', tags: ['Data'], docsAnchor: 'state' },
 
@@ -114,7 +114,7 @@ const DOCS_SURFACE: RouteManifestEntry[] = [
   { routePath: 'APIRateLimiter', methods: ['POST'], description: 'Token bucket rate limiting per IP/route', tags: ['API'], docsAnchor: 'api' },
 
   // ─── SSR ────────────────────────────────────────────────────────
-  { routePath: 'createSSRStream()', methods: ['GET'], description: 'Server-side rendering with streaming support', tags: ['Platform'], docsAnchor: 'ssr' },
+  { routePath: 'createSSRStream()', methods: ['POST'], description: 'Create server-side rendering stream', tags: ['Platform'], docsAnchor: 'ssr' },
   { routePath: 'SSRSecurityGuard', methods: ['POST'], description: 'Validate SSR output for XSS before sending', tags: ['Platform'], docsAnchor: 'ssr' },
 
   // ─── Streaming ──────────────────────────────────────────────────
