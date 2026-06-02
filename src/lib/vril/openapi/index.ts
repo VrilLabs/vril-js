@@ -4,7 +4,7 @@
  * Used by the command palette docs explorer and served at /api/openapi.
  */
 
-import { VRIL_VERSION } from '../index';
+import { VRIL_VERSION } from '../version';
 
 export interface OpenAPIInfo {
   title: string;

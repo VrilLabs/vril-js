@@ -7,7 +7,7 @@
  * Streaming SSR · Edge Runtime · Plugin Architecture
  */
 
-export const VRIL_VERSION = '2.2.1';
+export { VRIL_VERSION } from './version';
 
 // ─── Core ────────────────────────────────────────────────────
 export {
