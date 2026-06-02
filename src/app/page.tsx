@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { VrilVault, type EncryptionResult, type StrengthAssessment } from '@/lib/vril/security/crypto/vault';
+import { CommandPalette } from '@/components/command-palette';
 
 /* ═══════════════════════════════════════════════════════════════
    Vril.js v2.2 — Showcase Landing Page
@@ -893,8 +894,6 @@ function HeroGraphic() {
 export default function VrilShowcase() {
   const [vaultOpen, setVaultOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [paletteQuery, setPaletteQuery] = useState('');
-  const [paletteSelected, setPaletteSelected] = useState(-1);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -916,14 +915,16 @@ export default function VrilShowcase() {
   // Command palette items
   const commands = [
     { id: 'vault', title: 'Open \u03A9Vault', group: 'Security', action: () => setVaultOpen(true) },
+    { id: 'docs', title: 'View Documentation', group: 'Navigation', action: () => { window.location.href = '/docs'; } },
     { id: 'sec-arch', title: 'Go to Security Architecture', group: 'Navigation', action: () => document.getElementById('architecture')?.scrollIntoView({ behavior: 'smooth' }) },
     { id: 'features', title: 'Go to Features', group: 'Navigation', action: () => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }) },
     { id: 'modules', title: 'Go to Module Ecosystem', group: 'Navigation', action: () => document.getElementById('modules')?.scrollIntoView({ behavior: 'smooth' }) },
     { id: 'compare', title: 'Go to Comparison', group: 'Navigation', action: () => document.getElementById('comparison')?.scrollIntoView({ behavior: 'smooth' }) },
     { id: 'start', title: 'Go to Getting Started', group: 'Navigation', action: () => document.getElementById('get-started')?.scrollIntoView({ behavior: 'smooth' }) },
-    { id: 'copy-install', title: 'Copy Install Command', group: 'Actions', action: () => navigator.clipboard.writeText('npx create-vril-app@latest') },
+    { id: 'copy-install', title: 'Copy Install Command', group: 'Actions', action: () => navigator.clipboard.writeText('npm install @vrillabs/vril-js') },
+    { id: 'github', title: 'Open GitHub Repository', group: 'Actions', action: () => window.open('https://github.com/VrilLabs/vril-js', '_blank') },
+    { id: 'npm', title: 'Open npm Package', group: 'Actions', action: () => window.open('https://www.npmjs.com/package/@vrillabs/vril-js', '_blank') },
   ];
-  const filteredCommands = commands.filter(c => !paletteQuery.trim() || c.title.toLowerCase().includes(paletteQuery.toLowerCase()));
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -1263,55 +1264,12 @@ export default function VrilShowcase() {
       {vaultOpen && <VaultInlineDialog onClose={() => setVaultOpen(false)} />}
 
       {/* ═══ COMMAND PALETTE ═══════════════════════════════════ */}
-      {paletteOpen && (
-        <div className="fixed inset-0 z-[500] flex items-start justify-center pt-[20vh]" onClick={() => setPaletteOpen(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative z-10 w-[min(560px,calc(100vw-2rem))] bg-[#0d1017] border border-white/10 rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 bg-[#111520]">
-              <SearchIcon className="w-4 h-4 text-violet flex-shrink-0" />
-              <input type="text" value={paletteQuery} onChange={e => { setPaletteQuery(e.target.value); setPaletteSelected(-1); }}
-                onKeyDown={e => {
-                  if (e.key === 'ArrowDown') { e.preventDefault(); setPaletteSelected(p => p < filteredCommands.length - 1 ? p + 1 : 0); }
-                  else if (e.key === 'ArrowUp') { e.preventDefault(); setPaletteSelected(p => p > 0 ? p - 1 : filteredCommands.length - 1); }
-                  else if (e.key === 'Enter' && paletteSelected >= 0 && filteredCommands[paletteSelected]) { e.preventDefault(); filteredCommands[paletteSelected].action(); setPaletteOpen(false); }
-                }}
-                placeholder="Type a command..." className="flex-1 bg-transparent text-white font-mono text-sm outline-none placeholder:text-white/30" autoFocus />
-              <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-white/5 border border-white/10 rounded text-white/30">ESC</kbd>
-            </div>
-            <div className="max-h-72 overflow-y-auto py-2">
-              {(() => {
-                const groups: Record<string, typeof commands> = {};
-                const groupOrder: string[] = [];
-                filteredCommands.forEach(cmd => {
-                  if (!groups[cmd.group]) { groups[cmd.group] = []; groupOrder.push(cmd.group); }
-                  groups[cmd.group].push(cmd);
-                });
-                let idx = 0;
-                return groupOrder.map(group => (
-                  <div key={group}>
-                    <div className="px-4 py-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-white/20">{group}</div>
-                    {groups[group].map(cmd => {
-                      const i = idx++;
-                      return (
-                        <button key={cmd.id} onClick={() => { cmd.action(); setPaletteOpen(false); }} onMouseEnter={() => setPaletteSelected(i)}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${i === paletteSelected ? 'bg-violet/12 text-white' : 'text-white/50 hover:text-white/70'}`}>
-                          <span className="w-3 h-3 rounded-full bg-white/8 flex-shrink-0" />
-                          <span className="font-mono text-sm">{cmd.title}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ));
-              })()}
-              {filteredCommands.length === 0 && <div className="px-4 py-8 text-center font-mono text-sm text-white/20">No commands found</div>}
-            </div>
-            <div className="flex items-center justify-between px-4 py-2 border-t border-white/8 bg-[#111520]">
-              <span className="font-mono text-[10px] text-white/20">{filteredCommands.length} command{filteredCommands.length !== 1 ? 's' : ''}</span>
-              <div className="flex gap-3 text-[9px] font-mono text-white/20"><span>↑↓ navigate</span><span>↵ select</span><span>esc close</span></div>
-            </div>
-          </div>
-        </div>
-      )}
+      <CommandPalette
+        commands={commands}
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        config={{ siteName: 'VrilLabs', docsExplorer: true }}
+      />
     </div>
   );
 }

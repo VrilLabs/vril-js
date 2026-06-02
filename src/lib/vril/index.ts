@@ -559,5 +559,20 @@ export {
 export { VrilProvider, useVril } from '@/components/vril-provider';
 export { CrystalWindow, useCrystalWindow } from '@/components/crystal-window';
 export { VaultDialog } from '@/components/vault-dialog';
-export { CommandPalette, type CommandItem } from '@/components/command-palette';
+export { CommandPalette, type CommandItem, type CommandPaletteConfig, type CommandPaletteProps, type DocsEntry } from '@/components/command-palette';
 export { VrilModal, type VrilModalHandle } from '@/components/modal';
+
+// ─── OpenAPI ─────────────────────────────────────────────────
+export {
+  generateOpenAPISpec,
+  discoverRoutesFromManifest,
+  type OpenAPISpec,
+  type OpenAPIInfo,
+  type OpenAPIPathItem,
+  type OpenAPIOperation,
+  type OpenAPIParameter,
+  type OpenAPIRequestBody,
+  type OpenAPIResponse,
+  type OpenAPISchema,
+  type RouteManifestEntry,
+} from './openapi';
