@@ -108,12 +108,13 @@ export function generateOpenAPISpec(
     const pathItem: OpenAPIPathItem = {};
 
     for (const method of methods) {
+      const methodUpper = method.toUpperCase();
       const operation: OpenAPIOperation = {
         operationId: `${method.toLowerCase()}_${route.routePath.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '')}`,
         summary: route.description ?? `${method} ${route.routePath}`,
         tags: route.tags ?? [deriveTag(route.routePath)],
         parameters: route.parameters,
-        requestBody: method !== 'GET' && method !== 'DELETE' ? route.requestBody : undefined,
+        requestBody: methodUpper !== 'GET' && methodUpper !== 'DELETE' ? route.requestBody : undefined,
         responses: route.responses ?? {
           '200': { description: 'Successful response', content: { 'application/json': { schema: { type: 'object' } } } },
           '400': { description: 'Bad request' },
