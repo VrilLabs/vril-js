@@ -416,6 +416,281 @@ function resolveStaticPath(pathname) {
   return filePath;
 }
 
+// ─── Doctor Command ─────────────────────────────────────────────────────────
+
+async function doctor() {
+  const packageJsonPath = resolve(root, 'package.json');
+  const pkg = JSON.parse(await readFile(packageJsonPath, 'utf8'));
+  const configPath = resolve(root, 'vril.config.ts');
+  const hasConfig = await isFile(configPath);
+
+  let vrilConfig = null;
+  if (hasConfig) {
+    await mkdir(resolve(root, '.vril'), { recursive: true });
+    await esbuild({
+      entryPoints: [configPath],
+      outfile: runtimeConfigBundle,
+      bundle: true,
+      platform: 'node',
+      format: 'esm',
+      packages: 'external',
+      plugins: [aliasPlugin, ignoreCssPlugin],
+    });
+    const module = await import(`${pathToFileURL(runtimeConfigBundle).href}?t=${Date.now()}`);
+    const configObj = module.default;
+    // Access the full resolved config object
+    vrilConfig = configObj?.config ?? null;
+  }
+
+  console.log('');
+  console.log('\u2592\u2592 Vril.js Doctor v2.2.0');
+  console.log('\u2500'.repeat(50));
+  console.log('');
+
+  // ─── 20-Point Security Audit ────────────────────────────────────────────
+  const checks = [];
+
+  // 1. HTTPS / HSTS configuration
+  checks.push({
+    name: 'HSTS configured',
+    pass: !!(vrilConfig?.security?.headers?.strictTransportSecurity || securityHeaders['Strict-Transport-Security']),
+  });
+
+  // 2. X-Content-Type-Options
+  checks.push({
+    name: 'X-Content-Type-Options: nosniff',
+    pass: (vrilConfig?.security?.headers?.xContentTypeOptions ?? securityHeaders['X-Content-Type-Options']) === 'nosniff',
+  });
+
+  // 3. X-Frame-Options
+  checks.push({
+    name: 'X-Frame-Options set',
+    pass: !!(vrilConfig?.security?.headers?.xFrameOptions || securityHeaders['X-Frame-Options']),
+  });
+
+  // 4. Referrer-Policy
+  checks.push({
+    name: 'Referrer-Policy configured',
+    pass: !!(vrilConfig?.security?.headers?.referrerPolicy || securityHeaders['Referrer-Policy']),
+  });
+
+  // 5. Cross-Origin-Opener-Policy
+  checks.push({
+    name: 'Cross-Origin-Opener-Policy set',
+    pass: !!(vrilConfig?.security?.headers?.crossOriginOpenerPolicy || securityHeaders['Cross-Origin-Opener-Policy']),
+  });
+
+  // 6. Cross-Origin-Embedder-Policy
+  checks.push({
+    name: 'Cross-Origin-Embedder-Policy set',
+    pass: !!(vrilConfig?.security?.headers?.crossOriginEmbedderPolicy || securityHeaders['Cross-Origin-Embedder-Policy']),
+  });
+
+  // 7. Content-Security-Policy
+  checks.push({
+    name: 'Content-Security-Policy defined',
+    pass: !!(vrilConfig?.security?.csp || securityHeaders['Content-Security-Policy']),
+  });
+
+  // 8. Permissions-Policy
+  checks.push({
+    name: 'Permissions-Policy configured',
+    pass: !!(vrilConfig?.security?.permissionsPolicy || securityHeaders['Permissions-Policy']),
+  });
+
+  // 9. No unsafe-inline in CSP script-src
+  const cspString = securityHeaders['Content-Security-Policy'] ?? '';
+  const scriptSrc = vrilConfig?.security?.csp?.scriptSrc ?? [];
+  checks.push({
+    name: 'No unsafe-inline in script-src',
+    pass: !cspString.includes("'unsafe-inline'") && !scriptSrc.includes("'unsafe-inline'"),
+  });
+
+  // 10. No unsafe-eval in CSP
+  checks.push({
+    name: 'No unsafe-eval in CSP',
+    pass: !cspString.includes("'unsafe-eval'") && !(vrilConfig?.security?.csp?.scriptSrc ?? []).includes("'unsafe-eval'"),
+  });
+
+  // 11. frame-ancestors restriction
+  checks.push({
+    name: 'CSP frame-ancestors restricted',
+    pass: cspString.includes('frame-ancestors') || (vrilConfig?.security?.csp?.frameAncestors ?? []).length > 0,
+  });
+
+  // 12. Trusted Types enabled
+  checks.push({
+    name: 'Trusted Types enforcement',
+    pass: vrilConfig?.security?.trustedTypes === true,
+  });
+
+  // 13. API membrane active
+  checks.push({
+    name: 'API membrane configured',
+    pass: vrilConfig?.security?.apiMembrane === true,
+  });
+
+  // 14. CSRF protection enabled
+  checks.push({
+    name: 'CSRF protection enabled',
+    pass: vrilConfig?.security?.csrf?.enabled === true,
+  });
+
+  // 15. SRI hashes configured
+  checks.push({
+    name: 'Subresource Integrity (SRI)',
+    pass: vrilConfig?.build?.sriHashes === true,
+  });
+
+  // 16. No known vulnerable dependencies (check for lockfile existence)
+  const lockfileNames = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lockb', 'bun.lock'];
+  let hasLockfile = false;
+  for (const lf of lockfileNames) {
+    if (await isFile(resolve(root, lf))) { hasLockfile = true; break; }
+  }
+  checks.push({
+    name: 'Lockfile present',
+    pass: hasLockfile,
+  });
+
+  // 17. No .env file exposed (check if .env is tracked by git or not gitignored)
+  let envExposed = false;
+  const envFilePath = resolve(root, '.env');
+  const hasEnvFile = await isFile(envFilePath);
+  if (hasEnvFile) {
+    // Check if .env is tracked by git (already committed)
+    const lsFiles = spawnSync('git', ['ls-files', '--error-unmatch', '.env'], {
+      cwd: root, stdio: 'ignore',
+    });
+    if (lsFiles.status === 0) {
+      // File is tracked by git – definitely exposed
+      envExposed = true;
+    } else {
+      // File exists but not tracked – check if it's gitignored
+      const checkIgnore = spawnSync('git', ['check-ignore', '-q', '.env'], {
+        cwd: root, stdio: 'ignore',
+      });
+      // Exit 0 = ignored (safe), exit 1 = NOT ignored (exposed risk)
+      if (checkIgnore.status !== 0) {
+        envExposed = true;
+      }
+    }
+  }
+  checks.push({
+    name: 'No .env file exposed',
+    pass: !envExposed,
+  });
+
+  // 18. Strict TypeScript (check tsconfig.json for strict mode)
+  const tsconfigPath = resolve(root, 'tsconfig.json');
+  let tsStrict = false;
+  try {
+    const raw = await readFile(tsconfigPath, 'utf8');
+    // Use TypeScript's own JSONC parser which handles comments and trailing commas
+    const ts = await import('typescript');
+    const parsed = ts.parseConfigFileTextToJson(tsconfigPath, raw);
+    if (!parsed.error) {
+      tsStrict = parsed.config?.compilerOptions?.strict === true;
+    }
+  } catch { /* no tsconfig or typescript not available */ }
+  checks.push({
+    name: 'TypeScript strict mode',
+    pass: tsStrict,
+  });
+
+  // 19. X-Powered-By header disabled
+  checks.push({
+    name: 'X-Powered-By disabled',
+    pass: vrilConfig?.framework?.poweredByHeader === false || vrilConfig?.poweredByHeader === false,
+  });
+
+  // 20. upgrade-insecure-requests in CSP
+  checks.push({
+    name: 'upgrade-insecure-requests in CSP',
+    pass: cspString.includes('upgrade-insecure-requests') || vrilConfig?.security?.csp?.upgradeInsecureRequests === true,
+  });
+
+  const passed = checks.filter(c => c.pass).length;
+  const total = checks.length;
+
+  for (const check of checks) {
+    const icon = check.pass ? '\u2713' : '\u2717';
+    const color = check.pass ? '\x1b[32m' : '\x1b[31m';
+    console.log(`  ${color}${icon}\x1b[0m ${check.name}`);
+  }
+
+  console.log('');
+  console.log(`\u25B8 Security audit: ${passed}/${total} checks passed`);
+
+  // ─── SBOM Generation (CycloneDX) ───────────────────────────────────────
+  const allDeps = {
+    ...(pkg.dependencies ?? {}),
+    ...(pkg.devDependencies ?? {}),
+    ...(pkg.optionalDependencies ?? {}),
+  };
+  const components = Object.entries(allDeps).map(([name, version]) => {
+    const ver = String(version).replace(/^[\^~>=<]*/g, '');
+    const purl = `pkg:npm/${name.startsWith('@') ? '%40' + name.slice(1) : name}@${ver}`;
+    let scope = 'required';
+    if (pkg.optionalDependencies?.[name]) {
+      scope = 'optional';
+    } else if (pkg.devDependencies?.[name] && !pkg.dependencies?.[name]) {
+      scope = 'excluded';
+    }
+    return {
+      'bom-ref': purl,
+      type: 'library',
+      name,
+      version: ver,
+      purl,
+      scope,
+    };
+  });
+
+  const sbom = {
+    bomFormat: 'CycloneDX',
+    specVersion: '1.5',
+    serialNumber: `urn:uuid:${generateUUID()}`,
+    version: 1,
+    metadata: {
+      timestamp: new Date().toISOString(),
+      tools: [{ vendor: 'VrilLabs', name: 'vril-doctor', version: '2.2.0' }],
+      component: {
+        type: 'application',
+        name: pkg.name ?? 'vril-app',
+        version: pkg.version ?? '0.0.0',
+      },
+    },
+    components,
+    dependencies: components.map(c => ({ ref: c.purl, dependsOn: [] })),
+  };
+
+  const sbomPath = resolve(root, 'sbom.cyclonedx.json');
+  await writeFile(sbomPath, JSON.stringify(sbom, null, 2));
+  console.log(`\u25B8 SBOM generated: sbom.cyclonedx.json`);
+  console.log('');
+
+  if (passed < total) {
+    console.log(`\x1b[33m\u26A0 ${total - passed} check(s) did not pass. Review recommendations above.\x1b[0m`);
+    console.log('');
+    process.exitCode = 1;
+  }
+}
+
+function generateUUID() {
+  const bytes = new Uint8Array(16);
+  // Use crypto.getRandomValues if available, otherwise fall back
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 const command = process.argv[2] ?? 'build';
 if (command === 'build') {
   await bundle();
@@ -425,6 +700,8 @@ if (command === 'build') {
   process.env.NODE_ENV = process.env.NODE_ENV ?? 'development';
   await bundle();
   await serve();
+} else if (command === 'doctor') {
+  await doctor();
 } else {
   console.error(`Unknown Vril command: ${command}`);
   process.exit(1);

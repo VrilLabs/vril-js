@@ -44,6 +44,9 @@ yarn-error.log*
 .pnpm-debug.log*
 *.log
 
+# ─── Generated artifacts ─────────────────────────────────────────
+sbom.cyclonedx.json
+
 # ─── Misc ────────────────────────────────────────────────────────
 *.tgz
 .cache/
