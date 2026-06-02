@@ -175,13 +175,14 @@ function deriveTagList(routes: RouteManifestEntry[]): Array<{ name: string; desc
 
 /**
  * Discover routes from the built api-routes.json manifest.
- * Maps manifest entries to RouteManifestEntry objects with standard HTTP methods.
+ * Maps manifest entries to RouteManifestEntry objects.
+ * Defaults to GET only since the manifest does not include method information.
  */
 export function discoverRoutesFromManifest(
-  manifest: Array<{ routePath: string; bundleName?: string }>
+  manifest: Array<{ routePath: string; bundleName?: string; methods?: string[] }>
 ): RouteManifestEntry[] {
   return manifest.map(entry => ({
     routePath: entry.routePath,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    methods: entry.methods ?? ['GET'],
   }));
 }
