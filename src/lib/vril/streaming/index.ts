@@ -114,7 +114,7 @@ export function createStreamingBoundary(
  */
 export class StreamIntegrityValidator {
   private secret: string;
-  private version = '2.2.0';
+  private version = '2.2.1';
 
   constructor(secret: string) {
     this.secret = secret;
@@ -191,7 +191,7 @@ export class RateLimitedStream {
   private config: StreamingConfig;
   private bytesSent = 0;
   private startTime = 0;
-  private version = '2.2.0';
+  private version = '2.2.1';
 
   constructor(config?: Partial<StreamingConfig>) {
     this.config = { ...DEFAULT_STREAMING_CONFIG, ...config };
@@ -295,7 +295,7 @@ const DEFAULT_SANITIZE_PATTERNS: RegExp[] = [
  */
 export class SecureStreamTransformer {
   private patterns: RegExp[];
-  private version = '2.2.0';
+  private version = '2.2.1';
 
   constructor(config?: Partial<StreamingConfig>) {
     this.patterns =
@@ -349,7 +349,7 @@ interface CachedStream {
 export class StreamingCache {
   private cache = new Map<string, CachedStream>();
   private config: CachePolicy;
-  private version = '2.2.0';
+  private version = '2.2.1';
 
   constructor(policy?: CachePolicy) {
     this.config = policy ?? DEFAULT_STREAMING_CONFIG.cachePolicy!;

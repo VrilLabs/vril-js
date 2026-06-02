@@ -533,7 +533,7 @@ function warnDiagnostic(message: string, ...details: unknown[]): void {
  * closed instead of falling back to placeholders.
  */
 export class PQCHandler {
-  private readonly version = '2.2.0';
+  private readonly version = '2.2.1';
 
   /**
    * Creates a PQC handler.

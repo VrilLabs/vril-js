@@ -1,5 +1,5 @@
 /**
- * Vril.js v2.2.0 — Active Surface PQC
+ * Vril.js v2.2.1 — Active Surface PQC
  *
  * Zero-dependency orchestration layer for authentic post-quantum providers.
  * It only selects authentic PQC. It chooses the strongest registered

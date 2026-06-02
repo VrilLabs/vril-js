@@ -1,5 +1,5 @@
 /**
- * Vril.js v2.2.0 Security Proxy
+ * Vril.js v2.2.1 Security Proxy
  * Applies all security headers, CSP, Permissions-Policy, and
  * blocks internal header injection attacks (CVE-2025-29927 mitigation).
  * Includes HSTS preload, COEP/COOP for SharedArrayBuffer support,
@@ -22,7 +22,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
     'usb=()', 'serial=()', 'bluetooth=()', 'hid=()',
     'xr-spatial-tracking=()', 'compute-pressure=()',
   ].join(', '),
-  'X-Vril-Version': '2.2.0',
+  'X-Vril-Version': '2.2.1',
   'Server': 'Vril.js',
 };
 

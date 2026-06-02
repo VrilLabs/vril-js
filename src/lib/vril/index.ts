@@ -1,5 +1,5 @@
 /**
- * Vril.js v2.2.0 — The Security-First React Framework
+ * Vril.js v2.2.1 — The Security-First React Framework
  * by VRIL LABS
  *
  * Post-quantum cryptography · Zero-trust membrane · Crypto agility
@@ -7,7 +7,7 @@
  * Streaming SSR · Edge Runtime · Plugin Architecture
  */
 
-export const VRIL_VERSION = '2.2.0';
+export const VRIL_VERSION = '2.2.1';
 
 // ─── Core ────────────────────────────────────────────────────
 export {

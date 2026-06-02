@@ -83,7 +83,7 @@ const INJECTION_PATTERNS: RegExp[] = [
  */
 export class SSRSecurityGuard {
   private violations: string[] = [];
-  private version = '2.2.0';
+  private version = '2.2.1';
   private maxHtmlSize: number;
 
   constructor(maxHtmlSize: number = 5 * 1024 * 1024) {
@@ -297,7 +297,7 @@ export async function renderToStream(
  */
 export class SelectiveHydration {
   private descriptors = new Map<string, HydrationDescriptor>();
-  private version = '2.2.0';
+  private version = '2.2.1';
 
   /** Register a component for selective hydration */
   register(descriptor: HydrationDescriptor): void {
@@ -364,7 +364,7 @@ export class SelectiveHydration {
  */
 export class SSRManifest {
   private entries = new Map<string, SSRManifestEntry>();
-  private version = '2.2.0';
+  private version = '2.2.1';
   /** CSP nonce to use for bootstrap script tags; set from SSROptions.nonce */
   readonly nonce: string | undefined;
 
