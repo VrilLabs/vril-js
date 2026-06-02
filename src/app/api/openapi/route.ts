@@ -6,7 +6,7 @@ import { generateOpenAPISpec, type RouteManifestEntry } from "@/lib/vril/openapi
  * Returns the auto-generated OpenAPI 3.1.0 specification for all Vril.js API routes.
  * The command palette docs explorer consumes this endpoint.
  */
-export async function GET() {
+export async function GET(request: Request) {
   // Discover routes — in production these come from the built manifest.
   // For the framework itself, we define the known API surface here.
   const routes: RouteManifestEntry[] = [
@@ -30,12 +30,18 @@ export async function GET() {
     },
   ];
 
+  // Construct the server URL from request headers
+  let serverUrl: string | undefined;
+  const proto = request.headers.get('x-forwarded-proto') || 'https';
+  const host = request.headers.get('host');
+  if (host) {
+    serverUrl = `${proto}://${host}`;
+  }
+
   const spec = generateOpenAPISpec(routes, {
     title: 'Vril.js API',
     description: 'Auto-generated OpenAPI specification for the Vril.js security-first framework API. This spec is generated from the file-system based API route discovery.',
-    serverUrl: typeof globalThis !== 'undefined' && 'location' in globalThis
-      ? (globalThis as unknown as { location: { origin: string } }).location.origin
-      : undefined,
+    serverUrl,
   });
 
   return json(spec, {
