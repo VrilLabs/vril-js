@@ -328,6 +328,283 @@ const layerAccentMap = {
   error: { bg: 'layer-accent-error', text: 'layer-text-error' },
 } satisfies Record<LayerAccent, { bg: string; text: string }>;
 
+// ─── Accent hex colors (for SVG, not Tailwind) ──────────────────
+const LAYER_ACCENT_HEX: Record<LayerAccent, string> = {
+  amber:  '#f5a623',
+  violet: '#9b5eff',
+  teal:   '#00FFC8',
+  blue:   '#0A84FF',
+  error:  '#ff4d6a',
+};
+
+// ─── Zero-Trust Chain (scroll-reactive, physics-based) ──────────
+/**
+ * Renders the animated glowing-chain + electric-firewire spine beside
+ * the Five Layers of Zero-Trust cards, with scroll-reactive physics
+ * (skewY driven by scroll velocity via rAF). Gracefully degrades:
+ *  • prefers-reduced-motion → CSS animations + physics both disabled
+ *  • No CSS custom-property support (IE 11) → falls back to static bars
+ *  • No ResizeObserver → falls back to window.resize for measurement
+ */
+function ZeroTrustChainSection() {
+  const colRef   = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const groupRef = useRef<SVGGElement>(null);
+
+  const [nodes, setNodes] = useState<{ y: number; color: string }[]>([]);
+  const [colH,  setColH]  = useState(0);
+
+  // ── Measure card centre positions relative to the column top ───
+  useEffect(() => {
+    const measure = () => {
+      const col = colRef.current;
+      if (!col) return;
+      const colRect = col.getBoundingClientRect();
+      setColH(colRect.height);
+      setNodes(
+        cardRefs.current.map((el, i) => {
+          const color = LAYER_ACCENT_HEX[SECURITY_LAYERS[i].accent];
+          if (!el) return { y: 0, color };
+          const r = el.getBoundingClientRect();
+          return { y: r.top + r.height / 2 - colRect.top, color };
+        }),
+      );
+    };
+
+    measure();
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure);
+      if (colRef.current) ro.observe(colRef.current);
+    } else {
+      window.addEventListener('resize', measure, { passive: true });
+    }
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+
+  // ── Scroll-reactive physics ─────────────────────────────────────
+  // Directly mutates the SVG <g> style to avoid React re-renders on
+  // every animation frame. `will-change` is toggled only when moving.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (mq?.matches) return;
+    if (typeof CSS === 'undefined' || !CSS.supports?.('color', 'var(--x)')) return;
+
+    let vel = 0, skew = 0;
+    let lastY = window.scrollY, lastT = performance.now();
+    let rafId = 0, active = false;
+
+    const onScroll = () => {
+      const now = performance.now();
+      vel = (window.scrollY - lastY) / Math.max(now - lastT, 1) * 16;
+      lastY = window.scrollY;
+      lastT = now;
+    };
+
+    const tick = () => {
+      vel  *= 0.88;
+      const target = Math.max(-5.5, Math.min(5.5, vel * -0.32));
+      skew += (target - skew) * 0.1;
+
+      const g = groupRef.current;
+      if (g) {
+        if (Math.abs(skew) > 0.015 || Math.abs(vel) > 0.015) {
+          if (!active) { g.style.willChange = 'transform'; active = true; }
+          g.style.transform = `skewY(${skew.toFixed(3)}deg)`;
+        } else if (active) {
+          g.style.transform  = '';
+          g.style.willChange = 'auto';
+          active = false; skew = 0; vel = 0;
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  const ready = colH > 0 && nodes.length === SECURITY_LAYERS.length;
+  const firstY = nodes[0]?.y ?? 0;
+  const lastY2 = nodes[nodes.length - 1]?.y ?? colH;
+
+  return (
+    <div className="flex items-stretch">
+      {/* ── Chain spine — hidden below md breakpoint ── */}
+      <div className="hidden md:block w-10 flex-shrink-0 relative" aria-hidden="true">
+        <svg
+          className="absolute inset-0 w-full overflow-visible pointer-events-none select-none"
+          viewBox={`0 0 40 ${colH || 400}`}
+          preserveAspectRatio="none"
+          role="presentation"
+        >
+          {ready && (
+            <>
+              <defs>
+                {/* Full-height gradient: amber → violet → teal → blue → red */}
+                <linearGradient id="ztc-wire" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+                  {SECURITY_LAYERS.map((l, i) => (
+                    <stop key={i}
+                      offset={`${(i / (SECURITY_LAYERS.length - 1)) * 100}%`}
+                      stopColor={LAYER_ACCENT_HEX[l.accent]}
+                    />
+                  ))}
+                </linearGradient>
+
+                {/* Wire glow — userSpaceOnUse so it works on zero-width lines */}
+                <filter id="ztc-wire-glow" x="0" y={firstY - 20} width="40" height={lastY2 - firstY + 40} filterUnits="userSpaceOnUse">
+                  <feGaussianBlur stdDeviation="2.5" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+
+                {/* Node glow — objectBoundingBox works for non-zero circles */}
+                <filter id="ztc-node-glow" x="-80%" y="-80%" width="260%" height="260%">
+                  <feGaussianBlur stdDeviation="3.5" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+
+              {/* ── All chain elements skew together on scroll ── */}
+              <g ref={groupRef} style={{ transformOrigin: `20px ${(colH / 2).toFixed(0)}px` }}>
+
+                {/* Backbone spine wire */}
+                <line
+                  x1="20" y1={firstY} x2="20" y2={lastY2}
+                  stroke="url(#ztc-wire)"
+                  strokeWidth="1.5"
+                  opacity="0.3"
+                />
+
+                {/* Per-segment chain links + flowing energy */}
+                {nodes.map((node, i) => {
+                  const next = nodes[i + 1];
+                  if (!next) return null;
+                  const color = node.color;
+                  const y1 = node.y + 12, y2 = next.y - 12;
+                  return (
+                    <g key={`seg-${i}`}>
+                      {/* Rounded dashes — the "chain link" texture */}
+                      <line
+                        x1="20" y1={y1} x2="20" y2={y2}
+                        stroke={color}
+                        strokeWidth="3.5"
+                        strokeDasharray="3 9"
+                        strokeLinecap="round"
+                        opacity="0.22"
+                      />
+                      {/* Bright flowing energy — animates stroke-dashoffset */}
+                      <line
+                        x1="20" y1={y1} x2="20" y2={y2}
+                        stroke={color}
+                        strokeWidth="1.5"
+                        strokeDasharray="10 62"
+                        strokeLinecap="round"
+                        filter="url(#ztc-wire-glow)"
+                        opacity="0.72"
+                        className="chain-flow"
+                        style={{ animationDelay: `${(-i * 0.4).toFixed(2)}s` }}
+                      />
+                    </g>
+                  );
+                })}
+
+                {/* Port nodes at each layer boundary */}
+                {nodes.map((node, i) => {
+                  const color = node.color;
+                  const delay = `${(i * 0.55).toFixed(2)}s`;
+                  return (
+                    <g key={`node-${i}`}>
+                      {/* Outer glow ring */}
+                      <circle cx="20" cy={node.y} r="11"
+                        fill="none" stroke={color} strokeWidth="1"
+                        className="chain-node-outer"
+                        style={{ animationDelay: delay }}
+                      />
+                      {/* Middle ring */}
+                      <circle cx="20" cy={node.y} r="7"
+                        fill="none" stroke={color} strokeWidth="1.5"
+                        filter="url(#ztc-node-glow)"
+                        className="chain-node-mid"
+                        style={{ animationDelay: delay }}
+                      />
+                      {/* Core dot */}
+                      <circle cx="20" cy={node.y} r="3.5"
+                        fill={color}
+                        filter="url(#ztc-node-glow)"
+                        className="chain-node-inner"
+                        style={{ animationDelay: delay }}
+                      />
+                      {/* Tap line from node centre to card left edge */}
+                      <line
+                        x1="21" y1={node.y} x2="40" y2={node.y}
+                        stroke={color} strokeWidth="1"
+                        opacity="0.3"
+                      />
+                      {/* Electric spark burst */}
+                      <g
+                        className="chain-spark"
+                        style={{ animationDelay: `${(i * 1.1 + 0.6).toFixed(2)}s` }}
+                      >
+                        <line x1="15" y1={node.y - 5} x2="25" y2={node.y + 5}
+                          stroke={color} strokeWidth="1.5" strokeLinecap="round"
+                          filter="url(#ztc-node-glow)"
+                        />
+                        <line x1="25" y1={node.y - 5} x2="15" y2={node.y + 5}
+                          stroke={color} strokeWidth="1.5" strokeLinecap="round"
+                          filter="url(#ztc-node-glow)"
+                        />
+                      </g>
+                    </g>
+                  );
+                })}
+              </g>
+            </>
+          )}
+        </svg>
+      </div>
+
+      {/* ── Layer cards ── */}
+      <div ref={colRef} className="flex-1 flex flex-col gap-3">
+        {SECURITY_LAYERS.map((layer, i) => {
+          const accent = layerAccentMap[layer.accent];
+          return (
+            <div
+              ref={el => { cardRefs.current[i] = el; }}
+              key={i}
+              className="group relative p-5 bg-card border border-white/6 rounded-2xl hover:border-white/15 transition-all duration-300 hover:scale-[1.02]"
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <span className={`font-mono text-[10px] tracking-[0.16em] uppercase font-bold ${accent.text}`}>{layer.num}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-display font-bold text-white mb-2">{layer.name}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {layer.items.map(item => (
+                      <span key={item} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/4 border border-white/8 rounded-lg font-mono text-[11px] text-white/50 group-hover:text-white/70 group-hover:border-white/12 transition-colors">
+                        <span className={`w-1 h-1 rounded-full ${accent.bg}`} />
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Animated Counter ──────────────────────────────────────────
 function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: string }) {
   const [display, setDisplay] = useState('0');
@@ -792,33 +1069,7 @@ export default function VrilShowcase() {
             </div>
 
             <div className="max-w-3xl mx-auto">
-              <div className="flex flex-col gap-3">
-                {SECURITY_LAYERS.map((layer, i) => {
-                  const accent = layerAccentMap[layer.accent];
-                  return (
-                    <div key={i} className="group relative p-5 bg-card border border-white/6 rounded-2xl hover:border-white/15 transition-all duration-300 hover:scale-[1.02]">
-                      {/* Layer accent bar */}
-                      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${accent.bg}`} />
-                      <div className="flex items-start gap-4 pl-3">
-                        <div className="flex-shrink-0">
-                          <span className={`font-mono text-[10px] tracking-[0.16em] uppercase font-bold ${accent.text}`}>{layer.num}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-display font-bold text-white mb-2">{layer.name}</h3>
-                          <div className="flex flex-wrap gap-2">
-                            {layer.items.map(item => (
-                              <span key={item} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/4 border border-white/8 rounded-lg font-mono text-[11px] text-white/50 group-hover:text-white/70 group-hover:border-white/12 transition-colors">
-                                <span className={`w-1 h-1 rounded-full ${accent.bg}`} />
-                                {item}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <ZeroTrustChainSection />
             </div>
           </div>
         </Section>

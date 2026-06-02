@@ -309,6 +309,49 @@ body::before {
 .layer-text-blue { color: #0A84FF; }
 .layer-text-error { color: #ff4d6a; }
 
+/* ── Zero-Trust Chain animations ─────────────────────────────── */
+
+/* Energy pulse flowing down the wire — one dasharray cycle = seamless loop */
+@keyframes ztc-flow {
+  from { stroke-dashoffset: 72; }
+  to   { stroke-dashoffset: 0;  }
+}
+.chain-flow { animation: ztc-flow 2.4s linear infinite; }
+
+/* Port node — outer glow ring breathes and scales */
+@keyframes ztc-node-outer {
+  0%, 100% { opacity: 0.18; transform: scale(1);    }
+  50%       { opacity: 0.38; transform: scale(1.22); }
+}
+.chain-node-outer {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ztc-node-outer 3s ease-in-out infinite;
+}
+
+/* Port node — middle ring brightness pulse */
+@keyframes ztc-node-mid {
+  0%, 100% { opacity: 0.4;  }
+  50%       { opacity: 0.75; }
+}
+.chain-node-mid { animation: ztc-node-mid 3s ease-in-out infinite; }
+
+/* Port node — inner core breath */
+@keyframes ztc-node-inner {
+  0%, 100% { opacity: 0.75; }
+  50%       { opacity: 1;    }
+}
+.chain-node-inner { animation: ztc-node-inner 3s ease-in-out infinite; }
+
+/* Electric spark — irregular double flash, long idle period */
+@keyframes ztc-spark {
+  0%, 80%, 100% { opacity: 0;    }
+  83%, 87%      { opacity: 0.95; }
+  89%, 94%      { opacity: 0;    }
+  95%, 98%      { opacity: 0.65; }
+}
+.chain-spark { animation: ztc-spark 5.5s ease-in-out infinite; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -326,7 +369,12 @@ body::before {
   .animate-orbit-reverse,
   .animate-vril-float,
   .animate-vril-pulse,
-  .animate-vril-badge-pulse {
+  .animate-vril-badge-pulse,
+  .chain-flow,
+  .chain-node-outer,
+  .chain-node-mid,
+  .chain-node-inner,
+  .chain-spark {
     animation: none !important;
   }
 }
