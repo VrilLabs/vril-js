@@ -543,19 +543,42 @@ async function doctor() {
   });
 
   // 16. No known vulnerable dependencies (check for lockfile existence)
-  const lockfilePath = resolve(root, 'package-lock.json');
-  const hasLockfile = await isFile(lockfilePath);
+  const lockfileNames = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lockb', 'bun.lock'];
+  let hasLockfile = false;
+  for (const lf of lockfileNames) {
+    if (await isFile(resolve(root, lf))) { hasLockfile = true; break; }
+  }
   checks.push({
     name: 'Lockfile present',
     pass: hasLockfile,
   });
 
-  // 17. No .env file committed (check for .env in project root)
+  // 17. No .env file exposed (check if .env is tracked by git or not gitignored)
+  let envExposed = false;
   const envFilePath = resolve(root, '.env');
   const hasEnvFile = await isFile(envFilePath);
+  if (hasEnvFile) {
+    // Check if .env is tracked by git (already committed)
+    const lsFiles = spawnSync('git', ['ls-files', '--error-unmatch', '.env'], {
+      cwd: root, stdio: 'ignore',
+    });
+    if (lsFiles.status === 0) {
+      // File is tracked by git – definitely exposed
+      envExposed = true;
+    } else {
+      // File exists but not tracked – check if it's gitignored
+      const checkIgnore = spawnSync('git', ['check-ignore', '-q', '.env'], {
+        cwd: root, stdio: 'ignore',
+      });
+      // Exit 0 = ignored (safe), exit 1 = NOT ignored (exposed risk)
+      if (checkIgnore.status !== 0) {
+        envExposed = true;
+      }
+    }
+  }
   checks.push({
     name: 'No .env file exposed',
-    pass: !hasEnvFile,
+    pass: !envExposed,
   });
 
   // 18. Strict TypeScript (check tsconfig.json for strict mode)
@@ -563,14 +586,13 @@ async function doctor() {
   let tsStrict = false;
   try {
     const raw = await readFile(tsconfigPath, 'utf8');
-    // tsconfig.json is JSONC – strip comments and trailing commas before parsing
-    const stripped = raw
-      .replace(/\/\/[^\n]*/g, '')
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/,(\s*[}\]])/g, '$1');
-    const tsconfig = JSON.parse(stripped);
-    tsStrict = tsconfig?.compilerOptions?.strict === true;
-  } catch { /* no tsconfig or invalid */ }
+    // Use TypeScript's own JSONC parser which handles comments and trailing commas
+    const ts = await import('typescript');
+    const parsed = ts.parseConfigFileTextToJson(tsconfigPath, raw);
+    if (!parsed.error) {
+      tsStrict = parsed.config?.compilerOptions?.strict === true;
+    }
+  } catch { /* no tsconfig or typescript not available */ }
   checks.push({
     name: 'TypeScript strict mode',
     pass: tsStrict,
@@ -604,17 +626,24 @@ async function doctor() {
   const allDeps = {
     ...(pkg.dependencies ?? {}),
     ...(pkg.devDependencies ?? {}),
+    ...(pkg.optionalDependencies ?? {}),
   };
   const components = Object.entries(allDeps).map(([name, version]) => {
     const ver = String(version).replace(/^[\^~>=<]*/g, '');
     const purl = `pkg:npm/${name.startsWith('@') ? '%40' + name.slice(1) : name}@${ver}`;
+    let scope = 'required';
+    if (pkg.optionalDependencies?.[name]) {
+      scope = 'optional';
+    } else if (pkg.devDependencies?.[name] && !pkg.dependencies?.[name]) {
+      scope = 'excluded';
+    }
     return {
       'bom-ref': purl,
       type: 'library',
       name,
       version: ver,
       purl,
-      scope: pkg.dependencies?.[name] ? 'required' : 'optional',
+      scope,
     };
   });
 
@@ -644,6 +673,7 @@ async function doctor() {
   if (passed < total) {
     console.log(`\x1b[33m\u26A0 ${total - passed} check(s) did not pass. Review recommendations above.\x1b[0m`);
     console.log('');
+    process.exitCode = 1;
   }
 }
 
