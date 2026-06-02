@@ -170,8 +170,10 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
         filtered[selectedIndex].action();
         onClose();
       } else if (mode === 'docs' && filteredDocs[selectedIndex]) {
-        const entry = filteredDocs[selectedIndex];
-        window.location.assign(`/docs#api-${entry.method.toLowerCase()}-${entry.path.replace(/[^a-zA-Z0-9]/g, '-')}`);
+        // Navigate to docs page. Note: API endpoint anchors are not yet implemented in the docs page,
+        // so we navigate to /docs without a hash. Future: add API endpoint documentation sections with
+        // IDs like api-${method}-${path} to enable deep-linking.
+        window.location.assign('/docs');
         onClose();
       }
     }
@@ -262,7 +264,7 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
                     const i = idx++;
                     return (
                       <button key={`${entry.method}-${entry.path}`}
-                        onClick={() => { window.location.assign(`/docs#api-${entry.method.toLowerCase()}-${entry.path.replace(/[^a-zA-Z0-9]/g, '-')}`); onClose(); }}
+                        onClick={() => { window.location.assign('/docs'); onClose(); }}
                         onMouseEnter={() => setSelectedIndex(i)}
                         className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${i === selectedIndex ? 'bg-[#9b5eff]/12 text-white' : 'text-white/50 hover:text-white/70'}`}>
                         <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${methodColor(entry.method)}`}>
