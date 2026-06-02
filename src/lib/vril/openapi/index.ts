@@ -174,7 +174,7 @@ function deriveTagList(routes: RouteManifestEntry[]): Array<{ name: string; desc
 
 /**
  * Discover routes from the built api-routes.json manifest.
- * Falls back to scanning known routes if manifest is unavailable.
+ * Maps manifest entries to RouteManifestEntry objects with standard HTTP methods.
  */
 export function discoverRoutesFromManifest(
   manifest: Array<{ routePath: string; bundleName?: string }>
