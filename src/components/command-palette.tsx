@@ -49,6 +49,7 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
   const [docsEntries, setDocsEntries] = useState<DocsEntry[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const docsFetchedRef = useRef(false);
 
   const siteName = config?.siteName;
   const docsExplorerEnabled = config?.docsExplorer ?? !!siteName;
@@ -59,7 +60,8 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
 
   // Fetch OpenAPI docs when entering docs mode
   const fetchDocs = useCallback(async () => {
-    if (docsEntries.length > 0) return;
+    if (docsFetchedRef.current) return;
+    docsFetchedRef.current = true;
     setDocsLoading(true);
     try {
       const res = await fetch(openApiEndpoint);
@@ -88,7 +90,7 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
     } finally {
       setDocsLoading(false);
     }
-  }, [openApiEndpoint, docsEntries.length]);
+  }, [openApiEndpoint]);
 
   // Reset on open
   useEffect(() => {
@@ -96,8 +98,18 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setQuery(''); setSelectedIndex(-1); setMode('commands');
       setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      // Reset fetch state when palette closes
+      docsFetchedRef.current = false;
+      setDocsEntries([]);
     }
   }, [open]);
+
+  // Reset fetch state when endpoint changes
+  useEffect(() => {
+    docsFetchedRef.current = false;
+    setDocsEntries([]);
+  }, [openApiEndpoint]);
 
   // Switch mode based on trigger characters
   useEffect(() => {
