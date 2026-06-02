@@ -30,6 +30,8 @@ export interface OpenAPIOperation {
   parameters?: OpenAPIParameter[];
   requestBody?: OpenAPIRequestBody;
   responses: Record<string, OpenAPIResponse>;
+  'x-docs-anchor'?: string;
+  'x-has-submenu'?: boolean;
 }
 
 export interface OpenAPIParameter {
@@ -80,6 +82,10 @@ export interface RouteManifestEntry {
   parameters?: OpenAPIParameter[];
   requestBody?: OpenAPIRequestBody;
   responses?: Record<string, OpenAPIResponse>;
+  /** Anchor ID on the /docs page for deep-linking */
+  docsAnchor?: string;
+  /** If true, indicates this entry has a submenu (e.g. Security with sub-sections) */
+  hasSubmenu?: boolean;
 }
 
 /**
@@ -117,11 +123,9 @@ export function generateOpenAPISpec(
         requestBody: methodUpper !== 'GET' && methodUpper !== 'DELETE' ? route.requestBody : undefined,
         responses: route.responses ?? {
           '200': { description: 'Successful response', content: { 'application/json': { schema: { type: 'object' } } } },
-          '400': { description: 'Bad request' },
-          '401': { description: 'Unauthorized' },
-          '404': { description: 'Not found' },
-          '500': { description: 'Internal server error' },
         },
+        'x-docs-anchor': route.docsAnchor,
+        'x-has-submenu': route.hasSubmenu || undefined,
       };
 
       const key = method.toLowerCase() as keyof OpenAPIPathItem;

@@ -18,6 +18,8 @@ export interface DocsEntry {
   method: string;
   summary: string;
   tags?: string[];
+  docsAnchor?: string;
+  hasSubmenu?: boolean;
 }
 
 export interface CommandPaletteConfig {
@@ -38,7 +40,7 @@ export interface CommandPaletteProps {
   config?: CommandPaletteConfig;
 }
 
-type PaletteMode = 'commands' | 'docs';
+type PaletteMode = 'commands' | 'docs' | 'submenu';
 
 // ─── Component ────────────────────────────────────────────────────
 
@@ -48,6 +50,7 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
   const [mode, setMode] = useState<PaletteMode>('commands');
   const [docsEntries, setDocsEntries] = useState<DocsEntry[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
+  const [submenuTag, setSubmenuTag] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const docsFetchedRef = useRef(false);
 
@@ -70,7 +73,7 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
         const entries: DocsEntry[] = [];
         if (spec.paths) {
           for (const [path, methods] of Object.entries(spec.paths)) {
-            const methodObj = methods as Record<string, { summary?: string; tags?: string[] }>;
+            const methodObj = methods as Record<string, { summary?: string; tags?: string[]; 'x-docs-anchor'?: string; 'x-has-submenu'?: boolean }>;
             for (const [method, operation] of Object.entries(methodObj)) {
               if (['get', 'post', 'put', 'patch', 'delete'].includes(method)) {
                 entries.push({
@@ -78,6 +81,8 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
                   method: method.toUpperCase(),
                   summary: operation.summary ?? `${method.toUpperCase()} ${path}`,
                   tags: operation.tags,
+                  docsAnchor: operation['x-docs-anchor'],
+                  hasSubmenu: operation['x-has-submenu'],
                 });
               }
             }
@@ -96,7 +101,7 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
   useEffect(() => {
     if (open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setQuery(''); setSelectedIndex(-1); setMode('commands');
+      setQuery(''); setSelectedIndex(-1); setMode('commands'); setSubmenuTag(null);
       setTimeout(() => inputRef.current?.focus(), 50);
     } else {
       // Reset fetch state when palette closes
@@ -116,7 +121,7 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
     if (!docsExplorerEnabled) return;
     if (query === '/' || query === '?' || query === '#') {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMode('docs'); setQuery(''); setSelectedIndex(-1);
+      setMode('docs'); setQuery(''); setSelectedIndex(-1); setSubmenuTag(null);
       fetchDocs();
     }
   }, [query, docsExplorerEnabled, fetchDocs]);
@@ -130,8 +135,22 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
       })
     : [];
 
-  const filteredDocs = mode === 'docs'
+  // In submenu mode, show only entries matching the submenu tag (Security sub-sections)
+  const filteredDocs = (mode === 'docs' || mode === 'submenu')
     ? docsEntries.filter(entry => {
+        // In submenu mode, filter to Security sub-entries (tags starting with "Security ›")
+        if (mode === 'submenu' && submenuTag) {
+          const tag = entry.tags?.[0] ?? '';
+          if (!tag.startsWith(submenuTag + ' ›') && tag !== submenuTag) return false;
+          // Exclude the parent submenu entry itself
+          if (entry.hasSubmenu) return false;
+        }
+        // In docs mode, show top-level entries only (collapse Security sub-items into the parent)
+        if (mode === 'docs') {
+          const tag = entry.tags?.[0] ?? '';
+          // Hide Security sub-entries (those with › in the tag) — they're accessed via submenu
+          if (tag.includes('›')) return false;
+        }
         if (!query.trim()) return true;
         const q = query.toLowerCase();
         return entry.path.toLowerCase().includes(q) || entry.summary.toLowerCase().includes(q) || entry.method.toLowerCase().includes(q) || entry.tags?.some(t => t.toLowerCase().includes(q));
@@ -153,13 +172,32 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
   // Groups for docs mode
   const docsGroups: Record<string, DocsEntry[]> = {};
   const docsGroupOrder: string[] = [];
-  if (mode === 'docs') {
+  if (mode === 'docs' || mode === 'submenu') {
     filteredDocs.forEach(entry => {
       const tag = entry.tags?.[0] ?? 'General';
-      if (!docsGroups[tag]) { docsGroups[tag] = []; docsGroupOrder.push(tag); }
-      docsGroups[tag].push(entry);
+      // In submenu mode, use the sub-tag label (after ›)
+      const groupLabel = mode === 'submenu' && tag.includes('›')
+        ? tag.split('›').pop()?.trim() ?? tag
+        : tag;
+      if (!docsGroups[groupLabel]) { docsGroups[groupLabel] = []; docsGroupOrder.push(groupLabel); }
+      docsGroups[groupLabel].push(entry);
     });
   }
+
+  const navigateToEntry = (entry: DocsEntry) => {
+    if (entry.hasSubmenu) {
+      // Open submenu for this tag
+      setMode('submenu');
+      setSubmenuTag(entry.tags?.[0] ?? null);
+      setQuery('');
+      setSelectedIndex(-1);
+    } else {
+      // Navigate to the docs page at the correct anchor
+      const anchor = entry.docsAnchor ?? 'api';
+      window.location.assign(`/docs#${anchor}`);
+      onClose();
+    }
+  };
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setSelectedIndex(p => p < totalItems - 1 ? p + 1 : 0); }
@@ -169,18 +207,18 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
       if (mode === 'commands' && filtered[selectedIndex]) {
         filtered[selectedIndex].action();
         onClose();
-      } else if (mode === 'docs' && filteredDocs[selectedIndex]) {
-        window.location.assign('/docs#api');
-        onClose();
+      } else if ((mode === 'docs' || mode === 'submenu') && filteredDocs[selectedIndex]) {
+        navigateToEntry(filteredDocs[selectedIndex]);
       }
     }
     else if (e.key === 'Escape') {
-      if (mode === 'docs') { setMode('commands'); setQuery(''); setSelectedIndex(-1); }
+      if (mode === 'submenu') { setMode('docs'); setSubmenuTag(null); setQuery(''); setSelectedIndex(-1); }
+      else if (mode === 'docs') { setMode('commands'); setQuery(''); setSelectedIndex(-1); }
       else onClose();
     }
-    else if (e.key === 'Backspace' && query === '' && mode === 'docs') {
-      setMode('commands');
-      setSelectedIndex(-1);
+    else if (e.key === 'Backspace' && query === '') {
+      if (mode === 'submenu') { setMode('docs'); setSubmenuTag(null); setSelectedIndex(-1); }
+      else if (mode === 'docs') { setMode('commands'); setSelectedIndex(-1); }
     }
   };
 
@@ -201,9 +239,14 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
               <span className="text-white/20">/</span>
             </span>
           )}
-          {mode === 'docs' && (
+          {(mode === 'docs' || mode === 'submenu') && (
             <span className="flex items-center gap-1 px-1.5 py-0.5 bg-[#9b5eff]/15 border border-[#9b5eff]/25 rounded text-[10px] font-mono text-[#9b5eff] flex-shrink-0">
               docs
+            </span>
+          )}
+          {mode === 'submenu' && submenuTag && (
+            <span className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/15 border border-amber-500/25 rounded text-[10px] font-mono text-amber-400 flex-shrink-0">
+              {submenuTag.toLowerCase()}
             </span>
           )}
           <input
@@ -212,7 +255,7 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
             value={query}
             onChange={e => { setQuery(e.target.value); setSelectedIndex(-1); }}
             onKeyDown={handleKey}
-            placeholder={mode === 'docs' ? 'Search API endpoints...' : hintText}
+            placeholder={mode === 'submenu' ? `Search ${submenuTag?.toLowerCase() ?? ''} functions...` : mode === 'docs' ? 'Search API endpoints...' : hintText}
             className="flex-1 bg-transparent text-white font-mono text-sm outline-none placeholder:text-white/30"
           />
           <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-white/5 border border-white/10 rounded text-white/30">ESC</kbd>
@@ -247,7 +290,7 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
             </>
           )}
 
-          {mode === 'docs' && (
+          {(mode === 'docs' || mode === 'submenu') && (
             <>
               {docsLoading && (
                 <div className="px-4 py-8 text-center font-mono text-sm text-white/30">
@@ -261,14 +304,18 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
                     const i = idx++;
                     return (
                       <button key={`${entry.method}-${entry.path}`}
-                        onClick={() => { window.location.assign('/docs#api'); onClose(); }}
+                        onClick={() => navigateToEntry(entry)}
                         onMouseEnter={() => setSelectedIndex(i)}
                         className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${i === selectedIndex ? 'bg-[#9b5eff]/12 text-white' : 'text-white/50 hover:text-white/70'}`}>
                         <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${methodColor(entry.method)}`}>
                           {entry.method}
                         </span>
                         <span className="font-mono text-sm truncate">{entry.path}</span>
-                        <span className="ml-auto font-mono text-[10px] text-white/20 truncate max-w-[150px]">{entry.summary}</span>
+                        {entry.hasSubmenu ? (
+                          <span className="ml-auto font-mono text-sm text-[#9b5eff]/70">→</span>
+                        ) : (
+                          <span className="ml-auto font-mono text-[10px] text-white/20 truncate max-w-[150px]">{entry.summary}</span>
+                        )}
                       </button>
                     );
                   })}
@@ -288,15 +335,15 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-2 border-t border-white/8 bg-[#111520]">
           <span className="font-mono text-[10px] text-white/20">
-            {mode === 'docs'
+            {(mode === 'docs' || mode === 'submenu')
               ? `${filteredDocs.length} endpoint${filteredDocs.length !== 1 ? 's' : ''}`
               : `${filtered.length} command${filtered.length !== 1 ? 's' : ''}`}
           </span>
           <div className="flex gap-2 text-[9px] font-mono text-white/20">
             <span>↑↓ navigate</span>
             <span>↵ select</span>
-            {mode === 'docs' && <span>⌫ back</span>}
-            <span>esc {mode === 'docs' ? 'back' : 'close'}</span>
+            {(mode === 'docs' || mode === 'submenu') && <span>⌫ back</span>}
+            <span>esc {(mode === 'docs' || mode === 'submenu') ? 'back' : 'close'}</span>
           </div>
         </div>
       </div>
