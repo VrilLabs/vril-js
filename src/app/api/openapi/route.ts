@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 
   const spec = generateOpenAPISpec(routes, {
     title: 'Vril.js API',
-    description: 'Auto-generated OpenAPI specification for the Vril.js security-first framework API. This spec is generated from the file-system based API route discovery.',
+    description: 'OpenAPI specification for the Vril.js security-first framework API. This is a curated list of the framework showcase endpoints.',
     serverUrl,
   });
 
