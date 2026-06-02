@@ -583,7 +583,7 @@ function HeroGraphic() {
           </div>
         ))}
 
-        <div className="absolute inset-20 rounded-[2rem] border border-white/10 bg-[#0d1017]/60 shadow-2xl backdrop-blur-xl hero-core">
+        <div className="absolute inset-20 rounded-[2rem] border border-white/10 bg-[#0d1017]/60 shadow-2xl backdrop-blur-xl hero-core overflow-hidden">
           <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_30%_20%,rgba(0,255,200,0.22),transparent_34%),radial-gradient(circle_at_72%_80%,rgba(155,94,255,0.18),transparent_36%)]" />
           <div className="absolute inset-0 rounded-[2rem] hero-scanline" />
           <div className="relative h-full flex flex-col items-center justify-center gap-4">
@@ -692,9 +692,8 @@ export default function VrilShowcase() {
           <div className="max-w-7xl mx-auto px-5 relative z-10">
             <div className="max-w-3xl">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-olo-teal/8 border border-olo-teal/20 rounded-full mb-8 animate-vril-badge-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-olo-teal glow-dot-teal" />
-                <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">v2.2.0 — Security-First Evolution</span>
+              <div className="inline-flex items-center gap-2 mb-8 animate-vril-badge-pulse">
+                <span className="font-mono text-xs tracking-[0.16em] uppercase text-olo-teal">// v2.2.0 — Security-First Evolution</span>
               </div>
 
               {/* Headline */}
@@ -735,7 +734,7 @@ export default function VrilShowcase() {
                 </span>
                 <span className="w-1 h-1 rounded-full bg-white/10" />
                 <span className="flex items-center gap-2 text-olo-teal/60">
-                  <span className="w-1.5 h-1.5 rounded-full bg-olo-teal animate-vril-pulse" /> Provider-gated PQC
+                  <LockIcon className="w-3 h-3" /> Provider-gated PQC
                 </span>
               </div>
             </div>
