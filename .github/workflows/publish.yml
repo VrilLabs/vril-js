@@ -53,7 +53,11 @@ jobs:
           if (parts.length !== 3) {
             throw new Error('Invalid version format: ' + currentVersion);
           }
-          parts[2] = String(parseInt(parts[2], 10) + 1);
+          const patchNum = parseInt(parts[2], 10);
+          if (isNaN(patchNum) || parts[2] !== String(patchNum)) {
+            throw new Error('Invalid patch version (not a valid integer): ' + parts[2]);
+          }
+          parts[2] = String(patchNum + 1);
           const nextVersion = parts.join('.');
           console.log('Incremented next package version:', nextVersion);
           
