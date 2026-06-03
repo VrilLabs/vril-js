@@ -118,3 +118,16 @@ For local production preview:
 ```bash
 npm run build && npm run start
 ```
+
+---
+
+## Publishing & Versioning
+
+The npm package `@vrillabs/vril-js` is published via the GitHub Actions workflow `.github/workflows/publish.yml`.
+
+### Auto-Bump Logic
+To prevent npm republish failures (e.g. attempting to publish an existing version like `2.2.1`), the publish workflow automatically increments the patch component of the package version before building and publishing.
+- The workflow parses the current version from `package.json`.
+- It increments the third segment (patch component) of the version by `1`.
+- It updates `package.json`, `package-lock.json`, and `src/lib/vril/version.ts` to keep the version strings synchronized during publish.
+- The bumped version is then compiled, built, and published to npm.

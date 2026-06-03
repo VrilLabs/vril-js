@@ -35,6 +35,53 @@ jobs:
           [ -f package-lock.json ] || npm install
           npm ci
 
+      - name: Auto-bump patch version
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          // 1. Determine current package version from package.json
+          const pkgPath = path.join(process.cwd(), 'package.json');
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          const currentVersion = pkg.version;
+          console.log('Current package version:', currentVersion);
+          
+          // 2. Increment the patch component (the third segment) of the version by 1
+          const parts = currentVersion.split('.');
+          if (parts.length !== 3) {
+            throw new Error('Invalid version format: ' + currentVersion);
+          }
+          parts[2] = String(parseInt(parts[2], 10) + 1);
+          const nextVersion = parts.join('.');
+          console.log('Incremented next package version:', nextVersion);
+          
+          // 3. Update package.json with the bumped version
+          pkg.version = nextVersion;
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+          
+          // 4. Update package-lock.json if it exists
+          const pkgLockPath = path.join(process.cwd(), 'package-lock.json');
+          if (fs.existsSync(pkgLockPath)) {
+            const pkgLock = JSON.parse(fs.readFileSync(pkgLockPath, 'utf8'));
+            pkgLock.version = nextVersion;
+            if (pkgLock.packages && pkgLock.packages['']) {
+              pkgLock.packages[''].version = nextVersion;
+            }
+            fs.writeFileSync(pkgLockPath, JSON.stringify(pkgLock, null, 2) + '\n', 'utf8');
+            console.log('Updated package-lock.json');
+          }
+          
+          // 5. Keep src/lib/vril/version.ts synchronized with the package version
+          const versionTsPath = path.join(process.cwd(), 'src/lib/vril/version.ts');
+          if (fs.existsSync(versionTsPath)) {
+            let content = fs.readFileSync(versionTsPath, 'utf8');
+            content = content.replace(/export const VRIL_VERSION = '[^']+';/, 'export const VRIL_VERSION = \'' + nextVersion + '\';');
+            fs.writeFileSync(versionTsPath, content, 'utf8');
+            console.log('Updated src/lib/vril/version.ts');
+          }
+          "
+
       - name: Build
         run: npm run build
 
