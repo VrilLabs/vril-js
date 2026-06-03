@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { VrilVault, type EncryptionResult, type StrengthAssessment } from '@/lib/vril/security/crypto/vault';
+import { CommandPalette } from '@/components/command-palette';
 
 /* ═══════════════════════════════════════════════════════════════
    Vril.js v2.2 — Showcase Landing Page
@@ -328,6 +329,283 @@ const layerAccentMap = {
   error: { bg: 'layer-accent-error', text: 'layer-text-error' },
 } satisfies Record<LayerAccent, { bg: string; text: string }>;
 
+// ─── Accent hex colors (for SVG, not Tailwind) ──────────────────
+const LAYER_ACCENT_HEX: Record<LayerAccent, string> = {
+  amber:  '#f5a623',
+  violet: '#9b5eff',
+  teal:   '#00FFC8',
+  blue:   '#0A84FF',
+  error:  '#ff4d6a',
+};
+
+// ─── Zero-Trust Chain (scroll-reactive, physics-based) ──────────
+/**
+ * Renders the animated glowing-chain + electric-firewire spine beside
+ * the Five Layers of Zero-Trust cards, with scroll-reactive physics
+ * (skewY driven by scroll velocity via rAF). Gracefully degrades:
+ *  • prefers-reduced-motion → CSS animations + physics both disabled
+ *  • No CSS custom-property support (IE 11) → falls back to static bars
+ *  • No ResizeObserver → falls back to window.resize for measurement
+ */
+function ZeroTrustChainSection() {
+  const colRef   = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const groupRef = useRef<SVGGElement>(null);
+
+  const [nodes, setNodes] = useState<{ y: number; color: string }[]>([]);
+  const [colH,  setColH]  = useState(0);
+
+  // ── Measure card centre positions relative to the column top ───
+  useEffect(() => {
+    const measure = () => {
+      const col = colRef.current;
+      if (!col) return;
+      const colRect = col.getBoundingClientRect();
+      setColH(colRect.height);
+      setNodes(
+        cardRefs.current.map((el, i) => {
+          const color = LAYER_ACCENT_HEX[SECURITY_LAYERS[i].accent];
+          if (!el) return { y: 0, color };
+          const r = el.getBoundingClientRect();
+          return { y: r.top + r.height / 2 - colRect.top, color };
+        }),
+      );
+    };
+
+    measure();
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure);
+      if (colRef.current) ro.observe(colRef.current);
+    } else {
+      window.addEventListener('resize', measure, { passive: true });
+    }
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+
+  // ── Scroll-reactive physics ─────────────────────────────────────
+  // Directly mutates the SVG <g> style to avoid React re-renders on
+  // every animation frame. `will-change` is toggled only when moving.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (mq?.matches) return;
+    if (typeof CSS === 'undefined' || !CSS.supports?.('color', 'var(--x)')) return;
+
+    let vel = 0, skew = 0;
+    let lastY = window.scrollY, lastT = performance.now();
+    let rafId = 0, active = false;
+
+    const onScroll = () => {
+      const now = performance.now();
+      vel = (window.scrollY - lastY) / Math.max(now - lastT, 1) * 16;
+      lastY = window.scrollY;
+      lastT = now;
+    };
+
+    const tick = () => {
+      vel  *= 0.88;
+      const target = Math.max(-5.5, Math.min(5.5, vel * -0.32));
+      skew += (target - skew) * 0.1;
+
+      const g = groupRef.current;
+      if (g) {
+        if (Math.abs(skew) > 0.015 || Math.abs(vel) > 0.015) {
+          if (!active) { g.style.willChange = 'transform'; active = true; }
+          g.style.transform = `skewY(${skew.toFixed(3)}deg)`;
+        } else if (active) {
+          g.style.transform  = '';
+          g.style.willChange = 'auto';
+          active = false; skew = 0; vel = 0;
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  const ready = colH > 0 && nodes.length === SECURITY_LAYERS.length;
+  const firstY = nodes[0]?.y ?? 0;
+  const lastY2 = nodes[nodes.length - 1]?.y ?? colH;
+
+  return (
+    <div className="flex items-stretch">
+      {/* ── Chain spine — hidden below md breakpoint ── */}
+      <div className="hidden md:block w-10 flex-shrink-0 relative" aria-hidden="true">
+        <svg
+          className="absolute inset-0 w-full overflow-visible pointer-events-none select-none"
+          viewBox={`0 0 40 ${colH || 400}`}
+          preserveAspectRatio="none"
+          role="presentation"
+        >
+          {ready && (
+            <>
+              <defs>
+                {/* Full-height gradient: amber → violet → teal → blue → red */}
+                <linearGradient id="ztc-wire" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+                  {SECURITY_LAYERS.map((l, i) => (
+                    <stop key={i}
+                      offset={`${(i / (SECURITY_LAYERS.length - 1)) * 100}%`}
+                      stopColor={LAYER_ACCENT_HEX[l.accent]}
+                    />
+                  ))}
+                </linearGradient>
+
+                {/* Wire glow — userSpaceOnUse so it works on zero-width lines */}
+                <filter id="ztc-wire-glow" x="0" y={firstY - 20} width="40" height={lastY2 - firstY + 40} filterUnits="userSpaceOnUse">
+                  <feGaussianBlur stdDeviation="2.5" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+
+                {/* Node glow — objectBoundingBox works for non-zero circles */}
+                <filter id="ztc-node-glow" x="-80%" y="-80%" width="260%" height="260%">
+                  <feGaussianBlur stdDeviation="3.5" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+
+              {/* ── All chain elements skew together on scroll ── */}
+              <g ref={groupRef} style={{ transformOrigin: `20px ${(colH / 2).toFixed(0)}px` }}>
+
+                {/* Backbone spine wire */}
+                <line
+                  x1="20" y1={firstY} x2="20" y2={lastY2}
+                  stroke="url(#ztc-wire)"
+                  strokeWidth="1.5"
+                  opacity="0.3"
+                />
+
+                {/* Per-segment chain links + flowing energy */}
+                {nodes.map((node, i) => {
+                  const next = nodes[i + 1];
+                  if (!next) return null;
+                  const color = node.color;
+                  const y1 = node.y + 12, y2 = next.y - 12;
+                  return (
+                    <g key={`seg-${i}`}>
+                      {/* Rounded dashes — the "chain link" texture */}
+                      <line
+                        x1="20" y1={y1} x2="20" y2={y2}
+                        stroke={color}
+                        strokeWidth="3.5"
+                        strokeDasharray="3 9"
+                        strokeLinecap="round"
+                        opacity="0.22"
+                      />
+                      {/* Bright flowing energy — animates stroke-dashoffset */}
+                      <line
+                        x1="20" y1={y1} x2="20" y2={y2}
+                        stroke={color}
+                        strokeWidth="1.5"
+                        strokeDasharray="10 62"
+                        strokeLinecap="round"
+                        filter="url(#ztc-wire-glow)"
+                        opacity="0.72"
+                        className="chain-flow"
+                        style={{ animationDelay: `${(-i * 0.4).toFixed(2)}s` }}
+                      />
+                    </g>
+                  );
+                })}
+
+                {/* Port nodes at each layer boundary */}
+                {nodes.map((node, i) => {
+                  const color = node.color;
+                  const delay = `${(i * 0.55).toFixed(2)}s`;
+                  return (
+                    <g key={`node-${i}`}>
+                      {/* Outer glow ring */}
+                      <circle cx="20" cy={node.y} r="11"
+                        fill="none" stroke={color} strokeWidth="1"
+                        className="chain-node-outer"
+                        style={{ animationDelay: delay }}
+                      />
+                      {/* Middle ring */}
+                      <circle cx="20" cy={node.y} r="7"
+                        fill="none" stroke={color} strokeWidth="1.5"
+                        filter="url(#ztc-node-glow)"
+                        className="chain-node-mid"
+                        style={{ animationDelay: delay }}
+                      />
+                      {/* Core dot */}
+                      <circle cx="20" cy={node.y} r="3.5"
+                        fill={color}
+                        filter="url(#ztc-node-glow)"
+                        className="chain-node-inner"
+                        style={{ animationDelay: delay }}
+                      />
+                      {/* Tap line from node centre to card left edge */}
+                      <line
+                        x1="21" y1={node.y} x2="40" y2={node.y}
+                        stroke={color} strokeWidth="1"
+                        opacity="0.3"
+                      />
+                      {/* Electric spark burst */}
+                      <g
+                        className="chain-spark"
+                        style={{ animationDelay: `${(i * 1.1 + 0.6).toFixed(2)}s` }}
+                      >
+                        <line x1="15" y1={node.y - 5} x2="25" y2={node.y + 5}
+                          stroke={color} strokeWidth="1.5" strokeLinecap="round"
+                          filter="url(#ztc-node-glow)"
+                        />
+                        <line x1="25" y1={node.y - 5} x2="15" y2={node.y + 5}
+                          stroke={color} strokeWidth="1.5" strokeLinecap="round"
+                          filter="url(#ztc-node-glow)"
+                        />
+                      </g>
+                    </g>
+                  );
+                })}
+              </g>
+            </>
+          )}
+        </svg>
+      </div>
+
+      {/* ── Layer cards ── */}
+      <div ref={colRef} className="flex-1 flex flex-col gap-3">
+        {SECURITY_LAYERS.map((layer, i) => {
+          const accent = layerAccentMap[layer.accent];
+          return (
+            <div
+              ref={el => { cardRefs.current[i] = el; }}
+              key={i}
+              className="group relative p-5 bg-card border border-white/6 rounded-2xl hover:border-white/15 transition-all duration-300 hover:scale-[1.02]"
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <span className={`font-mono text-[10px] tracking-[0.16em] uppercase font-bold ${accent.text}`}>{layer.num}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-display font-bold text-white mb-2">{layer.name}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {layer.items.map(item => (
+                      <span key={item} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/4 border border-white/8 rounded-lg font-mono text-[11px] text-white/50 group-hover:text-white/70 group-hover:border-white/12 transition-colors">
+                        <span className={`w-1 h-1 rounded-full ${accent.bg}`} />
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Animated Counter ──────────────────────────────────────────
 function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: string }) {
   const [display, setDisplay] = useState('0');
@@ -616,8 +894,6 @@ function HeroGraphic() {
 export default function VrilShowcase() {
   const [vaultOpen, setVaultOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [paletteQuery, setPaletteQuery] = useState('');
-  const [paletteSelected, setPaletteSelected] = useState(-1);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -639,14 +915,16 @@ export default function VrilShowcase() {
   // Command palette items
   const commands = [
     { id: 'vault', title: 'Open \u03A9Vault', group: 'Security', action: () => setVaultOpen(true) },
+    { id: 'docs', title: 'View Documentation', group: 'Navigation', action: () => { window.location.href = '/docs'; } },
     { id: 'sec-arch', title: 'Go to Security Architecture', group: 'Navigation', action: () => document.getElementById('architecture')?.scrollIntoView({ behavior: 'smooth' }) },
     { id: 'features', title: 'Go to Features', group: 'Navigation', action: () => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }) },
     { id: 'modules', title: 'Go to Module Ecosystem', group: 'Navigation', action: () => document.getElementById('modules')?.scrollIntoView({ behavior: 'smooth' }) },
     { id: 'compare', title: 'Go to Comparison', group: 'Navigation', action: () => document.getElementById('comparison')?.scrollIntoView({ behavior: 'smooth' }) },
     { id: 'start', title: 'Go to Getting Started', group: 'Navigation', action: () => document.getElementById('get-started')?.scrollIntoView({ behavior: 'smooth' }) },
-    { id: 'copy-install', title: 'Copy Install Command', group: 'Actions', action: () => navigator.clipboard.writeText('npx create-vril-app@latest') },
+    { id: 'copy-install', title: 'Copy Install Command', group: 'Actions', action: () => navigator.clipboard.writeText('npm install @vrillabs/vril-js') },
+    { id: 'github', title: 'Open GitHub Repository', group: 'Actions', action: () => window.open('https://github.com/VrilLabs/vril-js', '_blank') },
+    { id: 'npm', title: 'Open npm Package', group: 'Actions', action: () => window.open('https://www.npmjs.com/package/@vrillabs/vril-js', '_blank') },
   ];
-  const filteredCommands = commands.filter(c => !paletteQuery.trim() || c.title.toLowerCase().includes(paletteQuery.toLowerCase()));
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -792,33 +1070,7 @@ export default function VrilShowcase() {
             </div>
 
             <div className="max-w-3xl mx-auto">
-              <div className="flex flex-col gap-3">
-                {SECURITY_LAYERS.map((layer, i) => {
-                  const accent = layerAccentMap[layer.accent];
-                  return (
-                    <div key={i} className="group relative p-5 bg-card border border-white/6 rounded-2xl hover:border-white/15 transition-all duration-300 hover:scale-[1.02]">
-                      {/* Layer accent bar */}
-                      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${accent.bg}`} />
-                      <div className="flex items-start gap-4 pl-3">
-                        <div className="flex-shrink-0">
-                          <span className={`font-mono text-[10px] tracking-[0.16em] uppercase font-bold ${accent.text}`}>{layer.num}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-display font-bold text-white mb-2">{layer.name}</h3>
-                          <div className="flex flex-wrap gap-2">
-                            {layer.items.map(item => (
-                              <span key={item} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/4 border border-white/8 rounded-lg font-mono text-[11px] text-white/50 group-hover:text-white/70 group-hover:border-white/12 transition-colors">
-                                <span className={`w-1 h-1 rounded-full ${accent.bg}`} />
-                                {item}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <ZeroTrustChainSection />
             </div>
           </div>
         </Section>
@@ -1012,55 +1264,12 @@ export default function VrilShowcase() {
       {vaultOpen && <VaultInlineDialog onClose={() => setVaultOpen(false)} />}
 
       {/* ═══ COMMAND PALETTE ═══════════════════════════════════ */}
-      {paletteOpen && (
-        <div className="fixed inset-0 z-[500] flex items-start justify-center pt-[20vh]" onClick={() => setPaletteOpen(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative z-10 w-[min(560px,calc(100vw-2rem))] bg-[#0d1017] border border-white/10 rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 bg-[#111520]">
-              <SearchIcon className="w-4 h-4 text-violet flex-shrink-0" />
-              <input type="text" value={paletteQuery} onChange={e => { setPaletteQuery(e.target.value); setPaletteSelected(-1); }}
-                onKeyDown={e => {
-                  if (e.key === 'ArrowDown') { e.preventDefault(); setPaletteSelected(p => p < filteredCommands.length - 1 ? p + 1 : 0); }
-                  else if (e.key === 'ArrowUp') { e.preventDefault(); setPaletteSelected(p => p > 0 ? p - 1 : filteredCommands.length - 1); }
-                  else if (e.key === 'Enter' && paletteSelected >= 0 && filteredCommands[paletteSelected]) { e.preventDefault(); filteredCommands[paletteSelected].action(); setPaletteOpen(false); }
-                }}
-                placeholder="Type a command..." className="flex-1 bg-transparent text-white font-mono text-sm outline-none placeholder:text-white/30" autoFocus />
-              <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-white/5 border border-white/10 rounded text-white/30">ESC</kbd>
-            </div>
-            <div className="max-h-72 overflow-y-auto py-2">
-              {(() => {
-                const groups: Record<string, typeof commands> = {};
-                const groupOrder: string[] = [];
-                filteredCommands.forEach(cmd => {
-                  if (!groups[cmd.group]) { groups[cmd.group] = []; groupOrder.push(cmd.group); }
-                  groups[cmd.group].push(cmd);
-                });
-                let idx = 0;
-                return groupOrder.map(group => (
-                  <div key={group}>
-                    <div className="px-4 py-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-white/20">{group}</div>
-                    {groups[group].map(cmd => {
-                      const i = idx++;
-                      return (
-                        <button key={cmd.id} onClick={() => { cmd.action(); setPaletteOpen(false); }} onMouseEnter={() => setPaletteSelected(i)}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${i === paletteSelected ? 'bg-violet/12 text-white' : 'text-white/50 hover:text-white/70'}`}>
-                          <span className="w-3 h-3 rounded-full bg-white/8 flex-shrink-0" />
-                          <span className="font-mono text-sm">{cmd.title}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ));
-              })()}
-              {filteredCommands.length === 0 && <div className="px-4 py-8 text-center font-mono text-sm text-white/20">No commands found</div>}
-            </div>
-            <div className="flex items-center justify-between px-4 py-2 border-t border-white/8 bg-[#111520]">
-              <span className="font-mono text-[10px] text-white/20">{filteredCommands.length} command{filteredCommands.length !== 1 ? 's' : ''}</span>
-              <div className="flex gap-3 text-[9px] font-mono text-white/20"><span>↑↓ navigate</span><span>↵ select</span><span>esc close</span></div>
-            </div>
-          </div>
-        </div>
-      )}
+      <CommandPalette
+        commands={commands}
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        config={{ siteName: 'VrilLabs', docsExplorer: true }}
+      />
     </div>
   );
 }

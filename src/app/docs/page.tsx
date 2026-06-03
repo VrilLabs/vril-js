@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from 'react';
+import { CommandPalette, type CommandItem } from '@/components/command-palette';
 
 // ─── Types ──────────────────────────────────────────────────────
 interface DocSection {
@@ -129,12 +130,76 @@ function SecurityNote({ children }: { children: ReactNode }) {
 export default function DocsPage() {
   const [activeSection, setActiveSection] = useState('intro');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const scrollTo = useCallback((id: string) => {
     setActiveSection(id);
     setSidebarOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   }, []);
+
+  // Initialize active section from URL hash and handle hash navigation
+  useEffect(() => {
+    const applyHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && SECTIONS.some(s => s.id === hash)) {
+        setActiveSection(hash);
+        // Defer scroll until after paint so the element exists
+        requestAnimationFrame(() => {
+          document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
+        });
+      }
+    };
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    return () => window.removeEventListener('hashchange', applyHash);
+  }, []);
+
+  // IntersectionObserver: update active section as user scrolls
+  useEffect(() => {
+    observerRef.current?.disconnect();
+    observerRef.current = new IntersectionObserver(
+      entries => {
+        // Pick the topmost visible section
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) setActiveSection(visible[0].target.id);
+      },
+      { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
+    );
+    SECTIONS.forEach(s => {
+      const el = document.getElementById(s.id);
+      if (el) observerRef.current?.observe(el);
+    });
+    return () => observerRef.current?.disconnect();
+  }, []);
+
+  // Cmd+K / Ctrl+K to open palette
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen(p => !p);
+      } else if (e.key === 'Escape') {
+        setPaletteOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Commands for docs palette — navigate to sections
+  const commands: CommandItem[] = useMemo(
+    () => SECTIONS.map(s => ({
+      id: s.id,
+      title: s.label,
+      group: s.category ?? 'Other',
+      action: () => scrollTo(s.id),
+    })),
+    [scrollTo]
+  );
 
   // Group sections by category
   const categories: Record<string, DocSection[]> = {};
@@ -158,6 +223,15 @@ export default function DocsPage() {
             <span className="font-mono text-xs text-white/20">v2.2.0</span>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setPaletteOpen(true)}
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/4 border border-white/10 rounded-lg text-white/40 font-mono text-xs hover:border-[#9b5eff]/40 hover:text-white transition-all min-w-[160px]"
+              aria-label="Open command palette"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <span>Search docs...</span>
+              <kbd className="ml-auto px-1.5 py-0.5 text-[9px] bg-white/5 border border-white/10 rounded font-mono">⌘K</kbd>
+            </button>
             <a href="/" className="text-sm text-white/40 hover:text-[#00FFC8] transition-colors">← Home</a>
           </div>
         </div>
@@ -1044,6 +1118,14 @@ const hash = await hashData('input-data', 'SHA-256');`}</Code>
           </Section>
         </main>
       </div>
+
+      {/* Command Palette */}
+      <CommandPalette
+        commands={commands}
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        config={{ siteName: 'VrilLabs', docsExplorer: true }}
+      />
     </div>
   );
 }
