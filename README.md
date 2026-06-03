@@ -15,22 +15,30 @@ npm install @vrillabs/vril-js
 
 [Documentation](https://vril-js.vercel.app/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/VrilLabs/vril-js) · [npm](https://www.npmjs.com/package/@vrillabs/vril-js)
 
-[![Version](https://img.shields.io/badge/version-2.2.1-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
-[![npm](https://img.shields.io/badge/npm-%40vrillabs%2Fvril--js-00d4aa?style=flat-square&labelColor=1a1a2e&logo=npm)](https://www.npmjs.com/package/@vrillabs/vril-js)
-[![License](https://img.shields.io/badge/license-VRIL_LABS_OSL_v1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js/blob/main/LICENSE)
-[![Zero-Dependency Security Core](https://img.shields.io/badge/security_core-0_runtime_deps-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
-[![PQC-Ready](https://img.shields.io/badge/PQC-Ready-00d4aa?style=flat-square&labelColor=1a1a2e)](https://csrc.nist.gov/projects/post-quantum-cryptography)
+ [![Version](https://img.shields.io/badge/version-2.2.1-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
+ [![npm](https://img.shields.io/badge/npm-%40vrillabs%2Fvril--js-00d4aa?style=flat-square&labelColor=1a1a2e&logo=npm)](https://www.npmjs.com/package/@vrillabs/vril-js)
+ [![License](https://img.shields.io/badge/license-VRIL_LABS_OSL_v1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js/blob/main/LICENSE)
+ [![Zero-Dependency Security Core](https://img.shields.io/badge/security_core-0_runtime_deps-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
+ [![PQC-Ready](https://img.shields.io/badge/PQC-Ready-00d4aa?style=flat-square&labelColor=1a1a2e)](https://csrc.nist.gov/projects/post-quantum-cryptography)
+
+<br />
+<br />
+
+  <div align="center">
+  <strong>
+  Post-quantum cryptography · Zero-trust membrane · Crypto agility · ΩSignal reactivity
+  </strong>
+ </div>
 
 </div>
 
-<br />
+
+
 <br />
 
 # Vril.js v2.2
 
-### The Security-First React Framework
-
-**Post-quantum cryptography · Zero-trust membrane · Crypto agility · ΩSignal reactivity**
+### The Security-First React Framewor
 
 ❯ <strong>Vril.js</strong> is a production-grade React framework where security is the architecture, not an afterthought. Its app shell, routing, API responses, security proxy, SSR/hydration, and static build pipeline are now provided by the built-in Vril runtime instead of Next.js.
 
