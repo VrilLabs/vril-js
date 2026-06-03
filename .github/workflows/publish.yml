@@ -36,7 +36,7 @@ jobs:
           npm ci
 
       - name: Auto-bump patch version
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           node -e "
           const fs = require('fs');
@@ -77,9 +77,61 @@ jobs:
           const versionTsPath = path.join(process.cwd(), 'src/lib/vril/version.ts');
           if (fs.existsSync(versionTsPath)) {
             let content = fs.readFileSync(versionTsPath, 'utf8');
-            content = content.replace(/export const VRIL_VERSION = ['\"]\d+\.\d+\.\d+['\"];/, 'export const VRIL_VERSION = \\'' + nextVersion + '\\';');
-            fs.writeFileSync(versionTsPath, content, 'utf8');
+            const newContent = content.replace(/export const VRIL_VERSION = ['\"]\d+\.\d+\.\d+['\"];/, 'export const VRIL_VERSION = \\'' + nextVersion + '\\';');
+            if (newContent === content) {
+              throw new Error('Failed to update VRIL_VERSION in version.ts - regex did not match. Current content: ' + content);
+            }
+            fs.writeFileSync(versionTsPath, newContent, 'utf8');
             console.log('Updated src/lib/vril/version.ts');
+          }
+          "
+
+      - name: Sync version from tag input
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const tag = '${{ inputs.tag }}';
+          
+          // Extract version from tag (e.g., 'v2.1.0' -> '2.1.0')
+          const versionMatch = tag.match(/v?(\d+\.\d+\.\d+)/);
+          if (!versionMatch) {
+            throw new Error('Invalid tag format: ' + tag + '. Expected format: v?.?.? or ??.??.??');
+          }
+          const targetVersion = versionMatch[1];
+          console.log('Target version from tag:', targetVersion);
+          
+          // Update package.json
+          const pkgPath = path.join(process.cwd(), 'package.json');
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          console.log('Current package version:', pkg.version);
+          pkg.version = targetVersion;
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+          console.log('Updated package.json to', targetVersion);
+          
+          // Update package-lock.json if it exists
+          const pkgLockPath = path.join(process.cwd(), 'package-lock.json');
+          if (fs.existsSync(pkgLockPath)) {
+            const pkgLock = JSON.parse(fs.readFileSync(pkgLockPath, 'utf8'));
+            pkgLock.version = targetVersion;
+            if (pkgLock.packages && pkgLock.packages['']) {
+              pkgLock.packages[''].version = targetVersion;
+            }
+            fs.writeFileSync(pkgLockPath, JSON.stringify(pkgLock, null, 2) + '\n', 'utf8');
+            console.log('Updated package-lock.json');
+          }
+          
+          // Update version.ts
+          const versionTsPath = path.join(process.cwd(), 'src/lib/vril/version.ts');
+          if (fs.existsSync(versionTsPath)) {
+            let content = fs.readFileSync(versionTsPath, 'utf8');
+            const newContent = content.replace(/export const VRIL_VERSION = ['\"]\d+\.\d+\.\d+['\"];/, 'export const VRIL_VERSION = \\'' + targetVersion + '\\';');
+            if (newContent === content) {
+              throw new Error('Failed to update VRIL_VERSION in version.ts - regex did not match. Current content: ' + content);
+            }
+            fs.writeFileSync(versionTsPath, newContent, 'utf8');
+            console.log('Updated src/lib/vril/version.ts to', targetVersion);
           }
           "
 
