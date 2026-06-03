@@ -1,4 +1,9 @@
+
+
 <div align="center">
+❯ <span style="font-size:24px;"><strong>npm install @vrillabs/vril-js<strong></span>
+
+<br />
  
 ```
  _    __     _ __    _     
@@ -340,37 +345,37 @@ Vril.js ships with environment-optimized presets:
 ┌─────────────────────────────────────────────────────────────────┐
 │                       VRIL.JS v2.2 ARCHITECTURE                 │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌─────────── BROWSER HARDENING ───────────┐                    │
-│  │  Trusted Types · API Membrane · XSS Shield │                 │
+│                                                                 │
+│  ┌─────────── BROWSER HARDENING ────────────────┐               │
+│  │  Trusted Types · API Membrane · XSS Shield   │               │
 │  │  Cross-Origin Isolation · Fingerprint Resist │               │
-│  └──────────────────┬───────────────────────┘                    │
-│                     │                                            │
-│  ┌─────────── TRANSPORT SECURITY ──────────┐                    │
+│  └──────────────────┬───────────────────────────┘               │
+│                     │                                           │
+│  ┌─────────── TRANSPORT SECURITY ───────────┐                   │
 │  │  HSTS · CSP · Permissions-Policy         │                   │
 │  │  Security Headers · CORS · CSRF Guard    │                   │
-│  └──────────────────┬───────────────────────┘                    │
-│                     │                                            │
-│  ┌─────────── CRYPTOGRAPHIC LAYER ─────────┐                    │
-│  │  PQC (ML-KEM/ML-DSA/SLH-DSA)            │                   │
-│  │  Hybrid KEM/Signer · ΩVault · Agility    │                  │
+│  └──────────────────┬───────────────────────┘                   │
+│                     │                                           │
+│  ┌─────────── CRYPTOGRAPHIC LAYER ──────────┐                   │
+│  │  PQC (ML-KEM/ML-DSA/SLH-DSA)             │                   │
+│  │  Hybrid KEM/Signer · ΩVault · Agility    │                   │
 │  │  Secure Memory · Constant-Time Ops       │                   │
-│  └──────────────────┬───────────────────────┘                    │
-│                     │                                            │
-│  ┌─────────── APPLICATION SECURITY ────────┐                    │
+│  └──────────────────┬───────────────────────┘                   │
+│                     │                                           │
+│  ┌─────────── APPLICATION SECURITY ─────────┐                   │
 │  │  Secure Router · RBAC · Auth Primitives  │                   │
-│  │  ΩSignal · Secure SSR · API Validation   │                  │
-│  │  Request Signing · Rate Limiting          │                  │
-│  └──────────────────┬───────────────────────┘                    │
-│                     │                                            │
-│  ┌─────────── BUILD-TIME INTEGRITY ────────┐                    │
-│  │  SBOM/CycloneDX · SRI · CSP Nonces       │                  │
-│  │  20-Point Audit · Integrity Verification  │                 │
-│  │  Supply Chain · Plugin Verification       │                 │
-│  └──────────────────────────────────────────┘                    │
-│                                                                  │
+│  │  ΩSignal · Secure SSR · API Validation   │                   │
+│  │  Request Signing · Rate Limiting         │                   │
+│  └──────────────────┬───────────────────────┘                   │
+│                     │                                           │
+│  ┌─────────── BUILD-TIME INTEGRITY ─────────┐                   │
+│  │  SBOM/CycloneDX · SRI · CSP Nonces       │                   │
+│  │  20-Point Audit · Integrity Verification │                   │
+│  │  Supply Chain · Plugin Verification      │                   │
+│  └──────────────────────────────────────────┘                   │
+│                                                                 │
 │  26 Modules · 6 Categories · 200+ Exports · 0 Dependencies      │
-│                                                                  │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
