@@ -12,20 +12,23 @@ npm install @vrillabs/vril-js
 |___/_/  /_/_(_)_/ /____/  
               /___/        
 ```
+
 [Documentation](https://vril-js.vercel.app/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/VrilLabs/vril-js) · [npm](https://www.npmjs.com/package/@vrillabs/vril-js)
-</div>
-<br />
-<br />
-
-# Vril.js v2.2
-
-### The Security-First React Framework
 
 [![Version](https://img.shields.io/badge/version-2.2.1-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
 [![npm](https://img.shields.io/badge/npm-%40vrillabs%2Fvril--js-00d4aa?style=flat-square&labelColor=1a1a2e&logo=npm)](https://www.npmjs.com/package/@vrillabs/vril-js)
 [![License](https://img.shields.io/badge/license-VRIL_LABS_OSL_v1.0-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js/blob/main/LICENSE)
 [![Zero-Dependency Security Core](https://img.shields.io/badge/security_core-0_runtime_deps-00d4aa?style=flat-square&labelColor=1a1a2e)](https://github.com/VrilLabs/vril-js)
 [![PQC-Ready](https://img.shields.io/badge/PQC-Ready-00d4aa?style=flat-square&labelColor=1a1a2e)](https://csrc.nist.gov/projects/post-quantum-cryptography)
+
+</div>
+
+<br />
+<br />
+
+# Vril.js v2.2
+
+### The Security-First React Framework
 
 **Post-quantum cryptography · Zero-trust membrane · Crypto agility · ΩSignal reactivity**
 
