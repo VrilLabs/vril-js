@@ -36,6 +36,7 @@ jobs:
           npm ci
 
       - name: Auto-bump patch version
+        if: github.ref == 'refs/heads/main'
         run: |
           node -e "
           const fs = require('fs');
@@ -76,7 +77,7 @@ jobs:
           const versionTsPath = path.join(process.cwd(), 'src/lib/vril/version.ts');
           if (fs.existsSync(versionTsPath)) {
             let content = fs.readFileSync(versionTsPath, 'utf8');
-            content = content.replace(/export const VRIL_VERSION = '[^']+';/, 'export const VRIL_VERSION = \'' + nextVersion + '\';');
+            content = content.replace(/export const VRIL_VERSION = ['\"]\d+\.\d+\.\d+['\"];/, 'export const VRIL_VERSION = \\'' + nextVersion + '\\';');
             fs.writeFileSync(versionTsPath, content, 'utf8');
             console.log('Updated src/lib/vril/version.ts');
           }
