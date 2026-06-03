@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from 'react';
 import { CommandPalette, type CommandItem } from '@/components/command-palette';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -179,20 +179,27 @@ export default function DocsPage() {
   // Cmd+K / Ctrl+K to open palette
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setPaletteOpen(p => !p); }
-      if (e.key === 'Escape') setPaletteOpen(false);
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen(p => !p);
+      } else if (e.key === 'Escape') {
+        setPaletteOpen(false);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
   // Commands for docs palette — navigate to sections
-  const commands: CommandItem[] = SECTIONS.map(s => ({
-    id: s.id,
-    title: s.label,
-    group: s.category ?? 'Other',
-    action: () => scrollTo(s.id),
-  }));
+  const commands: CommandItem[] = useMemo(
+    () => SECTIONS.map(s => ({
+      id: s.id,
+      title: s.label,
+      group: s.category ?? 'Other',
+      action: () => scrollTo(s.id),
+    })),
+    [scrollTo]
+  );
 
   // Group sections by category
   const categories: Record<string, DocSection[]> = {};
