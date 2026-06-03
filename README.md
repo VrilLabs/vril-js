@@ -70,10 +70,7 @@ Vril.js inverts this. Every module — from routing to reactivity, from SSR to s
 ## Installation
 
 ```bash
-# Create a new Vril.js project (recommended)
-npx create-vril-app@latest
-
-# Or add to an existing project
+# Install with npm
 npm install @vrillabs/vril-js
 
 # Or with your preferred package manager
