@@ -25,12 +25,10 @@ export interface DocsEntry {
 export interface CommandPaletteConfig {
   /** Configurable site name displayed before the input field. If not set, palette operates in default mode. */
   siteName?: string;
-  /** Enable the docs explorer mode (triggered by /, ?, or #). Default: true when siteName is set */
+  /** Enable the docs explorer mode (triggered by /, ?, #, or typing 'docs'). Default: true when siteName is set */
   docsExplorer?: boolean;
   /** OpenAPI endpoint to fetch docs from. Default: /api/openapi */
   openApiEndpoint?: string;
-  /** Custom hint text shown when in default mode */
-  hint?: string;
 }
 
 export interface CommandPaletteProps {
@@ -57,9 +55,6 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
   const siteName = config?.siteName;
   const docsExplorerEnabled = config?.docsExplorer ?? !!siteName;
   const openApiEndpoint = config?.openApiEndpoint ?? '/api/openapi';
-  const hintText = docsExplorerEnabled
-    ? (config?.hint ?? 'Type /, ?, or # to explore')
-    : 'Type a command...';
 
   // Fetch OpenAPI docs when entering docs mode
   const fetchDocs = useCallback(async () => {
@@ -113,13 +108,14 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
   // Reset fetch state when endpoint changes
   useEffect(() => {
     docsFetchedRef.current = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDocsEntries([]);
   }, [openApiEndpoint]);
 
-  // Switch mode based on trigger characters
+  // Switch mode based on trigger characters or 'docs' keyword
   useEffect(() => {
     if (!docsExplorerEnabled) return;
-    if (query === '/' || query === '?' || query === '#') {
+    if (query === '/' || query === '?' || query === '#' || query.toLowerCase() === 'docs') {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMode('docs'); setQuery(''); setSelectedIndex(-1); setSubmenuTag(null);
       fetchDocs();
@@ -255,9 +251,18 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
             value={query}
             onChange={e => { setQuery(e.target.value); setSelectedIndex(-1); }}
             onKeyDown={handleKey}
-            placeholder={mode === 'submenu' ? `Search ${submenuTag?.toLowerCase() ?? ''} functions...` : mode === 'docs' ? 'Search API endpoints...' : hintText}
+            placeholder={mode === 'submenu' ? `Search ${submenuTag?.toLowerCase() ?? ''} functions...` : mode === 'docs' ? 'Search API endpoints...' : 'Type to explore'}
             className="flex-1 bg-transparent text-white font-mono text-sm outline-none placeholder:text-white/30"
           />
+          {docsExplorerEnabled && mode === 'commands' && (
+            <span className="hidden sm:flex items-center gap-1 flex-shrink-0 text-[9px] font-mono text-white/25">
+              <span>Type</span>
+              <kbd className="px-1 py-0.5 bg-white/5 border border-white/10 rounded text-[9px]">/</kbd>
+              <kbd className="px-1 py-0.5 bg-white/5 border border-white/10 rounded text-[9px]">?</kbd>
+              <kbd className="px-1 py-0.5 bg-white/5 border border-white/10 rounded text-[9px]">#</kbd>
+              <span>to explore docs</span>
+            </span>
+          )}
           <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-white/5 border border-white/10 rounded text-white/30">ESC</kbd>
         </div>
 
@@ -281,11 +286,7 @@ export function CommandPalette({ commands, open, onClose, config }: CommandPalet
                 </div>
               ))}
               {docsExplorerEnabled && !query && (
-                <div className="px-4 py-3 border-t border-white/5 mt-1">
-                  <p className="font-mono text-[10px] text-white/25 text-center">
-                    Type <kbd className="px-1 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] mx-0.5">/</kbd> <kbd className="px-1 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] mx-0.5">?</kbd> or <kbd className="px-1 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] mx-0.5">#</kbd> to explore API docs
-                  </p>
-                </div>
+                <div className="px-4 py-2 border-t border-white/5 mt-1" />
               )}
             </>
           )}
