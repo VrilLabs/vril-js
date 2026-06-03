@@ -1,10 +1,10 @@
+<div align="center">
+
  ```
- npm install @vrillabs/vril-js
- ```
-<br />
-<br />
- 
+npm install @vrillabs/vril-js
 ```
+
+ ```
  _    __     _ __    _     
 | |  / /____(_) /   (_)____
 | | / / ___/ / /   / / ___/
@@ -12,6 +12,10 @@
 |___/_/  /_/_(_)_/ /____/  
               /___/        
 ```
+[Documentation](https://vril-js.vercel.app/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/VrilLabs/vril-js) · [npm](https://www.npmjs.com/package/@vrillabs/vril-js)
+</div>
+<br />
+<br />
 
 # Vril.js v2.2
 
@@ -26,8 +30,6 @@
 **Post-quantum cryptography · Zero-trust membrane · Crypto agility · ΩSignal reactivity**
 
 ❯ <strong>Vril.js</strong> is a production-grade React framework where security is the architecture, not an afterthought. Its app shell, routing, API responses, security proxy, SSR/hydration, and static build pipeline are now provided by the built-in Vril runtime instead of Next.js.
-
-[Documentation](https://vril-js.vercel.app/docs) · [Getting Started](#installation) · [API Reference](#api-overview) · [Security Model](#security-model) · [GitHub](https://github.com/VrilLabs/vril-js) · [npm](https://www.npmjs.com/package/@vrillabs/vril-js)
 
 </div>
 
