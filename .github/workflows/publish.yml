@@ -35,10 +35,115 @@ jobs:
           [ -f package-lock.json ] || npm install
           npm ci
 
+      - name: Auto-bump patch version
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          // 1. Determine current package version from package.json
+          const pkgPath = path.join(process.cwd(), 'package.json');
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          const currentVersion = pkg.version;
+          console.log('Current package version:', currentVersion);
+          
+          // 2. Increment the patch component (the third segment) of the version by 1
+          const parts = currentVersion.split('.');
+          if (parts.length !== 3) {
+            throw new Error('Invalid version format: ' + currentVersion);
+          }
+          const patchNum = parseInt(parts[2], 10);
+          if (isNaN(patchNum) || parts[2] !== String(patchNum)) {
+            throw new Error('Invalid patch version (not a valid integer): ' + parts[2]);
+          }
+          parts[2] = String(patchNum + 1);
+          const nextVersion = parts.join('.');
+          console.log('Incremented next package version:', nextVersion);
+          
+          // 3. Update package.json with the bumped version
+          pkg.version = nextVersion;
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+          
+          // 4. Update package-lock.json if it exists
+          const pkgLockPath = path.join(process.cwd(), 'package-lock.json');
+          if (fs.existsSync(pkgLockPath)) {
+            const pkgLock = JSON.parse(fs.readFileSync(pkgLockPath, 'utf8'));
+            pkgLock.version = nextVersion;
+            if (pkgLock.packages && pkgLock.packages['']) {
+              pkgLock.packages[''].version = nextVersion;
+            }
+            fs.writeFileSync(pkgLockPath, JSON.stringify(pkgLock, null, 2) + '\n', 'utf8');
+            console.log('Updated package-lock.json');
+          }
+          
+          // 5. Keep src/lib/vril/version.ts synchronized with the package version
+          const versionTsPath = path.join(process.cwd(), 'src/lib/vril/version.ts');
+          if (fs.existsSync(versionTsPath)) {
+            let content = fs.readFileSync(versionTsPath, 'utf8');
+            const newContent = content.replace(/export const VRIL_VERSION = ['\"]\d+\.\d+\.\d+['\"];/, 'export const VRIL_VERSION = \\'' + nextVersion + '\\';');
+            if (newContent === content) {
+              throw new Error('Failed to update VRIL_VERSION in version.ts - regex did not match. Current content: ' + content);
+            }
+            fs.writeFileSync(versionTsPath, newContent, 'utf8');
+            console.log('Updated src/lib/vril/version.ts');
+          }
+          "
+
+      - name: Sync version from tag input
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const tag = '${{ inputs.tag }}';
+          
+          // Extract version from tag (e.g., 'v2.1.0' -> '2.1.0')
+          const versionMatch = tag.match(/v?(\d+\.\d+\.\d+)/);
+          if (!versionMatch) {
+            throw new Error('Invalid tag format: ' + tag + '. Expected format: v?.?.? or ??.??.??');
+          }
+          const targetVersion = versionMatch[1];
+          console.log('Target version from tag:', targetVersion);
+          
+          // Update package.json
+          const pkgPath = path.join(process.cwd(), 'package.json');
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          console.log('Current package version:', pkg.version);
+          pkg.version = targetVersion;
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+          console.log('Updated package.json to', targetVersion);
+          
+          // Update package-lock.json if it exists
+          const pkgLockPath = path.join(process.cwd(), 'package-lock.json');
+          if (fs.existsSync(pkgLockPath)) {
+            const pkgLock = JSON.parse(fs.readFileSync(pkgLockPath, 'utf8'));
+            pkgLock.version = targetVersion;
+            if (pkgLock.packages && pkgLock.packages['']) {
+              pkgLock.packages[''].version = targetVersion;
+            }
+            fs.writeFileSync(pkgLockPath, JSON.stringify(pkgLock, null, 2) + '\n', 'utf8');
+            console.log('Updated package-lock.json');
+          }
+          
+          // Update version.ts
+          const versionTsPath = path.join(process.cwd(), 'src/lib/vril/version.ts');
+          if (fs.existsSync(versionTsPath)) {
+            let content = fs.readFileSync(versionTsPath, 'utf8');
+            const newContent = content.replace(/export const VRIL_VERSION = ['\"]\d+\.\d+\.\d+['\"];/, 'export const VRIL_VERSION = \\'' + targetVersion + '\\';');
+            if (newContent === content) {
+              throw new Error('Failed to update VRIL_VERSION in version.ts - regex did not match. Current content: ' + content);
+            }
+            fs.writeFileSync(versionTsPath, newContent, 'utf8');
+            console.log('Updated src/lib/vril/version.ts to', targetVersion);
+          }
+          "
+
       - name: Build
         run: npm run build
 
       - name: Create GitHub Release
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag || github.ref_name }}
@@ -46,11 +151,13 @@ jobs:
           generate_release_notes: true
 
       - name: Verify npm auth
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         run: npm whoami
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_TOKEN }}
 
       - name: Publish to npm
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_TOKEN }}
